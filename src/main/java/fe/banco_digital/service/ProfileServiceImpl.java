@@ -1,35 +1,23 @@
-package fe.banco_digital.service;
+package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.ProfileDTO;
-import fe.banco_digital.entity.Account;
-import fe.banco_digital.entity.User;
-import fe.banco_digital.mapper.ProfileMapper;
-import fe.banco_digital.repository.AccountRepository;
-import fe.banco_digital.repository.UserRepository;
-import org.springframework.stereotype.Service;
+import fe.banco_digital.service.ProfileService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-@Service
-public class ProfileServiceImpl implements ProfileService {
+@RestController
+@RequestMapping("/api/profile")
+public class ProfileController {
 
-    private final UserRepository userRepository;
-    private final AccountRepository accountRepository;
+    private final ProfileService profileService;
 
-    public ProfileServiceImpl(UserRepository userRepository,
-                              AccountRepository accountRepository) {
-        this.userRepository = userRepository;
-        this.accountRepository = accountRepository;
+    public ProfileController(ProfileService profileService) {
+        this.profileService = profileService;
     }
 
-    @Override
-    public ProfileDTO getProfile(Long userId) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        Account account = accountRepository
-                .findByUserIdAndActiveTrue(userId)
-                .orElseThrow(() -> new RuntimeException("Cuenta activa no encontrada"));
-
-        return ProfileMapper.toDTO(user, account);
+    @GetMapping("/{userId}")
+    public ResponseEntity<ProfileDTO> getProfile(@PathVariable Long userId) {
+        ProfileDTO profile = profileService.getProfile(userId);
+        return ResponseEntity.ok(profile);
     }
 }
