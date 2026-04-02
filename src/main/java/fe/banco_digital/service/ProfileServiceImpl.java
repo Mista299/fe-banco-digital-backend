@@ -1,8 +1,9 @@
 package fe.banco_digital.service;
 
 import fe.banco_digital.dto.ProfileDTO;
-import fe.banco_digital.entity.Account;
-import fe.banco_digital.entity.User;
+import fe.banco_digital.entity.Cliente;
+import fe.banco_digital.entity.Cuenta;
+import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.mapper.ProfileMapper;
 import fe.banco_digital.repository.AccountRepository;
 import fe.banco_digital.repository.UserRepository;
@@ -23,13 +24,13 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public ProfileDTO getProfile(Long userId) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        Cliente cliente = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
-        Account account = accountRepository
-                .findByUserIdAndActiveTrue(userId)
+        Cuenta cuenta = accountRepository
+                .findFirstByClienteIdClienteAndEstado(userId, EstadoCuenta.ACTIVA)
                 .orElseThrow(() -> new RuntimeException("Cuenta activa no encontrada"));
 
-        return ProfileMapper.toDTO(user, account);
+        return ProfileMapper.toDTO(cliente, cuenta);
     }
 }
