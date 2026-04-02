@@ -3,6 +3,7 @@ package fe.banco_digital.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
+
 @Entity
 @Table(name = "account")
 public class Account {
@@ -13,11 +14,14 @@ public class Account {
 
     private String numeroCuenta;
     private BigDecimal saldo;
-    private boolean active;
+
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
 
     // ===== GETTERS =====
     public Long getId() {
@@ -31,10 +35,11 @@ public class Account {
     public BigDecimal getSaldo() {
         return saldo;
     }
-
-    public boolean isActive() {
-        return active;
+    
+    public AccountStatus getStatus() {
+        return status;
     }
+
 
     public User getUser() {
         return user;
@@ -52,10 +57,11 @@ public class Account {
     public void setSaldo(BigDecimal saldo) {
         this.saldo = saldo;
     }
-
-    public void setActive(boolean active) {
-        this.active = active;
+    
+    public void setStatus(AccountStatus status) { // ✅ ESTE MÉTODO ES CLAVE
+        this.status = status;
     }
+
 
     public void setUser(User user) {
         this.user = user;
