@@ -1,5 +1,6 @@
 package fe.banco_digital.repository;
 
+import fe.banco_digital.entity.AccountStatus;
 import fe.banco_digital.entity.Account;
 import fe.banco_digital.entity.User;
 import org.springframework.boot.CommandLineRunner;
@@ -27,8 +28,8 @@ public class DataLoader {
             Account acc = new Account();
             acc.setNumeroCuenta("1234567890"); // 10 dígitos
             acc.setSaldo(new BigDecimal("150000"));
-            acc.setActive(true);
             acc.setUser(user); // relación correcta
+            acc.setStatus(AccountStatus.ACTIVE);
 
             accRepo.save(acc);
         };
