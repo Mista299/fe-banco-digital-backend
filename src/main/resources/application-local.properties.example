@@ -6,3 +6,7 @@
 #spring.datasource.url=jdbc:postgresql://localhost:5432/banco2026
 #spring.datasource.username=postgres
 #spring.datasource.password=tu_password
+#
+# Opcional: cuando el esquema ya existe y no quieres que Hibernate recree tablas al iniciar:
+#spring.jpa.hibernate.ddl-auto=update
+# (o en .env: DDL_AUTO=update)
