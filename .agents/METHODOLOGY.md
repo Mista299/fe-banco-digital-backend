@@ -207,8 +207,9 @@ public class CuentaNoEncontradaException extends RuntimeException {
 
 ---
 
-## 5. Endpoints
+## 5. Endpoints y Documentación con Swagger
 
+### Reglas básicas de endpoints
 - Siempre bajo `/api/v1/...`
 - Usar el nombre del recurso en plural y en español
 
@@ -219,6 +220,62 @@ public class CuentaNoEncontradaException extends RuntimeException {
 | `POST` | `/api/v1/cuentas` | Crear cuenta |
 | `PUT` | `/api/v1/cuentas/{id}` | Actualizar cuenta |
 | `DELETE` | `/api/v1/cuentas/{id}` | Eliminar cuenta |
+
+### Swagger — documentación obligatoria
+
+Todos los endpoints deben estar documentados con las anotaciones de Swagger. No se hace merge de un PR que tenga endpoints sin documentar.
+
+Swagger estará disponible en: `http://localhost:8080/swagger-ui/index.html`
+
+**Dependencia en `pom.xml`:**
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.3.0</version>
+</dependency>
+```
+
+**Cómo documentar un controller:**
+
+```java
+@RestController
+@RequestMapping("/api/v1/cuentas")
+@Tag(name = "Cuentas", description = "Operaciones sobre cuentas bancarias")
+public class CuentaController {
+
+    @Operation(
+        summary = "Buscar cuenta por ID",
+        description = "Retorna los datos de una cuenta dado su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Cuenta encontrada"),
+        @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
+    })
+    @GetMapping("/{id}")
+    public ResponseEntity<CuentaDTO> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(cuentaService.buscarPorId(id));
+    }
+
+    @Operation(summary = "Crear cuenta", description = "Crea una nueva cuenta bancaria para un cliente")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Cuenta creada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
+    @PostMapping
+    public ResponseEntity<CuentaDTO> crear(@RequestBody CrearCuentaDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(cuentaService.crear(dto));
+    }
+}
+```
+
+**Anotaciones mínimas obligatorias por endpoint:**
+
+| Anotación | Dónde va | Para qué sirve |
+|---|---|---|
+| `@Tag` | En la clase | Agrupa los endpoints en Swagger |
+| `@Operation` | En cada método | Describe qué hace el endpoint |
+| `@ApiResponses` | En cada método | Lista los posibles códigos de respuesta |
 
 ---
 
@@ -295,4 +352,4 @@ refactor(cliente): simplificar validación de documento
 
 ---
 
-*Ante dudas, consultar equipo antes de tomar decisiones que afecten a todos.*
+*Ante dudas, consultar con el líder del equipo antes de tomar decisiones que afecten a todos.*
