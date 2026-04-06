@@ -1,95 +1,77 @@
 package fe.banco_digital.service;
 
-import fe.banco_digital.entity.Account;
-import fe.banco_digital.entity.AccountBlockLog;
-import fe.banco_digital.entity.AccountStatus;
-import fe.banco_digital.repository.AccountBlockLogRepository;
-import fe.banco_digital.repository.AccountRepository;
-import fe.banco_digital.repository.UserRepository;
+import fe.banco_digital.entity.Auditoria;
+import fe.banco_digital.entity.Cuenta;
+import fe.banco_digital.entity.EstadoCuenta;
+import fe.banco_digital.entity.Usuario;
+import fe.banco_digital.repository.AuditoriaRepository;
+import fe.banco_digital.repository.CuentaRepository;
+import fe.banco_digital.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AccountSecurityServiceImpl implements AccountSecurityService {
 
-    private final UserRepository userRepo;
-    private final AccountRepository accRepo;
-    private final AccountBlockLogRepository logRepo;
+    private final UsuarioRepository usuarioRepo;
+    private final CuentaRepository cuentaRepo;
+    private final AuditoriaRepository auditoriaRepo;
 
-    public AccountSecurityServiceImpl(UserRepository userRepo,
-                                      AccountRepository accRepo,
-                                      AccountBlockLogRepository logRepo) {
-        this.userRepo = userRepo;
-        this.accRepo = accRepo;
-        this.logRepo = logRepo;
+    public AccountSecurityServiceImpl(UsuarioRepository usuarioRepo,
+                                      CuentaRepository cuentaRepo,
+                                      AuditoriaRepository auditoriaRepo) {
+        this.usuarioRepo = usuarioRepo;
+        this.cuentaRepo = cuentaRepo;
+        this.auditoriaRepo = auditoriaRepo;
     }
 
-   
-@Override
-public void blockAccount(Long userId, String password) {
+    @Override
+    @Transactional
+    public void bloquearCuenta(Long idUsuario, String password) {
+        Usuario usuario = usuarioRepo.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    // 1️⃣ Validar que el usuario exista
-    userRepo.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        if (!"1234".equals(password)) {
+            throw new RuntimeException("Contraseña incorrecta");
+        }
 
-    // 2️⃣ Validar contraseña (simulada)
-    if (!"1234".equals(password)) {
-        throw new RuntimeException("Contraseña incorrecta");
+        Long clienteId = usuario.getCliente().getIdCliente();
+        Cuenta cuenta = cuentaRepo
+                .findFirstByClienteIdClienteAndEstado(clienteId, EstadoCuenta.ACTIVA)
+                .orElseThrow(() -> new RuntimeException("Cuenta activa no encontrada"));
+
+        cuenta.setEstado(EstadoCuenta.BLOQUEADA);
+        cuentaRepo.save(cuenta);
+
+        Auditoria auditoria = new Auditoria();
+        auditoria.setAccion("BLOQUEO_CUENTA");
+        auditoria.setUsuario(usuario.getUsername());
+        auditoria.setDetalle("Cuenta " + cuenta.getNumeroCuenta() + " bloqueada via APP_MOVIL");
+        auditoriaRepo.save(auditoria);
     }
 
-    // 3️⃣ Buscar cuenta activa
-    Account account = accRepo
-            .findByUserIdAndStatus(userId, AccountStatus.ACTIVE)
-            .orElseThrow(() ->
-                    new RuntimeException("Cuenta activa no encontrada"));
+    @Override
+    @Transactional
+    public void desbloquearCuenta(Long idUsuario, String password) {
+        Usuario usuario = usuarioRepo.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    // 4️⃣ Bloquear cuenta
-    account.setStatus(AccountStatus.BLOCKED);
-    accRepo.save(account);
+        if (!"1234".equals(password)) {
+            throw new RuntimeException("Contraseña incorrecta");
+        }
 
-    // 5️⃣ Registrar auditoría
-    AccountBlockLog log = new AccountBlockLog();
-    log.setAccount(account);
-    log.setChannel("APP_MOVIL");
-    logRepo.save(log);
+        Long clienteId = usuario.getCliente().getIdCliente();
+        Cuenta cuenta = cuentaRepo
+                .findFirstByClienteIdClienteAndEstado(clienteId, EstadoCuenta.BLOQUEADA)
+                .orElseThrow(() -> new RuntimeException("No existe una cuenta bloqueada"));
 
-    // 6️⃣ Simulación de notificación push
-    System.out.println(
-            "🔔 Notificación: Cuenta bloqueada el " +
-            log.getTimestamp() + " vía APP_MOVIL"
-    );
-}
-@Override
-public void unlockAccount(Long userId, String password) {
+        cuenta.setEstado(EstadoCuenta.ACTIVA);
+        cuentaRepo.save(cuenta);
 
-    // 1️⃣ Validar usuario
-    userRepo.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-    // 2️⃣ Validar contraseña (simulada)
-    if (!"1234".equals(password)) {
-        throw new RuntimeException("Contraseña incorrecta");
+        Auditoria auditoria = new Auditoria();
+        auditoria.setAccion("DESBLOQUEO_CUENTA");
+        auditoria.setUsuario(usuario.getUsername());
+        auditoria.setDetalle("Cuenta " + cuenta.getNumeroCuenta() + " desbloqueada via APP_MOVIL");
+        auditoriaRepo.save(auditoria);
     }
-
-    // 3️⃣ Buscar cuenta BLOQUEADA
-    Account account = accRepo
-            .findByUserIdAndStatus(userId, AccountStatus.BLOCKED)
-            .orElseThrow(() ->
-                    new RuntimeException("No existe una cuenta bloqueada"));
-
-    // 4️⃣ Desbloquear cuenta
-    account.setStatus(AccountStatus.ACTIVE);
-    accRepo.save(account);
-
-    // 5️⃣ Registrar auditoría (opcional, recomendado)
-    AccountBlockLog log = new AccountBlockLog();
-    log.setAccount(account);
-    log.setChannel("DESBLOQUEO_APP");
-    logRepo.save(log);
-
-    // 6️⃣ Notificación simulada
-    System.out.println(
-            "🔔 Notificación: Cuenta desbloqueada el "
-            + log.getTimestamp() + " vía APP_MOVIL"
-    );
-} 
 }

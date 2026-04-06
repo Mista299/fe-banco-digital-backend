@@ -10,14 +10,16 @@
 
 ## Stack tecnológico
 
-<iframe src="./imgs/stack_tecnologico_banco_digital.html" width="100%" height="520" frameborder="0"></iframe>
-
+![alt text](../imgs/stack_tecnologico_banco_digital.png)
 ---
 
 ## Visión general — arquitectura en capas
 
 La aplicación sigue el patrón **Layered Architecture**. Cada capa tiene una única responsabilidad y solo puede comunicarse con la capa inmediatamente adyacente. Saltarse una capa está prohibido.
 
+## Flujo de capas
+
+![alt text](../imgs/flujo_capas.svg)
 
 ## Capas — detalle de responsabilidades
 
@@ -74,10 +76,6 @@ flowchart LR
 - El método entidad → DTO siempre se llama `aDTO`.
 - El método DTO → entidad siempre se llama `aEntidad`.
 - Se anota con `@Component`.
-
-## Flujo de capas
-
-![Flujo de capas](./imgs/flujo_capas.svg)
 
 **¿Por qué es obligatorio el Mapper?**
 

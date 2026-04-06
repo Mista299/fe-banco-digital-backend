@@ -1,4 +1,4 @@
-package fe.banco_digital.controller;
+package fe.banco_digital.service;
 
 import fe.banco_digital.dto.ProfileDTO;
 import fe.banco_digital.entity.Cliente;
@@ -9,9 +9,8 @@ import fe.banco_digital.repository.ClienteRepository;
 import fe.banco_digital.repository.CuentaRepository;
 import org.springframework.stereotype.Service;
 
-@RestController
-@RequestMapping("/api/profile")
-public class ProfileController {
+@Service
+public class ProfileServiceImpl implements ProfileService {
 
     private final ClienteRepository clienteRepository;
     private final CuentaRepository cuentaRepository;
@@ -24,7 +23,6 @@ public class ProfileController {
 
     @Override
     public ProfileDTO getProfile(Long userId) {
-
         Cliente cliente = clienteRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
 
