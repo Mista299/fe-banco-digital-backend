@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+.m2repo/
+src/main/resources/application-local.properties
+.env
+scripts/
