@@ -149,13 +149,13 @@ public class DataLoader {
             if (auditoriaRepo.count() == 0) {
                 Auditoria a1 = new Auditoria();
                 a1.setAccion("LOGIN");
-                a1.setUsuario(u1.getUsername());
+                a1.setUsuario(u1);
                 a1.setDetalle("Inicio de sesión exitoso");
                 auditoriaRepo.save(a1);
 
                 Auditoria a2 = new Auditoria();
                 a2.setAccion("CONSULTA_SALDO");
-                a2.setUsuario(u2.getUsername());
+                a2.setUsuario(u2);
                 a2.setDetalle("Consulta de saldo de cuenta " + cta3.getNumeroCuenta());
                 auditoriaRepo.save(a2);
             }

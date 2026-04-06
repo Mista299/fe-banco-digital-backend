@@ -1,12 +1,13 @@
 package fe.banco_digital.entity;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,23 +24,27 @@ public class Transaccion {
 	@Column(name = "id_transaccion")
 	private Long idTransaccion;
 
-	@ManyToOne(optional = false)
-	@JoinColumn(name = "id_cuenta_origen", nullable = false)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_cuenta_origen")
 	private Cuenta cuentaOrigen;
 
-	@ManyToOne(optional = false)
-	@JoinColumn(name = "id_cuenta_destino", nullable = false)
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "id_cuenta_destino")
 	private Cuenta cuentaDestino;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "tipo", nullable = false)
 	private TipoTransaccion tipo;
 
-	@Column(nullable = false, precision = 38, scale = 2)
+	@Column(name = "monto", nullable = false, precision = 19, scale = 4)
 	private BigDecimal monto;
 
-	@Column(nullable = false)
-	private Instant fecha = Instant.now();
+	@Column(name = "fecha")
+	private LocalDateTime fecha = LocalDateTime.now();
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "estado", nullable = false)
+	private EstadoTransaccion estado;
 
 	public Long getIdTransaccion() {
 		return idTransaccion;
@@ -81,12 +86,19 @@ public class Transaccion {
 		this.monto = monto;
 	}
 
-	public Instant getFecha() {
+	public LocalDateTime getFecha() {
 		return fecha;
 	}
 
-	public void setFecha(Instant fecha) {
+	public void setFecha(LocalDateTime fecha) {
 		this.fecha = fecha;
 	}
-}
 
+	public EstadoTransaccion getEstado() {
+		return estado;
+	}
+
+	public void setEstado(EstadoTransaccion estado) {
+		this.estado = estado;
+	}
+}

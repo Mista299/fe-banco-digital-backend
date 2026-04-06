@@ -1,12 +1,13 @@
 package fe.banco_digital.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,22 +23,22 @@ public class Cliente {
 	@Column(name = "id_cliente")
 	private Long idCliente;
 
-	@Column(nullable = false)
+	@Column(name = "nombre", nullable = false)
 	private String nombre;
 
-	@Column(nullable = false, unique = true)
+	@Column(name = "documento", nullable = false, unique = true)
 	private String documento;
 
-	@Column(nullable = false, unique = true)
+	@Column(name = "email", nullable = false, unique = true)
 	private String email;
 
-	@Column(nullable = false)
+	@Column(name = "telefono")
 	private String telefono;
 
 	@Column(name = "fecha_registro", nullable = false)
-	private Instant fechaRegistro = Instant.now();
+	private LocalDateTime fechaRegistro = LocalDateTime.now();
 
-	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 	private List<Cuenta> cuentas = new ArrayList<>();
 
 	public Long getIdCliente() {
@@ -80,11 +81,11 @@ public class Cliente {
 		this.telefono = telefono;
 	}
 
-	public Instant getFechaRegistro() {
+	public LocalDateTime getFechaRegistro() {
 		return fechaRegistro;
 	}
 
-	public void setFechaRegistro(Instant fechaRegistro) {
+	public void setFechaRegistro(LocalDateTime fechaRegistro) {
 		this.fechaRegistro = fechaRegistro;
 	}
 
@@ -96,4 +97,3 @@ public class Cliente {
 		this.cuentas = cuentas;
 	}
 }
-

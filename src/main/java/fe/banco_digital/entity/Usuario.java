@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,21 +26,21 @@ public class Usuario {
 	@Column(name = "id_usuario")
 	private Long idUsuario;
 
-	@Column(nullable = false, unique = true)
+	@Column(name = "username", nullable = false, unique = true)
 	private String username;
 
 	@Column(name = "password_hash", nullable = false)
 	private String passwordHash;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(name = "estado", nullable = false)
 	private EstadoUsuario estado = EstadoUsuario.ACTIVO;
 
-	@OneToOne(optional = false)
+	@OneToOne(optional = false, fetch = FetchType.LAZY)
 	@JoinColumn(name = "id_cliente", nullable = false, unique = true)
 	private Cliente cliente;
 
-	@ManyToMany
+	@ManyToMany(fetch = FetchType.LAZY)
 	@JoinTable(
 			name = "usuario_rol",
 			joinColumns = @JoinColumn(name = "id_usuario"),
@@ -95,4 +96,3 @@ public class Usuario {
 		this.roles = roles;
 	}
 }
-

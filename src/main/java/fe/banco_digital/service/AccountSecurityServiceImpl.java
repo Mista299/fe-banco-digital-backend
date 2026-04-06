@@ -45,7 +45,7 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
 
         Auditoria auditoria = new Auditoria();
         auditoria.setAccion("BLOQUEO_CUENTA");
-        auditoria.setUsuario(usuario.getUsername());
+        auditoria.setUsuario(usuario);
         auditoria.setDetalle("Cuenta " + cuenta.getNumeroCuenta() + " bloqueada via APP_MOVIL");
         auditoriaRepo.save(auditoria);
     }
@@ -70,7 +70,7 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
 
         Auditoria auditoria = new Auditoria();
         auditoria.setAccion("DESBLOQUEO_CUENTA");
-        auditoria.setUsuario(usuario.getUsername());
+        auditoria.setUsuario(usuario);
         auditoria.setDetalle("Cuenta " + cuenta.getNumeroCuenta() + " desbloqueada via APP_MOVIL");
         auditoriaRepo.save(auditoria);
     }

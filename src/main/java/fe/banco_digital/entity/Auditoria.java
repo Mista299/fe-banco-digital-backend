@@ -1,12 +1,15 @@
 package fe.banco_digital.entity;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -18,16 +21,17 @@ public class Auditoria {
 	@Column(name = "id_auditoria")
 	private Long idAuditoria;
 
-	@Column(nullable = false)
+	@Column(name = "accion", nullable = false)
 	private String accion;
 
-	@Column(nullable = false)
-	private String usuario;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "id_usuario", nullable = false)
+	private Usuario usuario;
 
-	@Column(nullable = false)
-	private Instant fecha = Instant.now();
+	@Column(name = "fecha", nullable = false)
+	private LocalDateTime fecha = LocalDateTime.now();
 
-	@Column(nullable = false, length = 2000)
+	@Column(name = "detalle", columnDefinition = "TEXT")
 	private String detalle;
 
 	public Long getIdAuditoria() {
@@ -46,19 +50,19 @@ public class Auditoria {
 		this.accion = accion;
 	}
 
-	public String getUsuario() {
+	public Usuario getUsuario() {
 		return usuario;
 	}
 
-	public void setUsuario(String usuario) {
+	public void setUsuario(Usuario usuario) {
 		this.usuario = usuario;
 	}
 
-	public Instant getFecha() {
+	public LocalDateTime getFecha() {
 		return fecha;
 	}
 
-	public void setFecha(Instant fecha) {
+	public void setFecha(LocalDateTime fecha) {
 		this.fecha = fecha;
 	}
 
@@ -70,4 +74,3 @@ public class Auditoria {
 		this.detalle = detalle;
 	}
 }
-
