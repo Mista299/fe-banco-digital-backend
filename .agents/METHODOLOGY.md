@@ -1,7 +1,7 @@
 # 📋 Metodología de Trabajo — Banco Digital
 
-> **Equipo:** mista, mafe, bryan, xiomi, cristian  
-> **Stack:** Java 17, Spring Boot 3, PostgreSQL  
+> **Equipo:** mista, mafe, bryan, xiomi, cristian
+> **Stack:** Java 17, Spring Boot 3, PostgreSQL
 > **Nivel:** Equipo en aprendizaje — mantener todo simple
 
 ---
@@ -27,7 +27,8 @@ src/main/java/fe/banco_digital/
 ## 2. Reglas de código
 
 ### Todo en español
-Clases, variables, métodos y nombres de archivos van en **español**.  
+
+Clases, variables, métodos y nombres de archivos van en **español**.
 Solo se mantienen en inglés palabras técnicas que son estándar: `get`, `set`, `find`, `save`, `id`, `status`, `request`, `response`.
 
 ```java
@@ -85,6 +86,7 @@ public class Cuenta {
 ```
 
 ### Valores monetarios
+
 Siempre usar `BigDecimal` para dinero. Nunca `double` ni `float`.
 
 ```java
@@ -97,11 +99,127 @@ private double saldo;
 
 ---
 
-## 3. Cómo funciona cada capa
+## 3. DTOs y Mappers — uso obligatorio por seguridad
+
+> ⚠️ **Regla de oro:** Un endpoint **nunca** recibe ni devuelve una entidad directamente.
+> Toda entrada usa un DTO de request. Toda salida usa un DTO de response. La conversión **siempre** pasa por un Mapper.
+
+La razón principal es **seguridad**. Si un endpoint devuelve una entidad directamente, expone al cliente todo lo que hay en esa tabla de la base de datos: contraseñas hasheadas, campos de auditoría, ids internos, relaciones con otras tablas, etc. Eso es un riesgo real.
+
+Con DTOs, el equipo decide explícitamente qué campos salen y cuáles no. Nada llega al cliente por accidente.
+
+Las otras razones son:
+
+- **Control total sobre la API:** si la entidad cambia (se agrega una columna, se renombra un campo), el DTO no cambia y la API sigue funcionando igual para el cliente.
+- **Claridad de responsabilidades:** el Mapper es el único punto del código donde ocurre la conversión. Si algo falla en la transformación de datos, ya sabes dónde buscar.
+
+> ⚠️ Un endpoint que recibe o devuelve una entidad es un error de diseño, no un atajo válido.
+
+### DTOs — tipos
+
+| Tipo | Cuándo se usa | Ejemplo |
+|---|---|---|
+| **Request DTO** | Lo que llega desde el cliente (body del POST/PUT) | `CrearCuentaDTO`, `ActualizarCuentaDTO` |
+| **Response DTO** | Lo que se devuelve al cliente | `CuentaDTO` |
+
+#### Request DTO — lo que entra
+
+Solo incluye los campos que el cliente debe enviar. No incluye `id`, fechas de auditoría ni campos calculados.
+
+```java
+// dto/CrearCuentaDTO.java
+public class CrearCuentaDTO {
+
+    private String numeroCuenta;
+    private Long idCliente;
+
+    // getters y setters
+}
+```
+
+#### Response DTO — lo que sale
+
+Solo incluye los campos que el cliente necesita ver. Nunca exponer la entidad completa.
+
+```java
+// dto/CuentaDTO.java
+public class CuentaDTO {
+
+    private Long idCuenta;
+    private String numeroCuenta;
+    private BigDecimal saldo;
+    private String estado;
+
+    // getters y setters
+}
+```
+
+> ❌ **Prohibido** construir el DTO dentro del Service o el Controller. Esa responsabilidad es exclusivamente del Mapper.
+
+### Mappers — convención
+
+Cada entidad tiene su propio Mapper. El Mapper es la **única clase** autorizada para convertir entre entidades y DTOs.
+
+- El método que convierte entidad → DTO se llama `aDTO`.
+- El método que convierte DTO → entidad se llama `aEntidad`.
+- El Mapper se anota con `@Component` para que Spring lo inyecte donde se necesite.
+
+```java
+// mapper/CuentaMapper.java
+@Component
+public class CuentaMapper {
+
+    public CuentaDTO aDTO(Cuenta cuenta) {
+        CuentaDTO dto = new CuentaDTO();
+        dto.setIdCuenta(cuenta.getIdCuenta());
+        dto.setNumeroCuenta(cuenta.getNumeroCuenta());
+        dto.setSaldo(cuenta.getSaldo());
+        dto.setEstado(cuenta.getEstado().name());
+        return dto;
+    }
+
+    public Cuenta aEntidad(CrearCuentaDTO dto) {
+        Cuenta cuenta = new Cuenta();
+        cuenta.setNumeroCuenta(dto.getNumeroCuenta());
+        return cuenta;
+    }
+
+    public List<CuentaDTO> aListaDTO(List<Cuenta> cuentas) {
+        return cuentas.stream()
+            .map(this::aDTO)
+            .collect(Collectors.toList());
+    }
+}
+```
+
+### Errores comunes — qué NO hacer
+
+```java
+// ❌ Devolver la entidad directamente desde el Controller
+public ResponseEntity<Cuenta> buscarPorId(@PathVariable Long id) { ... }
+
+// ❌ Construir el DTO dentro del Service
+CuentaDTO dto = new CuentaDTO();
+dto.setIdCuenta(cuenta.getIdCuenta()); // esto va en el Mapper
+
+// ❌ Inyectar el Mapper en el Controller (solo va en el Service)
+public class CuentaController {
+    private final CuentaMapper cuentaMapper; // ❌
+}
+
+// ❌ Recibir la entidad como parámetro del endpoint
+public ResponseEntity<CuentaDTO> crear(@RequestBody Cuenta cuenta) { ... } // debe ser un DTO
+```
+
+---
+
+## 4. Cómo funciona cada capa
 
 ### Controller
-- Solo recibe la petición y la pasa al service.
+
+- Solo recibe la petición y la pasa al Service.
 - No tiene lógica de negocio.
+- No interactúa con el Mapper directamente — eso es trabajo del Service.
 - Siempre devuelve `ResponseEntity`.
 
 ```java
@@ -119,17 +237,26 @@ public class CuentaController {
     public ResponseEntity<CuentaDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(cuentaService.buscarPorId(id));
     }
+
+    @PostMapping
+    public ResponseEntity<CuentaDTO> crear(@RequestBody CrearCuentaDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(cuentaService.crear(dto));
+    }
 }
 ```
 
 ### Service
+
 - Aquí va toda la lógica de negocio.
+- Es el **único lugar** donde se inyecta y usa el Mapper.
 - Siempre crear una **interfaz** y su **implementación** separadas.
 
 ```java
 // Interfaz
 public interface CuentaService {
     CuentaDTO buscarPorId(Long id);
+    CuentaDTO crear(CrearCuentaDTO dto);
+    List<CuentaDTO> listarTodas();
 }
 
 // Implementación
@@ -137,23 +264,37 @@ public interface CuentaService {
 public class CuentaServiceImpl implements CuentaService {
 
     private final CuentaRepository cuentaRepository;
+    private final CuentaMapper cuentaMapper;
 
-    public CuentaServiceImpl(CuentaRepository cuentaRepository) {
+    public CuentaServiceImpl(CuentaRepository cuentaRepository, CuentaMapper cuentaMapper) {
         this.cuentaRepository = cuentaRepository;
+        this.cuentaMapper = cuentaMapper;
     }
 
     @Override
     public CuentaDTO buscarPorId(Long id) {
         Cuenta cuenta = cuentaRepository.findById(id)
             .orElseThrow(() -> new CuentaNoEncontradaException(id));
-        return new CuentaDTO(cuenta);
+        return cuentaMapper.aDTO(cuenta);
+    }
+
+    @Override
+    public CuentaDTO crear(CrearCuentaDTO dto) {
+        Cuenta cuenta = cuentaMapper.aEntidad(dto);
+        return cuentaMapper.aDTO(cuentaRepository.save(cuenta));
+    }
+
+    @Override
+    public List<CuentaDTO> listarTodas() {
+        return cuentaMapper.aListaDTO(cuentaRepository.findAll());
     }
 }
 ```
 
 ### Repository
+
 - Solo consultas a la base de datos.
-- Extender `JpaRepository`.
+- Extender `JpaRepository`. Spring genera las queries básicas automáticamente.
 
 ```java
 @Repository
@@ -162,33 +303,11 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
 }
 ```
 
-### DTO
-- Nunca devolver una entidad directamente desde un endpoint.
-- Crear un DTO que tenga solo los campos necesarios.
-
-```java
-public class CuentaDTO {
-    private Long idCuenta;
-    private String numeroCuenta;
-    private BigDecimal saldo;
-    private String estado;
-
-    public CuentaDTO(Cuenta cuenta) {
-        this.idCuenta = cuenta.getIdCuenta();
-        this.numeroCuenta = cuenta.getNumeroCuenta();
-        this.saldo = cuenta.getSaldo();
-        this.estado = cuenta.getEstado().name();
-    }
-
-    // getters
-}
-```
-
 ---
 
-## 4. Manejo de errores
+## 5. Manejo de errores
 
-Todos los errores se manejan en `GlobalExceptionHandler` dentro de `exception/`.  
+Todos los errores se manejan en `GlobalExceptionHandler` dentro de `exception/`.
 No usar try-catch en controllers ni services salvo casos muy específicos.
 
 ```java
@@ -203,13 +322,22 @@ public class CuentaNoEncontradaException extends RuntimeException {
 .orElseThrow(() -> new CuentaNoEncontradaException(id));
 
 // 3. El GlobalExceptionHandler la atrapa y devuelve la respuesta al cliente
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(CuentaNoEncontradaException.class)
+    public ResponseEntity<String> handleCuentaNoEncontrada(CuentaNoEncontradaException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+}
 ```
 
 ---
 
-## 5. Endpoints y Documentación con Swagger
+## 6. Endpoints y documentación con Swagger
 
 ### Reglas básicas de endpoints
+
 - Siempre bajo `/api/v1/...`
 - Usar el nombre del recurso en plural y en español
 
@@ -223,9 +351,9 @@ public class CuentaNoEncontradaException extends RuntimeException {
 
 ### Swagger — documentación obligatoria
 
-Todos los endpoints deben estar documentados con las anotaciones de Swagger. No se hace merge de un PR que tenga endpoints sin documentar.
+No se hace merge de un PR que tenga endpoints sin documentar.
 
-Swagger estará disponible en: `http://localhost:8080/swagger-ui/index.html`
+Swagger disponible en: `http://localhost:8080/swagger-ui/index.html`
 
 **Dependencia en `pom.xml`:**
 ```xml
@@ -236,7 +364,13 @@ Swagger estará disponible en: `http://localhost:8080/swagger-ui/index.html`
 </dependency>
 ```
 
-**Cómo documentar un controller:**
+**Anotaciones mínimas obligatorias:**
+
+| Anotación | Dónde va | Para qué sirve |
+|---|---|---|
+| `@Tag` | En la clase | Agrupa los endpoints en Swagger |
+| `@Operation` | En cada método | Describe qué hace el endpoint |
+| `@ApiResponses` | En cada método | Lista los posibles códigos de respuesta |
 
 ```java
 @RestController
@@ -244,10 +378,7 @@ Swagger estará disponible en: `http://localhost:8080/swagger-ui/index.html`
 @Tag(name = "Cuentas", description = "Operaciones sobre cuentas bancarias")
 public class CuentaController {
 
-    @Operation(
-        summary = "Buscar cuenta por ID",
-        description = "Retorna los datos de una cuenta dado su ID"
-    )
+    @Operation(summary = "Buscar cuenta por ID", description = "Retorna los datos de una cuenta dado su ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Cuenta encontrada"),
         @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
@@ -256,30 +387,12 @@ public class CuentaController {
     public ResponseEntity<CuentaDTO> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(cuentaService.buscarPorId(id));
     }
-
-    @Operation(summary = "Crear cuenta", description = "Crea una nueva cuenta bancaria para un cliente")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Cuenta creada exitosamente"),
-        @ApiResponse(responseCode = "400", description = "Datos inválidos")
-    })
-    @PostMapping
-    public ResponseEntity<CuentaDTO> crear(@RequestBody CrearCuentaDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(cuentaService.crear(dto));
-    }
 }
 ```
 
-**Anotaciones mínimas obligatorias por endpoint:**
-
-| Anotación | Dónde va | Para qué sirve |
-|---|---|---|
-| `@Tag` | En la clase | Agrupa los endpoints en Swagger |
-| `@Operation` | En cada método | Describe qué hace el endpoint |
-| `@ApiResponses` | En cada método | Lista los posibles códigos de respuesta |
-
 ---
 
-## 6. Git — flujo de trabajo
+## 7. Git — flujo de trabajo
 
 ### Estructura de ramas
 
@@ -335,20 +448,24 @@ refactor(cliente): simplificar validación de documento
 ```
 
 ### Reglas de PR
+
 - El PR va siempre hacia `develop`, nunca directo a `main`.
 - Mínimo 1 persona del equipo debe aprobar antes de hacer merge.
 - Describir brevemente qué se hizo en el PR.
 
 ---
 
-## 7. Checklist antes de hacer PR
+## 8. Checklist antes de hacer PR
 
 - [ ] El código compila sin errores.
 - [ ] Probé manualmente que el endpoint funciona.
 - [ ] No hay credenciales ni contraseñas en el código.
 - [ ] Usé `BigDecimal` para valores de dinero.
 - [ ] Los endpoints siguen el patrón `/api/v1/...`.
-- [ ] No expuse entidades directamente — usé DTOs.
+- [ ] Ningún endpoint recibe ni devuelve una entidad — usé DTOs en todas las entradas y salidas.
+- [ ] La conversión entre entidad y DTO la hace el Mapper, no el Service ni el Controller.
+- [ ] Creé el Mapper correspondiente si agregué una entidad nueva.
+- [ ] Los endpoints nuevos están documentados con Swagger (`@Tag`, `@Operation`, `@ApiResponses`).
 
 ---
 

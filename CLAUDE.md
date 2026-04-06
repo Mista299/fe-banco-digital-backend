@@ -7,6 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - **Modelo de base de datos y entidades** → [`.agents/DATABASE.md`](.agents/DATABASE.md)
 > - **Contexto general del proyecto** → [`.agents/PROJECT_CONTEXT.md`](.agents/PROJECT_CONTEXT.md)
 > - **Sprint actual y tareas pendientes** → [`.agents/CURRENT_SPRINT.md`](.agents/CURRENT_SPRINT.md)
+> - **Arquitectura y como funciona el sistema** [`.agents/ARCHITECTURE.md`](.agents/ARCHITECTURE.md)
+
 
 ---
 
