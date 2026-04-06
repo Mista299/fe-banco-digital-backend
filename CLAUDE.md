@@ -53,7 +53,9 @@ There is also `application-local.properties.example` showing the alternative app
 
 ## Architecture overview
 
-Standard Spring Boot 3 / Java 17 layered application with no security framework wired yet.
+Spring Boot 4 / Java 17 layered application with no security framework wired yet.
+
+**Layer flow**: `Controller → Service interface → ServiceImpl → Repository`
 
 **Domain model** (`entity/`) — ver detalle completo en [`.agents/DATABASE.md`](.agents/DATABASE.md):
 - `Cliente` — bank customer (nombre, documento, email, telefono). Has a `List<Cuenta>`.
@@ -62,8 +64,6 @@ Standard Spring Boot 3 / Java 17 layered application with no security framework 
 - `Rol` / `RolNombre` (ADMIN, CLIENTE) — role-based access structure (not enforced yet, no Spring Security).
 - `Transaccion` — references `cuentaOrigen` and `cuentaDestino` (both `Cuenta`). Has `TipoTransaccion` (DEPOSITO, RETIRO, TRANSFERENCIA).
 - `Auditoria` — free-form audit log (accion, usuario string, detalle).
-
-**Layer flow**: `Controller → Service interface → ServiceImpl → Repository`
 
 **Seed data** (`DataLoader`): activated only under the `seed` Spring profile. Idempotent — uses `findBy…OrElseGet` before inserting. Creates two clients (bryan/ana), three accounts, three transactions, and two audit entries.
 
@@ -74,6 +74,21 @@ Standard Spring Boot 3 / Java 17 layered application with no security framework 
 **Error handling**: `GlobalExceptionHandler` catches all `Exception` and returns 500 with a generic Spanish message.
 
 **Tests**: only a context-load smoke test exists. Tests override the datasource to H2 (`MODE=PostgreSQL`) with `create-drop`, so no external DB is required.
+
+---
+
+## Implementation gap — código existente vs. modelo objetivo
+
+`DATABASE.md` describe el esquema **objetivo**; el código actual es una implementación parcial. Al escribir código nuevo, seguir el modelo objetivo, no el estilo del código legacy:
+
+| Aspecto | Código actual | Objetivo (DATABASE.md / METHODOLOGY.md) |
+|---------|--------------|------------------------------------------|
+| Campos de fecha | `Instant` | `LocalDateTime` |
+| Entidades | Getters/setters manuales | Lombok (`@Getter`, `@Setter`, `@NoArgsConstructor`) |
+| Estado de `Transaccion` | Sin campo `estado` | Enum `EstadoTransaccion` (EXITOSA, FALLIDA) |
+| `Auditoria.usuario` | `String` (username) | FK → `Usuario` |
+| Fetch type | Por defecto (EAGER) | `FetchType.LAZY` en todas las relaciones |
+| URL base | `/api/...` | `/api/v1/...` para todos los endpoints nuevos |
 
 ---
 
@@ -104,3 +119,4 @@ Standard Spring Boot 3 / Java 17 layered application with no security framework 
 - Usar `LocalDateTime` para fechas
 - Todo manejo de errores centralizado en `GlobalExceptionHandler`
 - Las operaciones de escritura llevan `@Transactional`
+- Todos los endpoints nuevos bajo `/api/v1/...`
