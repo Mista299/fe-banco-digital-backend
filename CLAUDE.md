@@ -9,6 +9,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > - **Sprint actual y tareas pendientes** → [`.agents/CURRENT_SPRINT.md`](.agents/CURRENT_SPRINT.md)
 > - **Arquitectura y como funciona el sistema** [`.agents/ARCHITECTURE.md`](.agents/ARCHITECTURE.md)
 
+### Convenciones
+- Diagramas: ver `.agents/conventions/diagrams.md`
+- Documentación: ver `.agents/conventions/documentation.md`
 
 ---
 

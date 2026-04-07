@@ -8,5 +8,9 @@ import fe.banco_digital.entity.Usuario;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 	Optional<Usuario> findByUsername(String username);
+
+	boolean existsByUsername(String username);
+
+	boolean existsByCliente_IdCliente(Long idCliente);
 }
 
