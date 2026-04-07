@@ -2,65 +2,49 @@ package fe.banco_digital.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ClienteNoEncontradoException.class)
-    public ResponseEntity<Map<String, String>> manejarClienteNoEncontrado(ClienteNoEncontradoException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("mensaje", ex.getMessage()));
-    }
-
-    @ExceptionHandler(CredencialesInvalidasException.class)
-    public ResponseEntity<Map<String, String>> manejarCredencialesInvalidas(CredencialesInvalidasException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("mensaje", ex.getMessage()));
-    }
-
-    @ExceptionHandler(UsuarioYaExisteException.class)
-    public ResponseEntity<Map<String, String>> manejarUsuarioYaExiste(UsuarioYaExisteException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("mensaje", ex.getMessage()));
-    }
-
-    @ExceptionHandler(ClienteYaTieneUsuarioException.class)
-    public ResponseEntity<Map<String, String>> manejarClienteYaTieneUsuario(ClienteYaTieneUsuarioException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("mensaje", ex.getMessage()));
-    }
-
-    @ExceptionHandler(TokenInvalidoException.class)
-    public ResponseEntity<Map<String, String>> manejarTokenInvalido(TokenInvalidoException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("mensaje", ex.getMessage()));
-    }
-
-    @ExceptionHandler(TokenExpiradoException.class)
-    public ResponseEntity<Map<String, String>> manejarTokenExpirado(TokenExpiradoException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(Map.of("mensaje", ex.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> manejarValidacion(MethodArgumentNotValidException ex) {
-        String mensaje = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .map(FieldError::getDefaultMessage)
-                .orElse("Datos inválidos");
-        return ResponseEntity.badRequest()
-                .body(Map.of("mensaje", mensaje));
-    }
-
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> manejarError(Exception ex) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("mensaje", "No se pudo cargar la información, intente más tarde"));
+    public ResponseEntity<String> handleException(Exception ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No se pudo cargar la información, intente más tarde");
     }
+    @ExceptionHandler(SaldoPendienteException.class)
+    public ResponseEntity<Map<String, Object>> manejarSaldoPendiente(SaldoPendienteException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(AutenticacionFallidaException.class)
+    public ResponseEntity<Map<String, Object>> manejarAutenticacionFallida(AutenticacionFallidaException ex) {
+        return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(CuentaNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarCuentaNoEncontrada(CuentaNoEncontradaException ex) {
+        return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(CuentaYaCerradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarCuentaYaCerrada(CuentaYaCerradaException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    private ResponseEntity<Map<String, Object>> construirRespuesta(HttpStatus estado, String mensaje) {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("timestamp", LocalDateTime.now());
+        cuerpo.put("estado", estado.value());
+        cuerpo.put("error", estado.getReasonPhrase());
+        cuerpo.put("mensaje", mensaje);
+        return ResponseEntity.status(estado).body(cuerpo);
+    }
+
 }
