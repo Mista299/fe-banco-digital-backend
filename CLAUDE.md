@@ -2,16 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> Para contexto detallado del proyecto ver los archivos en `.agents/`:
-> - **Metodología y buenas prácticas** → [`.agents/METHODOLOGY.md`](.agents/METHODOLOGY.md)
-> - **Modelo de base de datos y entidades** → [`.agents/DATABASE.md`](.agents/DATABASE.md)
-> - **Contexto general del proyecto** → [`.agents/PROJECT_CONTEXT.md`](.agents/PROJECT_CONTEXT.md)
-> - **Sprint actual y tareas pendientes** → [`.agents/CURRENT_SPRINT.md`](.agents/CURRENT_SPRINT.md)
-> - **Arquitectura y como funciona el sistema** [`.agents/ARCHITECTURE.md`](.agents/ARCHITECTURE.md)
+> Punto de entrada: [`.agents/index.md`](.agents/index.md)
+>
+> Contexto rápido:
+> - **Contexto general, módulos y restricciones** → [`.agents/context.md`](.agents/context.md)
+> - **Arquitectura en capas** → [`.agents/design/architecture.md`](.agents/design/architecture.md)
+> - **Autenticación JWT** → [`.agents/design/auth.md`](.agents/design/auth.md)
+> - **Modelo de base de datos** → [`.agents/design/database.md`](.agents/design/database.md)
+> - **Metodología y reglas de código** → [`.agents/design/methodology.md`](.agents/design/methodology.md)
+> - **Sprint actual** → [`.agents/sprint/current.md`](.agents/sprint/current.md)
 
 ### Convenciones
 - Diagramas: ver `.agents/conventions/diagrams.md`
-- Documentación: ver `.agents/conventions/documentation.md`
+- Documentación: ver `.agents/conventions/documentation-guidelines.md`
+- Documentos Word: ver `.agents/conventions/docs.md`
 
 ---
 

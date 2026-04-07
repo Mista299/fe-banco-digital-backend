@@ -1,0 +1,56 @@
+# Arquitectura en capas — Banco Digital
+direction: down
+
+client: Cliente HTTP {shape: rectangle}
+
+controller: Controller {
+  shape: rectangle
+  style.fill: "#6366f1"
+  style.font-color: "#ffffff"
+}
+
+service: Service {
+  shape: rectangle
+  style.fill: "#059669"
+  style.font-color: "#ffffff"
+}
+
+mapper: Mapper {
+  shape: rectangle
+  style.fill: "#f59e0b"
+  style.font-color: "#ffffff"
+}
+
+repository: Repository {
+  shape: rectangle
+  style.fill: "#7c3aed"
+  style.font-color: "#ffffff"
+}
+
+db: PostgreSQL {
+  shape: cylinder
+  style.fill: "#1e40af"
+  style.font-color: "#ffffff"
+}
+
+exception: GlobalExceptionHandler {
+  shape: rectangle
+  style.fill: "#dc2626"
+  style.font-color: "#ffffff"
+}
+
+security: FiltroJwt {
+  shape: rectangle
+  style.fill: "#374151"
+  style.font-color: "#ffffff"
+}
+
+client -> security: HTTP Request
+security -> controller: request autenticada
+controller -> service: delega (via interfaz)
+service -> mapper: aEntidad() / aDTO()
+service -> repository: guardar / consultar
+repository -> db: JPA / SQL
+service -> exception: lanza excepción
+exception -> client: HTTP Error Response
+controller -> client: ResponseEntity

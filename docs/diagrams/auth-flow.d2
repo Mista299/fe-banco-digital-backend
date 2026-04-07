@@ -1,0 +1,28 @@
+# Flujo de autenticación JWT — Banco Digital
+direction: right
+
+client: Cliente {shape: rectangle}
+ctrl: AutenticacionController {shape: rectangle}
+svc: AutenticacionServiceImpl {shape: rectangle}
+enc: BCryptPasswordEncoder {shape: rectangle}
+jwt: JwtUtil {shape: rectangle}
+rts: RefreshTokenServiceImpl {shape: rectangle}
+usr_repo: UsuarioRepository {shape: cylinder}
+rt_repo: RefreshTokenRepository {shape: cylinder}
+filtro: FiltroJwt {shape: rectangle}
+any_ctrl: CualquierController {shape: rectangle}
+
+client -> ctrl: "POST /registro o /login"
+ctrl -> svc: delega
+svc -> enc: "hash password (registro)"
+svc -> usr_repo: "save / findByUsername"
+svc -> jwt: "generarToken(username)"
+svc -> rts: "crearRefreshToken(idUsuario)"
+rts -> rt_repo: "save(refreshToken)"
+svc -> ctrl: "accessToken + refreshToken"
+ctrl -> client: "200 OK / 201 Created"
+
+client -> filtro: "GET /api/v1/... + Bearer token"
+filtro -> jwt: "esValido(token)"
+filtro -> any_ctrl: "request autenticada"
+any_ctrl -> client: "200 OK + datos"

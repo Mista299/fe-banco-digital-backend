@@ -1,0 +1,70 @@
+# Modelo entidad-relación — Banco Digital
+
+cliente: cliente {
+  shape: sql_table
+  id_cliente: BIGINT PK
+  nombre: VARCHAR(150)
+  documento: VARCHAR(20) UNIQUE
+  email: VARCHAR(100) UNIQUE
+  telefono: VARCHAR(20)
+  fecha_registro: TIMESTAMP
+}
+
+usuario: usuario {
+  shape: sql_table
+  id_usuario: BIGINT PK
+  username: VARCHAR(50) UNIQUE
+  password_hash: VARCHAR(255)
+  estado: ACTIVO | BLOQUEADO
+  id_cliente: BIGINT FK
+}
+
+rol: rol {
+  shape: sql_table
+  id_rol: BIGINT PK
+  nombre: VARCHAR(50) UNIQUE
+}
+
+usuario_rol: usuario_rol {
+  shape: sql_table
+  id_usuario: BIGINT FK
+  id_rol: BIGINT FK
+}
+
+cuenta: cuenta {
+  shape: sql_table
+  id_cuenta: BIGINT PK
+  numero_cuenta: VARCHAR(20) UNIQUE
+  tipo: AHORROS | CORRIENTE
+  saldo: DECIMAL(19-4)
+  estado: ACTIVA | INACTIVA
+  id_cliente: BIGINT FK
+}
+
+transaccion: transaccion {
+  shape: sql_table
+  id_transaccion: BIGINT PK
+  id_cuenta_origen: BIGINT FK
+  id_cuenta_destino: BIGINT FK
+  tipo: DEPOSITO | RETIRO | TRANSFERENCIA
+  monto: DECIMAL(19-4)
+  fecha: TIMESTAMP
+  estado: EXITOSA | FALLIDA
+}
+
+auditoria: auditoria {
+  shape: sql_table
+  id_auditoria: BIGINT PK
+  accion: VARCHAR(100)
+  id_usuario: BIGINT FK
+  fecha: TIMESTAMP
+  detalle: TEXT
+}
+
+cliente -> usuario: 1 a 1
+cliente -> cuenta: 1 a N
+usuario -> usuario_rol: 1 a N
+rol -> usuario_rol: 1 a N
+cuenta -> transaccion: origen 1 a N
+cuenta -> transaccion: destino 1 a N
+usuario -> auditoria: 1 a N
