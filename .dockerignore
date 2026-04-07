@@ -1,0 +1,7 @@
+target/*
+!target/banco-digital-0.0.1-SNAPSHOT.jar
+.git
+.gitignore
+docs/
+imgs/
+planning/
