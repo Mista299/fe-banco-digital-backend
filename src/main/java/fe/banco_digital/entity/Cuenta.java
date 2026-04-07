@@ -87,5 +87,7 @@ public class Cuenta {
 	public void setCliente(Cliente cliente) {
 		this.cliente = cliente;
 	}
+
+
 }
 
