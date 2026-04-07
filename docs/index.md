@@ -9,6 +9,7 @@ Sistema de banca digital (backend REST) construido con Java 17 + Spring Boot 3 +
 | [Cómo ejecutar el proyecto](./guides/getting-started.md) | Requisitos, variables de entorno, comandos |
 | [Datos de prueba (seed)](./guides/seed.md) | Cómo cargar datos iniciales y qué contienen |
 | [Consumir la API](./guides/api-usage.md) | Autenticación y ejemplos de endpoints |
+| [Flujo de trabajo en Git](./guides/git-workflow.md) | Ramas por HU, PRs, sincronización y merge al sprint |
 
 ## Arquitectura
 
