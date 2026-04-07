@@ -27,6 +27,11 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
+    @ExceptionHandler(ClienteNoEncontradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarClienteNoEncontrado(ClienteNoEncontradoException ex) {
+        return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
     @ExceptionHandler(CuentaYaCerradaException.class)
     public ResponseEntity<Map<String, Object>> manejarCuentaYaCerrada(CuentaYaCerradaException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
