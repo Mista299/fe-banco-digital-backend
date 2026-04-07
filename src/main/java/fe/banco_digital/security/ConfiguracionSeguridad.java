@@ -61,13 +61,16 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/swagger-ui/**",
+                                "/swagger-ui.html",      // <-- agrega esto
+                                "/swagger-ui/index.html", // <-- y esto
                                 "/v3/api-docs/**",
-                                "/api/db/ping"
+                                "/api/db/ping",
+                                "/favicon.ico"           // <-- y esto para el favicon
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS   )
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {

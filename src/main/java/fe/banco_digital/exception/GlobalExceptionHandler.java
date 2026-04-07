@@ -12,12 +12,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("No se pudo cargar la información, intente más tarde");
-    }
     @ExceptionHandler(SaldoPendienteException.class)
     public ResponseEntity<Map<String, Object>> manejarSaldoPendiente(SaldoPendienteException ex) {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
@@ -36,6 +30,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CuentaYaCerradaException.class)
     public ResponseEntity<Map<String, Object>> manejarCuentaYaCerrada(CuentaYaCerradaException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> manejarExcepcionGeneral(Exception ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("No se pudo cargar la información, intente más tarde");
     }
 
     private ResponseEntity<Map<String, Object>> construirRespuesta(HttpStatus estado, String mensaje) {

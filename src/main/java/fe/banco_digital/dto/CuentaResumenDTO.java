@@ -23,8 +23,8 @@ public class CuentaResumenDTO {
         this.tipo = cuenta.getTipo().name();
         this.saldo = cuenta.getSaldo();
         this.estado = cuenta.getEstado().name();
-        this.permiteTransacciones = !estaCerrada;                        // Escenario 3
-        this.etiquetaVisual = estaCerrada ? "Cuenta Cerrada" : null;    // Escenario 3
+        this.permiteTransacciones = cuenta.getEstado() == EstadoCuenta.ACTIVA;  // Escenario 3
+        this.etiquetaVisual = estaCerrada ? "Cuenta Cerrada" : null;            // Escenario 3
     }
 
     public Long getIdCuenta() { return idCuenta; }
