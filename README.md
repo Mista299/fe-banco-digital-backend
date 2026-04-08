@@ -7,8 +7,8 @@ Backend REST de un sistema de banca digital que permite gestionar clientes, cuen
 
 ---
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![JaCoCo Coverage](https://img.shields.io/badge/coverage-unknown%25-yellow.svg)](target/site/jacoco/index.html)
+[![CI](https://github.com/Mista299/fe-banco-digital-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Mista299/fe-banco-digital-backend/actions/workflows/ci.yml)
+[![JaCoCo Coverage](https://img.shields.io/badge/coverage-61.48%25-yellow.svg)](target/site/jacoco/index.html)
 
 **Nota:** se añadieron tests y un workflow CI que ejecuta la suite de pruebas y publica los reportes de JaCoCo y Surefire como artefactos. El workflow no bloquea merges por ahora.
 
