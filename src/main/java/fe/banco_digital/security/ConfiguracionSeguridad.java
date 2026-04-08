@@ -45,9 +45,6 @@ public class ConfiguracionSeguridad {
         return config.getAuthenticationManager();
     }
 
-    // El filtro se instancia aquí como @Bean en lugar de usar @Component en FiltroJwt.
-    // Así Spring Boot NO lo registra como filtro servlet genérico y solo vive
-    // dentro de la cadena de seguridad → se ejecuta una única vez por request.
     @Bean
     public FiltroJwt filtroJwt() {
         return new FiltroJwt(jwtUtil, usuarioDetallesService);
@@ -60,17 +57,18 @@ public class ConfiguracionSeguridad {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/registro/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",      // <-- agrega esto
-                                "/swagger-ui/index.html", // <-- y esto
+                                "/swagger-ui.html",
+                                "/swagger-ui/index.html",
                                 "/v3/api-docs/**",
                                 "/api/db/ping",
-                                "/favicon.ico"           // <-- y esto para el favicon
+                                "/favicon.ico"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS   )
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {

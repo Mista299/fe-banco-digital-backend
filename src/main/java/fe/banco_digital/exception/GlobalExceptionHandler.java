@@ -2,11 +2,14 @@ package fe.banco_digital.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -37,20 +40,66 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler({
+            IdentificacionDuplicadaException.class,
+            UsuarioYaExisteException.class,
+            ClienteYaTieneUsuarioException.class,
+            EmailYaExisteException.class
+    })
+    public ResponseEntity<Map<String, Object>> manejarConflictos(RuntimeException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler({
+            CredencialesInvalidasException.class,
+            TokenExpiradoException.class,
+            TokenInvalidoException.class
+    })
+    public ResponseEntity<Map<String, Object>> manejarNoAutorizado(RuntimeException ex) {
+        return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(CamposObligatoriosException.class)
+    public ResponseEntity<Map<String, Object>> manejarCamposObligatorios(CamposObligatoriosException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> manejarValidaciones(MethodArgumentNotValidException ex) {
+        Map<String, Object> cuerpo = cuerpoBase(HttpStatus.BAD_REQUEST, "Los campos faltantes son obligatorios para continuar.");
+        List<Map<String, String>> detalles = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(this::aDetalleCampo)
+                .toList();
+        cuerpo.put("detalles", detalles);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(cuerpo);
+    }
+
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> manejarExcepcionGeneral(Exception ex) {
+    public ResponseEntity<Map<String, Object>> manejarExcepcionGeneral(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("No se pudo cargar la información, intente más tarde");
+                .body(cuerpoBase(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar la información, intente más tarde"));
+    }
+
+    private Map<String, String> aDetalleCampo(FieldError error) {
+        Map<String, String> detalle = new LinkedHashMap<>();
+        detalle.put("campo", error.getField());
+        detalle.put("mensaje", error.getDefaultMessage());
+        return detalle;
     }
 
     private ResponseEntity<Map<String, Object>> construirRespuesta(HttpStatus estado, String mensaje) {
+        return ResponseEntity.status(estado).body(cuerpoBase(estado, mensaje));
+    }
+
+    private Map<String, Object> cuerpoBase(HttpStatus estado, String mensaje) {
         Map<String, Object> cuerpo = new LinkedHashMap<>();
         cuerpo.put("timestamp", LocalDateTime.now());
         cuerpo.put("estado", estado.value());
         cuerpo.put("error", estado.getReasonPhrase());
         cuerpo.put("mensaje", mensaje);
-        return ResponseEntity.status(estado).body(cuerpo);
+        return cuerpo;
     }
-
 }
