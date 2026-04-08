@@ -13,6 +13,3 @@ Este paquete incluye la implementación y documentación de la HU-01 asignada a 
 ## Archivos de diagramas
 - `docs/diagrams/hu-01-package.svg`
 - `docs/diagrams/hu-01-flow.svg`
-
-## Nota
-La revisión fue estática. En este entorno no fue posible ejecutar Maven porque el proyecto no trae completo el wrapper y no hay `mvn` instalado.
