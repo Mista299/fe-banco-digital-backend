@@ -15,7 +15,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -33,7 +33,7 @@ public class DataLoader {
             RolRepository rolRepo,
             CuentaRepository cuentaRepo,
             TransaccionRepository transaccionRepo,
-            AuditoriaRepository auditoriaRepo
+            AuditoriaRepository auditoriaRepo, PasswordEncoder passwordEncoder
     ) {
         return args -> {
 

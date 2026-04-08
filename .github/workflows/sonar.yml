@@ -1,17 +1,23 @@
 name: SonarCloud Analysis
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ main, develop ]
   pull_request:
+    branches: [ main ]
 
 jobs:
-  sonar:
+  sonarcloud:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=Mista299_fe-banco-digital-backend
+            -Dsonar.organization=mista299
