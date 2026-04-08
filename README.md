@@ -47,18 +47,25 @@ banco-digital/
 
 ## QA y cobertura
 
-- Ejecutar tests localmente:
 
 ```bash
 ./mvnw.cmd -DskipTests=false test
 ```
 
-- Informes generados (local):
 	- Surefire reports: `target/surefire-reports`
 	- JaCoCo HTML: `target/site/jacoco/index.html` (CSV: `target/site/jacoco/jacoco.csv`)
 
-- CI: se añadió `.github/workflows/ci.yml` que ejecuta `mvn verify` y sube los artefactos `jacoco-report` y `surefire-reports`.
+	- SonarCloud: recomendado para quality gates y cobertura. Pasos rápidos:
+		1. Crear cuenta y proyecto en https://sonarcloud.io (usar GitHub login).
+		2. Añadir secret `SONAR_TOKEN` en GitHub (Settings → Secrets) con el token de SonarCloud.
+		3. Actualizar `.github/workflows/ci.yml` (ya incluí un step `SonarCloud Scan`) reemplazando `YOUR_ORG` y `YOUR_PROJECT_KEY`.
+		4. Ejecutar CI; en SonarCloud verás las métricas y se generará el badge.
 
+	- Ejemplo badge SonarCloud (reemplaza `ORG_KEY`):
+
+```markdown
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=ORG_KEY&metric=coverage)](https://sonarcloud.io/summary/overview?id=ORG_KEY)
+```
 ## Cambios realizados
 
 - Añadidos tests unitarios y de integración bajo `src/test/java` (cobertura y validación de handlers, seguridad y servicios).  
