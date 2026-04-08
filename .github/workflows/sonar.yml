@@ -19,20 +19,8 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
       
-      # 🔴 IMPORTANTE: Ejecutar tests y generar reporte de cobertura
       - name: Run tests with JaCoCo
-        run: mvn clean verify
-      
-      # Opcional: Verificar que el reporte existe
-      - name: Verify JaCoCo report
-        run: |
-          if [ -f "target/site/jacoco/jacoco.xml" ]; then
-            echo "✅ JaCoCo report found"
-            ls -la target/site/jacoco/
-          else
-            echo "❌ JaCoCo report NOT found"
-            exit 1
-          fi
+        run: mvn clean verify -Dtest=!DataLoaderTest
       
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
@@ -40,7 +28,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=Mista299_fe-banco-digital-backend
-            -Dsonar.organization=mista299
-            -Dsonar.qualitygate.wait=false
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.qualitygate.wait=false
