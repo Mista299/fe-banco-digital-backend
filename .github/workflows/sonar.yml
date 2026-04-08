@@ -21,3 +21,4 @@ jobs:
           args: >
             -Dsonar.projectKey=Mista299_fe-banco-digital-backend
             -Dsonar.organization=mista299
+            -Dsonar.qualitygate.wait=false
