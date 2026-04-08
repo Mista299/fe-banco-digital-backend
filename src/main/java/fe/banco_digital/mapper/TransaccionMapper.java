@@ -12,33 +12,31 @@ import java.util.stream.Collectors;
 @Component
 public class TransaccionMapper {
 
-    public MovimientoDTO aMovimientoDTO(Transaccion transaccion) {
+    public MovimientoDTO aMovimientoDTO(Transaccion transaccion, Long idCuenta) {
         MovimientoDTO dto = new MovimientoDTO();
 
         dto.setFechaHora(transaccion.getFecha());
-
-        // concepto
         dto.setConcepto(transaccion.getTipo().name());
 
-        // monto con signo (🔥 importante para tu HU)
         BigDecimal monto = transaccion.getMonto();
 
-        if (transaccion.getTipo() == TipoTransaccion.RETIRO
-                || transaccion.getTipo() == TipoTransaccion.TRANSFERENCIA) {
+        boolean esOrigen = transaccion.getCuentaOrigen() != null
+                && transaccion.getCuentaOrigen().getIdCuenta().equals(idCuenta);
+
+        if (esOrigen) {
             monto = monto.negate(); // egreso
         }
+        // si es destino (depósito recibido o transferencia recibida) → positivo
 
         dto.setMonto(monto);
-
-        // ❗ NO EXISTE en tu modelo → dejamos null por ahora
         dto.setSaldoResultante(null);
 
         return dto;
     }
 
-    public List<MovimientoDTO> aListaDTO(List<Transaccion> transacciones) {
+    public List<MovimientoDTO> aListaDTO(List<Transaccion> transacciones, Long idCuenta) {
         return transacciones.stream()
-                .map(this::aMovimientoDTO)
+                .map(t -> aMovimientoDTO(t, idCuenta))
                 .collect(Collectors.toList());
     }
 }

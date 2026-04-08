@@ -37,6 +37,31 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(TokenExpiradoException.class)
+    public ResponseEntity<Map<String, Object>> manejarTokenExpirado(TokenExpiradoException ex) {
+        return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(TokenInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarTokenInvalido(TokenInvalidoException ex) {
+        return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    public ResponseEntity<Map<String, Object>> manejarCredencialesInvalidas(CredencialesInvalidasException ex) {
+        return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(UsuarioYaExisteException.class)
+    public ResponseEntity<Map<String, Object>> manejarUsuarioYaExiste(UsuarioYaExisteException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(ClienteYaTieneUsuarioException.class)
+    public ResponseEntity<Map<String, Object>> manejarClienteYaTieneUsuario(ClienteYaTieneUsuarioException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> manejarExcepcionGeneral(Exception ex) {
         return ResponseEntity

@@ -25,9 +25,9 @@ public class TransaccionServiceImpl implements TransaccionService {
     @Override
     public List<MovimientoDTO> obtenerMovimientos(Long idCuenta) {
 
-        List<Transaccion> transacciones = transaccionRepository.findByCuentaOrigenIdCuentaOrderByFechaDesc(idCuenta);
+        List<Transaccion> transacciones = transaccionRepository.findByCuentaIdOrderByFechaDesc(idCuenta);
 
-        return transaccionMapper.aListaDTO(transacciones);
+        return transaccionMapper.aListaDTO(transacciones, idCuenta);
     }
 
     @Override
@@ -37,11 +37,8 @@ public class TransaccionServiceImpl implements TransaccionService {
             LocalDateTime fechaFin) {
 
         List<Transaccion> transacciones = transaccionRepository
-                .findByCuentaOrigenIdCuentaAndFechaBetweenOrderByFechaDesc(
-                        idCuenta,
-                        fechaInicio,
-                        fechaFin);
+                .findByCuentaIdAndFechaBetweenOrderByFechaDesc(idCuenta, fechaInicio, fechaFin);
 
-        return transaccionMapper.aListaDTO(transacciones);
+        return transaccionMapper.aListaDTO(transacciones, idCuenta);
     }
 }
