@@ -6,11 +6,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,6 +30,8 @@ class DataLoaderTest {
     TransaccionRepository transaccionRepo;
     @Mock
     AuditoriaRepository auditoriaRepo;
+    @Mock
+    PasswordEncoder passwordEncoder;
 
     @InjectMocks
     DataLoader dataLoader;
@@ -47,8 +51,9 @@ class DataLoaderTest {
         when(cuentaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(transaccionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(auditoriaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenAnswer(i -> "hashed_" + i.getArgument(0));
 
-        var runner = dataLoader.init(clienteRepo, usuarioRepo, rolRepo, cuentaRepo, transaccionRepo, auditoriaRepo);
+        var runner = dataLoader.init(clienteRepo, usuarioRepo, rolRepo, cuentaRepo, transaccionRepo, auditoriaRepo, passwordEncoder);
         runner.run();
 
         // verify some saves were attempted
