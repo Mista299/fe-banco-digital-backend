@@ -8,7 +8,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -17,20 +16,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DataLoaderTest {
 
-    @Mock
-    ClienteRepository clienteRepo;
-    @Mock
-    UsuarioRepository usuarioRepo;
-    @Mock
-    RolRepository rolRepo;
-    @Mock
-    CuentaRepository cuentaRepo;
-    @Mock
-    TransaccionRepository transaccionRepo;
-    @Mock
-    AuditoriaRepository auditoriaRepo;
-    @Mock
-    PasswordEncoder passwordEncoder;
+    @Mock ClienteRepository clienteRepo;
+    @Mock UsuarioRepository usuarioRepo;
+    @Mock RolRepository rolRepo;
+    @Mock CuentaRepository cuentaRepo;
+    @Mock TransaccionRepository transaccionRepo;
+    @Mock AuditoriaRepository auditoriaRepo;
+    @Mock PasswordEncoder passwordEncoder;
 
     @InjectMocks
     DataLoader dataLoader;
