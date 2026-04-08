@@ -96,15 +96,16 @@ public class DataLoader {
                 return clienteRepo.save(c);
             });
 
-            clienteRepo.findByDocumento("444444444").orElseGet(() -> {
+            Cliente c6 = clienteRepo.findByDocumento("444444444").orElseGet(() -> {
                 Cliente c = new Cliente();
                 c.setNombre("Sofía Vargas");
                 c.setDocumento("444444444");
+                c.setFechaExpedicion(LocalDate.of(2022, 6, 15));
                 c.setEmail("sofia@example.com");
+                c.setDireccion("Calle 5 #10-20");
                 c.setTelefono("3000000006");
                 return clienteRepo.save(c);
             });
-
             // ── 5 Usuarios (1 por cliente) ────────────────────────────────────
             Usuario u1 = usuarioRepo.findByUsername("bryan").orElseGet(() -> {
                 Usuario u = new Usuario();
