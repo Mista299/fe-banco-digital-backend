@@ -129,7 +129,7 @@ public class DataLoader {
             if (transaccionRepo.count() == 0) {
                 Transaccion t1 = new Transaccion();
                 t1.setTipo(TipoTransaccion.DEPOSITO);
-                t1.setEstado(EstadoTransaccion.EXITOSA);  // ← agregar
+                t1.setEstado(EstadoTransaccion.EXITOSA);
                 t1.setMonto(new BigDecimal("100000.00"));
                 t1.setCuentaOrigen(cta1);
                 t1.setCuentaDestino(cta1);
@@ -137,7 +137,7 @@ public class DataLoader {
 
                 Transaccion t2 = new Transaccion();
                 t2.setTipo(TipoTransaccion.TRANSFERENCIA);
-                t2.setEstado(EstadoTransaccion.EXITOSA);  // ← agregar
+                t2.setEstado(EstadoTransaccion.EXITOSA);
                 t2.setMonto(new BigDecimal("25000.00"));
                 t2.setCuentaOrigen(cta1);
                 t2.setCuentaDestino(cta3);
@@ -145,12 +145,13 @@ public class DataLoader {
 
                 Transaccion t3 = new Transaccion();
                 t3.setTipo(TipoTransaccion.RETIRO);
-                t3.setEstado(EstadoTransaccion.EXITOSA);  // ← agregar
+                t3.setEstado(EstadoTransaccion.EXITOSA);
                 t3.setMonto(new BigDecimal("10000.00"));
                 t3.setCuentaOrigen(cta2);
                 t3.setCuentaDestino(cta2);
                 transaccionRepo.save(t3);
             }
+            
             if (auditoriaRepo.count() == 0) {
                 Auditoria a1 = new Auditoria();
                 a1.setAccion("LOGIN");
@@ -165,8 +166,8 @@ public class DataLoader {
                 auditoriaRepo.save(a2);
             }
         
-            // Clientes sin usuario (para pruebas)
-            clienteRepo.findByDocumento("111111111")
+            // ✅ CORREGIDO - Clientes sin usuario (para pruebas)
+            Cliente cSinUsuario1 = clienteRepo.findByDocumento("111111111")
                 .orElseGet(() -> {
                     Cliente c = new Cliente();
                     c.setNombre("Carlos Pérez");
@@ -176,7 +177,7 @@ public class DataLoader {
                     return clienteRepo.save(c);
                 });
 
-            clienteRepo.findByDocumento("222222222")
+            Cliente cSinUsuario2 = clienteRepo.findByDocumento("222222222")
                 .orElseGet(() -> {
                     Cliente c = new Cliente();
                     c.setNombre("Laura Martínez");
@@ -186,7 +187,7 @@ public class DataLoader {
                     return clienteRepo.save(c);
                 });
 
-            clienteRepo.findByDocumento("333333333")
+            Cliente cSinUsuario3 = clienteRepo.findByDocumento("333333333")
                 .orElseGet(() -> {
                     Cliente c = new Cliente();
                     c.setNombre("Jorge Ramírez");
@@ -196,7 +197,7 @@ public class DataLoader {
                     return clienteRepo.save(c);
                 });
 
-            clienteRepo.findByDocumento("444444444")
+            Cliente cSinUsuario4 = clienteRepo.findByDocumento("444444444")
                 .orElseGet(() -> {
                     Cliente c = new Cliente();
                     c.setNombre("Valentina Torres");
@@ -206,7 +207,7 @@ public class DataLoader {
                     return clienteRepo.save(c);
                 });
 
-            clienteRepo.findByDocumento("555555555")
+            Cliente cSinUsuario5 = clienteRepo.findByDocumento("555555555")
                 .orElseGet(() -> {
                     Cliente c = new Cliente();
                     c.setNombre("Andrés Herrera");
@@ -215,6 +216,13 @@ public class DataLoader {
                     c.setTelefono("3200000005");
                     return clienteRepo.save(c);
                 });
+                
+            // Opcional: puedes usar estos clientes para algo si lo necesitas
+            System.out.println("Clientes semilla creados: " + cSinUsuario1.getNombre() + 
+                ", " + cSinUsuario2.getNombre() + 
+                ", " + cSinUsuario3.getNombre() + 
+                ", " + cSinUsuario4.getNombre() + 
+                ", " + cSinUsuario5.getNombre());
         };
     }
 }
