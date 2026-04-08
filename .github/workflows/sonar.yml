@@ -22,11 +22,21 @@ jobs:
       - name: Run tests with JaCoCo
         run: mvn clean verify -Dtest=!DataLoaderTest
       
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
+      - name: Debug - Verify JaCoCo report
+        run: |
+          echo "Checking if jacoco.exec exists:"
+          ls -la target/jacoco.exec || echo "jacoco.exec not found"
+          echo "Checking if jacoco.xml exists:"
+          ls -la target/site/jacoco/jacoco.xml || echo "jacoco.xml not found"
+      
+      - name: SonarCloud Scan with Maven
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
+            -Dsonar.organization=mista299 \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.qualitygate.wait=false
