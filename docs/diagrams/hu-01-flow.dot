@@ -1,0 +1,32 @@
+digraph HU01Flow {
+  rankdir=TB;
+  graph [fontname="Helvetica", pad=0.3, nodesep=0.35, ranksep=0.5];
+  node [shape=box, style="rounded,filled", fillcolor="#F8FAFC", color="#475569", fontname="Helvetica"];
+  edge [color="#64748B", fontname="Helvetica"];
+
+  inicio [label="Inicio del registro"];
+  validar [label="Validar documento y fecha de expedición"];
+  dup [shape=diamond, label="¿Documento ya existe?"];
+  errorDup [label="409\nIdentificación duplicada", fillcolor="#FEF2F2", color="#DC2626"];
+  campos [shape=diamond, label="¿Campos obligatorios completos?"];
+  errorCampos [label="400\nCampos obligatorios faltantes", fillcolor="#FEFCE8", color="#CA8A04"];
+  emailDup [shape=diamond, label="¿Correo ya existe?"];
+  errorEmail [label="409\nCorreo duplicado", fillcolor="#FEF2F2", color="#DC2626"];
+  userDup [shape=diamond, label="¿Username ya existe?"];
+  errorUser [label="409\nUsername duplicado", fillcolor="#FEF2F2", color="#DC2626"];
+  crearCliente [label="Crear cliente"];
+  crearCuenta [label="Crear cuenta automática\n(tipo ahorro, saldo 0)"];
+  crearUsuario [label="Crear identidad digital\n(rol CLIENTE)"];
+  respuesta [label="201\nRetornar número de cuenta y saldo", fillcolor="#ECFDF5", color="#16A34A"];
+
+  inicio -> validar -> dup;
+  dup -> errorDup [label="Sí"];
+  dup -> campos [label="No"];
+  campos -> errorCampos [label="No"];
+  campos -> emailDup [label="Sí"];
+  emailDup -> errorEmail [label="Sí"];
+  emailDup -> userDup [label="No"];
+  userDup -> errorUser [label="Sí"];
+  userDup -> crearCliente [label="No"];
+  crearCliente -> crearCuenta -> crearUsuario -> respuesta;
+}

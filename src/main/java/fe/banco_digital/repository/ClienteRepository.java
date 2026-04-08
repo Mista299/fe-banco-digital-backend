@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import fe.banco_digital.entity.Cliente;
 
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
-	Optional<Cliente> findByDocumento(String documento);
+    Optional<Cliente> findByDocumento(String documento);
+    boolean existsByDocumento(String documento);
+    boolean existsByEmail(String email);
 }
-

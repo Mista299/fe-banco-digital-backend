@@ -30,7 +30,7 @@ JWT_SECRET=clave-secreta-larga-minimo-32-caracteres
 
 ```bash
 # Con carga automática del .env
-./run.sh
+./scripts/run.sh
 
 # Sin el script
 ./mvnw spring-boot:run

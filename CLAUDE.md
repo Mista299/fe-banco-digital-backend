@@ -23,7 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Run the application (loads .env automatically)
-./run.sh
+./scripts/run.sh
 
 # Run without the script (requires env vars exported)
 ./mvnw spring-boot:run

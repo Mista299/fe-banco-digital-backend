@@ -56,7 +56,7 @@
 
 ## Comandos frecuentes
 ```bash
-./run.sh                                                   # carga .env y ejecuta
+./scripts/run.sh                                           # carga .env y ejecuta
 ./mvnw spring-boot:run                                     # sin .env
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=seed    # con datos de prueba
 ./mvnw test                                                # tests con H2
