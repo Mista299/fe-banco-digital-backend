@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -218,11 +220,17 @@ public class DataLoader {
                 });
                 
             // Opcional: puedes usar estos clientes para algo si lo necesitas
-            System.out.println("Clientes semilla creados: " + cSinUsuario1.getNombre() + 
-                ", " + cSinUsuario2.getNombre() + 
-                ", " + cSinUsuario3.getNombre() + 
-                ", " + cSinUsuario4.getNombre() + 
-                ", " + cSinUsuario5.getNombre());
-        };
+            
+
+            final Logger log = LoggerFactory.getLogger(DataLoader.class);
+
+            // En el método:
+            log.info("Clientes semilla creados: {}, {}, {}, {}, {}", 
+                cSinUsuario1.getNombre(), 
+                cSinUsuario2.getNombre(),
+                cSinUsuario3.getNombre(),
+                cSinUsuario4.getNombre(),
+                cSinUsuario5.getNombre());
+                    };
     }
 }
