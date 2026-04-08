@@ -30,29 +30,6 @@ jobs:
       - name: Build and run tests with JaCoCo
         run: mvn -B clean verify
 
-      - name: 🔍 DEBUG - Check JaCoCo files
-        run: |
-          echo "=== Check jacoco.exec ==="
-          ls -la target/jacoco.exec || echo "❌ NOT FOUND"
-          echo ""
-          echo "=== Check jacoco.xml ==="
-          ls -la target/site/jacoco/jacoco.xml || echo "❌ NOT FOUND"
-          echo ""
-          echo "=== XML content preview ==="
-          head -20 target/site/jacoco/jacoco.xml 2>/dev/null || echo "No XML content"
-
-      - name: SonarCloud Scan
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          mvn sonar:sonar \
-            -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
-            -Dsonar.organization=mista299 \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-            -Dsonar.qualitygate.wait=false
-
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
         with:
