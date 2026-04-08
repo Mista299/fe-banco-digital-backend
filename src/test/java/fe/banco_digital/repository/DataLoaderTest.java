@@ -43,7 +43,6 @@ class DataLoaderTest {
         when(transaccionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(auditoriaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        when(passwordEncoder.encode(any())).thenReturn("hashed-password");
 
         var runner = dataLoader.init(clienteRepo, usuarioRepo, rolRepo, cuentaRepo, transaccionRepo, auditoriaRepo, passwordEncoder);
         runner.run();
@@ -54,5 +53,7 @@ class DataLoaderTest {
         verify(cuentaRepo, atLeastOnce()).save(any(Cuenta.class));
         verify(transaccionRepo, atLeastOnce()).save(any(Transaccion.class));
         verify(auditoriaRepo, atLeastOnce()).save(any(Auditoria.class));
+
+        verify(passwordEncoder, never()).encode(any());
     }
 }
