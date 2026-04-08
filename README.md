@@ -37,5 +37,5 @@ banco-digital/
 ├── .agents/                    # Contexto e instrucciones para Claude Code
 ├── scripts/                    # Scripts de utilidad
 ├── pom.xml                     # Dependencias y configuracion de Maven
-└── run.sh                      # Script para levantar la aplicacion
+└── scripts/run.sh              # Script para levantar la aplicacion
 ```
