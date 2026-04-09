@@ -12,6 +12,12 @@ Backend REST de un sistema de banca digital que permite gestionar clientes, cuen
 
 **Nota:** se añadieron tests y un workflow CI que ejecuta la suite de pruebas y publica los reportes de JaCoCo y Surefire como artefactos. El workflow no bloquea merges por ahora.
 
+## Arquitectura
+
+![Diagrama de paquetes y componentes](docs/diagrams/package-components.png)
+
+> Detalle completo en [docs/architecture.md](docs/architecture.md)
+
 ## Estructura del proyecto
 
 ```

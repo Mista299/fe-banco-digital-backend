@@ -17,6 +17,10 @@
 
 La aplicación sigue el patrón **Layered Architecture**. Cada capa tiene una única responsabilidad y solo puede comunicarse con la capa inmediatamente adyacente. Saltarse una capa está prohibido.
 
+## Diagrama de Paquetes y Componentes
+
+![Diagrama de paquetes y componentes](../../docs/diagrams/package-components.svg)
+
 ## Flujo de capas
 
 ![alt text](../imgs/flujo_capas.svg)
