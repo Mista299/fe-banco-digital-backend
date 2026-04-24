@@ -19,8 +19,10 @@ Gestiona la información personal de los clientes del banco y expone el perfil d
 
 | Método | Ruta | Descripción | Auth requerida |
 |--------|------|-------------|----------------|
-| `GET` | `/api/v1/profile/{userId}` | Consultar perfil del cliente | Sí |
+| `GET` | `/api/profile/{userId}` | Consultar perfil del cliente | Sí |
 | `PUT` | `/api/v1/clientes/{id}` | Actualizar datos editables | Sí |
+
+> **Verificación de propiedad:** ambos endpoints verifican que el `userId` / `id` de la ruta pertenezca al usuario autenticado (extraído del JWT). Si se intenta acceder al perfil o datos de otro usuario, se devuelve `403 Forbidden`.
 
 ## Campos editables vs. de solo lectura
 
@@ -68,4 +70,5 @@ Content-Type: application/json
 |----------------|----------|
 | `ClienteRepository` | Consultar y actualizar datos del cliente |
 | `CuentaRepository` | Obtener la cuenta activa del cliente para el perfil |
+| `UsuarioRepository` | Verificar que el usuario autenticado es el propietario del recurso |
 | `ClienteMapper` | Convertir `Cliente` → `ProfileDTO` / `ClienteDTO` |

@@ -7,10 +7,11 @@ import java.util.List;
 
 public interface TransaccionService {
 
-    List<MovimientoDTO> obtenerMovimientos(Long idCuenta);
+    List<MovimientoDTO> obtenerMovimientos(Long idCuenta, String username);
 
     List<MovimientoDTO> obtenerMovimientosPorFecha(
             Long idCuenta,
             LocalDateTime fechaInicio,
-            LocalDateTime fechaFin);
+            LocalDateTime fechaFin,
+            String username);
 }

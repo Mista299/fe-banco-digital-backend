@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -26,28 +28,32 @@ public class TransaccionController {
 
     @Operation(summary = "Listar movimientos de una cuenta")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de movimientos obtenida")
+            @ApiResponse(responseCode = "200", description = "Lista de movimientos obtenida"),
+            @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
     })
     @GetMapping("/cuenta/{idCuenta}")
     public ResponseEntity<List<MovimientoDTO>> obtenerMovimientos(
-            @PathVariable Long idCuenta) {
+            @PathVariable Long idCuenta,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         return ResponseEntity.ok(
-                transaccionService.obtenerMovimientos(idCuenta));
+                transaccionService.obtenerMovimientos(idCuenta, usuarioAutenticado.getUsername()));
     }
 
     @Operation(summary = "Filtrar movimientos por rango de fechas")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Movimientos filtrados correctamente")
+            @ApiResponse(responseCode = "200", description = "Movimientos filtrados correctamente"),
+            @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
     })
     @GetMapping("/cuenta/{idCuenta}/filtro")
     public ResponseEntity<List<MovimientoDTO>> obtenerMovimientosPorFecha(
             @PathVariable Long idCuenta,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         return ResponseEntity.ok(
                 transaccionService.obtenerMovimientosPorFecha(
-                        idCuenta, fechaInicio, fechaFin));
+                        idCuenta, fechaInicio, fechaFin, usuarioAutenticado.getUsername()));
     }
 }

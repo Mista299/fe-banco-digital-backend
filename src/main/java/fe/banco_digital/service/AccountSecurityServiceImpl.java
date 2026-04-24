@@ -33,8 +33,8 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
 
     @Override
     @Transactional
-    public void bloquearCuenta(Long idUsuario, String password) {
-        Usuario usuario = usuarioRepo.findById(idUsuario)
+    public void bloquearCuenta(String username, String password) {
+        Usuario usuario = usuarioRepo.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
 
         if (!passwordEncoder.matches(password, usuario.getPasswordHash())) {
@@ -58,8 +58,8 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
 
     @Override
     @Transactional
-    public void desbloquearCuenta(Long idUsuario, String password) {
-        Usuario usuario = usuarioRepo.findById(idUsuario)
+    public void desbloquearCuenta(String username, String password) {
+        Usuario usuario = usuarioRepo.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
 
         if (!passwordEncoder.matches(password, usuario.getPasswordHash())) {

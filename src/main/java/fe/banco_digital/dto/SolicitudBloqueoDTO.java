@@ -1,17 +1,11 @@
 package fe.banco_digital.dto;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class SolicitudBloqueoDTO {
 
-    private Long idUsuario;
+    @NotBlank(message = "La contraseña es obligatoria")
     private String password;
-
-    public Long getIdUsuario() {
-        return idUsuario;
-    }
-
-    public void setIdUsuario(Long idUsuario) {
-        this.idUsuario = idUsuario;
-    }
 
     public String getPassword() {
         return password;

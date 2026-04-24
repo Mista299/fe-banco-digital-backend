@@ -43,18 +43,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
-## Database configuration
+## Environment configuration
 
-The app connects to PostgreSQL via environment variables. Copy `.env` values as needed:
+All sensitive and environment-specific values live in `.env` (gitignored). Copy and fill:
 
-| Variable   | Default                                      |
-|------------|----------------------------------------------|
-| `DB_URL`   | `jdbc:postgresql://localhost:5432/banco2026` |
-| `DB_USER`  | `postgres`                                   |
-| `DB_PASS`  | _(empty)_                                    |
-| `DDL_AUTO` | `create` (drops and recreates schema on every start) |
+| Variable          | Default / required                             | Description |
+|-------------------|------------------------------------------------|-------------|
+| `DB_URL`          | `jdbc:postgresql://localhost:5432/banco2026`   | JDBC connection URL |
+| `DB_USER`         | `postgres`                                     | DB username |
+| `DB_PASS`         | _(empty)_                                      | DB password |
+| `DDL_AUTO`        | `create` (drops and recreates on every start)  | Use `update` in local dev |
+| `JWT_SECRET`      | **required** — no default                      | Secret key for signing JWT access tokens (min 32 chars) |
+| `SHOW_SQL`        | `false`                                        | Set `true` only for debugging — never in production |
+| `HTTPS_SEGURO`    | `false`                                        | Set `true` in production (HTTPS) — enables `.secure()` and `SameSite=Strict` on cookies |
+| `CORS_ORIGENES`   | `http://localhost:3000,http://localhost:5173`  | Comma-separated list of allowed CORS origins |
+| `PORT`            | `8080`                                         | Server port |
 
-In `.env` (gitignored), `DDL_AUTO=update` is set so that the local dev DB schema persists across restarts. The default in `application.properties` is `create`, which is intentional for fresh environments — change it to `update` once the schema is stable.
+> **`JWT_SECRET` is mandatory.** The app will not start without it. Use a strong random string of at least 32 characters.
 
 There is also `application-local.properties.example` showing the alternative approach of using a Spring profile instead of `.env`.
 

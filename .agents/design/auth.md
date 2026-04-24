@@ -71,9 +71,15 @@ src/main/java/fe/banco_digital/
 
 **Archivos modificados:**
 - `pom.xml` → Spring Security + JJWT 0.12.6
-- `GlobalExceptionHandler.java` → 4 nuevos handlers de auth
-- `application.properties` → `jwt.secreto`, `jwt.expiracion-access-ms`, `jwt.expiracion-refresh-dias`
+- `GlobalExceptionHandler.java` → handlers de auth + nuevo handler `AccesoNoAutorizadoException` (403)
+- `application.properties` → `jwt.secreto=${JWT_SECRET}` (sin default — obligatorio), `jwt.expiracion-access-ms`, `jwt.expiracion-refresh-dias`, `app.https`, `app.cors.origenes`
 - `UsuarioRepository.java` → `existsByUsername()`
+- `ConfiguracionSeguridad.java` → CORS configurado desde `CORS_ORIGENES` env var
+
+**Variables de entorno requeridas:**
+- `JWT_SECRET` — clave de firma del access token. **Sin default, la app no arranca sin él.**
+- `HTTPS_SEGURO` (default `false`) — activa `.secure(true)` y `SameSite=Strict` en cookies. Poner `true` en producción (HTTPS).
+- `CORS_ORIGENES` (default `http://localhost:3000,http://localhost:5173`) — orígenes permitidos, separados por coma.
 
 ---
 

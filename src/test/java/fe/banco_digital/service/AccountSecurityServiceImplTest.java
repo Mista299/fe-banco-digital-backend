@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -33,6 +34,9 @@ class AccountSecurityServiceImplTest {
     @Mock
     AuditoriaRepository auditoriaRepo;
 
+    @Mock
+    PasswordEncoder passwordEncoder;
+
     @InjectMocks
     AccountSecurityServiceImpl service;
 
@@ -47,6 +51,7 @@ class AccountSecurityServiceImplTest {
 
         usuario = new Usuario();
         usuario.setIdUsuario(9L);
+        usuario.setUsername("testuser");
         usuario.setCliente(cliente);
 
         cuenta = new Cuenta();
@@ -58,10 +63,11 @@ class AccountSecurityServiceImplTest {
 
     @Test
     void bloquearCuenta_success_savesCuentaAndAuditoria() {
-        when(usuarioRepo.findById(9L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
         when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.ACTIVA)).thenReturn(Optional.of(cuenta));
 
-        service.bloquearCuenta(9L, "1234");
+        service.bloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
         verify(auditoriaRepo).save(any(Auditoria.class));
@@ -69,23 +75,25 @@ class AccountSecurityServiceImplTest {
 
     @Test
     void bloquearCuenta_wrongPassword_throws() {
-        when(usuarioRepo.findById(9L)).thenReturn(Optional.of(usuario));
-        assertThrows(RuntimeException.class, () -> service.bloquearCuenta(9L, "bad"));
+        when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(any(), any())).thenReturn(false);
+        assertThrows(RuntimeException.class, () -> service.bloquearCuenta("testuser", "bad"));
     }
 
     @Test
     void bloquearCuenta_missingUsuario_throws() {
-        when(usuarioRepo.findById(9L)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> service.bloquearCuenta(9L, "1234"));
+        when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> service.bloquearCuenta("testuser", "1234"));
     }
 
     @Test
     void desbloquearCuenta_success_savesCuentaAndAuditoria() {
         cuenta.setEstado(EstadoCuenta.BLOQUEADA);
-        when(usuarioRepo.findById(9L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
         when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(Optional.of(cuenta));
 
-        service.desbloquearCuenta(9L, "1234");
+        service.desbloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
         verify(auditoriaRepo).save(any(Auditoria.class));
@@ -93,8 +101,9 @@ class AccountSecurityServiceImplTest {
 
     @Test
     void desbloquearCuenta_noBlockedAccount_throws() {
-        when(usuarioRepo.findById(9L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
         when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(Optional.empty());
-        assertThrows(RuntimeException.class, () -> service.desbloquearCuenta(9L, "1234"));
+        assertThrows(RuntimeException.class, () -> service.desbloquearCuenta("testuser", "1234"));
     }
 }

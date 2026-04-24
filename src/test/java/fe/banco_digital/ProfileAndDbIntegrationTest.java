@@ -4,16 +4,24 @@ import fe.banco_digital.entity.Cliente;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.TipoCuenta;
+import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.repository.ClienteRepository;
 import fe.banco_digital.repository.CuentaRepository;
+import fe.banco_digital.repository.UsuarioRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -28,7 +36,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "JWT_SECRET=test-secret-para-integration-tests"
 })
 public class ProfileAndDbIntegrationTest {
 
@@ -43,11 +52,20 @@ public class ProfileAndDbIntegrationTest {
     @Autowired
     private CuentaRepository cuentaRepository;
 
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
     @BeforeEach
     void setup() {
+        usuarioRepository.deleteAll();
         cuentaRepository.deleteAll();
         clienteRepository.deleteAll();
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -63,6 +81,8 @@ public class ProfileAndDbIntegrationTest {
         c.setNombre("Test User");
         c.setDocumento("99999");
         c.setEmail("test@example.com");
+        c.setFechaExpedicion(LocalDate.of(2000, 1, 1));
+        c.setDireccion("Calle 1");
         clienteRepository.save(c);
 
         Cuenta cuenta = new Cuenta();
@@ -72,6 +92,16 @@ public class ProfileAndDbIntegrationTest {
         cuenta.setSaldo(new BigDecimal("1000.00"));
         cuenta.setCliente(c);
         cuentaRepository.save(cuenta);
+
+        Usuario usuario = new Usuario();
+        usuario.setUsername("testuser");
+        usuario.setPasswordHash("$2a$10$hashedpassword");
+        usuario.setCliente(c);
+        usuarioRepository.save(usuario);
+
+        User userDetails = new User("testuser", "pass", List.of());
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities()));
 
         mockMvc.perform(get("/api/profile/" + c.getIdCliente()))
                 .andExpect(status().isOk())
