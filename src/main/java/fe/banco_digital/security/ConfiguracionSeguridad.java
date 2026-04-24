@@ -1,6 +1,7 @@
 package fe.banco_digital.security;
 
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,10 +16,19 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class ConfiguracionSeguridad {
+
+    @Value("${app.cors.origenes:http://localhost:3000,http://localhost:5173}")
+    private String corsOrigenes;
 
     private final UsuarioDetallesService usuarioDetallesService;
     private final JwtUtil jwtUtil;
@@ -45,32 +55,43 @@ public class ConfiguracionSeguridad {
         return config.getAuthenticationManager();
     }
 
-    // El filtro se instancia aquí como @Bean en lugar de usar @Component en FiltroJwt.
-    // Así Spring Boot NO lo registra como filtro servlet genérico y solo vive
-    // dentro de la cadena de seguridad → se ejecuta una única vez por request.
     @Bean
     public FiltroJwt filtroJwt() {
         return new FiltroJwt(jwtUtil, usuarioDetallesService);
     }
 
     @Bean
+    public CorsConfigurationSource fuenteConfiguracionCors() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(Arrays.asList(corsOrigenes.split(",")));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain cadenaFiltros(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(fuenteConfiguracionCors()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/**",
+                                "/api/v1/registro/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",      // <-- agrega esto
-                                "/swagger-ui/index.html", // <-- y esto
+                                "/swagger-ui.html",
+                                "/swagger-ui/index.html",
                                 "/v3/api-docs/**",
                                 "/api/db/ping",
-                                "/favicon.ico"           // <-- y esto para el favicon
+                                "/favicon.ico"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS   )
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, e) -> {

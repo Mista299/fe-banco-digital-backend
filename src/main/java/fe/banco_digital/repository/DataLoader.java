@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Configuration
@@ -26,19 +27,27 @@ public class DataLoader {
     ) {
         return args -> {
 
-            // ── Roles (2 posibles por enum: ADMIN, CLIENTE) ───────────────────
             Rol rolAdmin = rolRepo.findByNombre(RolNombre.ADMIN)
-                    .orElseGet(() -> { Rol r = new Rol(); r.setNombre(RolNombre.ADMIN); return rolRepo.save(r); });
+                    .orElseGet(() -> {
+                        Rol r = new Rol();
+                        r.setNombre(RolNombre.ADMIN);
+                        return rolRepo.save(r);
+                    });
 
             Rol rolCliente = rolRepo.findByNombre(RolNombre.CLIENTE)
-                    .orElseGet(() -> { Rol r = new Rol(); r.setNombre(RolNombre.CLIENTE); return rolRepo.save(r); });
+                    .orElseGet(() -> {
+                        Rol r = new Rol();
+                        r.setNombre(RolNombre.CLIENTE);
+                        return rolRepo.save(r);
+                    });
 
-            // ── 5 Clientes ────────────────────────────────────────────────────
             Cliente c1 = clienteRepo.findByDocumento("123456789").orElseGet(() -> {
                 Cliente c = new Cliente();
                 c.setNombre("Bryan Molina");
                 c.setDocumento("123456789");
+                c.setFechaExpedicion(LocalDate.of(2020, 1, 10));
                 c.setEmail("bryan@example.com");
+                c.setDireccion("Calle 10 #20-30");
                 c.setTelefono("3000000001");
                 return clienteRepo.save(c);
             });
@@ -47,7 +56,9 @@ public class DataLoader {
                 Cliente c = new Cliente();
                 c.setNombre("Ana Gómez");
                 c.setDocumento("987654321");
+                c.setFechaExpedicion(LocalDate.of(2019, 5, 2));
                 c.setEmail("ana@example.com");
+                c.setDireccion("Carrera 15 #8-45");
                 c.setTelefono("3000000002");
                 return clienteRepo.save(c);
             });
@@ -56,7 +67,9 @@ public class DataLoader {
                 Cliente c = new Cliente();
                 c.setNombre("Carlos Pérez");
                 c.setDocumento("111111111");
+                c.setFechaExpedicion(LocalDate.of(2021, 7, 19));
                 c.setEmail("carlos@example.com");
+                c.setDireccion("Diagonal 50 #14-90");
                 c.setTelefono("3000000003");
                 return clienteRepo.save(c);
             });
@@ -65,7 +78,9 @@ public class DataLoader {
                 Cliente c = new Cliente();
                 c.setNombre("Laura Martínez");
                 c.setDocumento("222222222");
+                c.setFechaExpedicion(LocalDate.of(2018, 3, 11));
                 c.setEmail("laura@example.com");
+                c.setDireccion("Transversal 12 #45-67");
                 c.setTelefono("3000000004");
                 return clienteRepo.save(c);
             });
@@ -74,11 +89,23 @@ public class DataLoader {
                 Cliente c = new Cliente();
                 c.setNombre("Jorge Ramírez");
                 c.setDocumento("333333333");
+                c.setFechaExpedicion(LocalDate.of(2017, 9, 30));
                 c.setEmail("jorge@example.com");
+                c.setDireccion("Avenida 80 #30-12");
                 c.setTelefono("3000000005");
                 return clienteRepo.save(c);
             });
 
+            Cliente c6 = clienteRepo.findByDocumento("444444444").orElseGet(() -> {
+                Cliente c = new Cliente();
+                c.setNombre("Sofía Vargas");
+                c.setDocumento("444444444");
+                c.setFechaExpedicion(LocalDate.of(2022, 6, 15));
+                c.setEmail("sofia@example.com");
+                c.setDireccion("Calle 5 #10-20");
+                c.setTelefono("3000000006");
+                return clienteRepo.save(c);
+            });
             // ── 5 Usuarios (1 por cliente) ────────────────────────────────────
             Usuario u1 = usuarioRepo.findByUsername("bryan").orElseGet(() -> {
                 Usuario u = new Usuario();
@@ -124,14 +151,12 @@ public class DataLoader {
                 Usuario u = new Usuario();
                 u.setUsername("jorge");
                 u.setPasswordHash(passwordEncoder.encode("jorge123"));
-                u.setEstado(EstadoUsuario.BLOQUEADO);   // usuario bloqueado — prueba de acceso denegado
+                u.setEstado(EstadoUsuario.BLOQUEADO);
                 u.setCliente(c5);
                 u.setRoles(Set.of(rolCliente));
                 return usuarioRepo.save(u);
             });
 
-            // ── 5 Cuentas (una por cliente, estados variados) ─────────────────
-            // Bryan  — ACTIVA con saldo alto
             Cuenta cta1 = cuentaRepo.findByNumeroCuenta("00010001").orElseGet(() -> {
                 Cuenta cta = new Cuenta();
                 cta.setNumeroCuenta("00010001");
@@ -142,7 +167,6 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
-            // Ana    — ACTIVA con saldo alto
             Cuenta cta2 = cuentaRepo.findByNumeroCuenta("00020001").orElseGet(() -> {
                 Cuenta cta = new Cuenta();
                 cta.setNumeroCuenta("00020001");
@@ -153,7 +177,6 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
-            // Carlos — ACTIVA con saldo CERO → prueba Escenario 1 (cierre exitoso)
             Cuenta cta3 = cuentaRepo.findByNumeroCuenta("00030001").orElseGet(() -> {
                 Cuenta cta = new Cuenta();
                 cta.setNumeroCuenta("00030001");
@@ -164,7 +187,6 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
-            // Laura  — ACTIVA con saldo pendiente → prueba Escenario 2 (no se puede cerrar)
             Cuenta cta4 = cuentaRepo.findByNumeroCuenta("00040001").orElseGet(() -> {
                 Cuenta cta = new Cuenta();
                 cta.setNumeroCuenta("00040001");
@@ -175,7 +197,6 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
-            // Jorge  — INACTIVA saldo 0 → prueba Escenario 3 (etiqueta "Cuenta Cerrada")
             Cuenta cta5 = cuentaRepo.findByNumeroCuenta("00050001").orElseGet(() -> {
                 Cuenta cta = new Cuenta();
                 cta.setNumeroCuenta("00050001");
@@ -186,10 +207,7 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
-            // ── 5 Transacciones ───────────────────────────────────────────────
             if (transaccionRepo.count() == 0) {
-
-                // 1. Depósito externo → Bryan
                 Transaccion t1 = new Transaccion();
                 t1.setTipo(TipoTransaccion.DEPOSITO);
                 t1.setEstado(EstadoTransaccion.EXITOSA);
@@ -198,7 +216,6 @@ public class DataLoader {
                 t1.setCuentaDestino(cta1);
                 transaccionRepo.save(t1);
 
-                // 2. Depósito externo → Ana
                 Transaccion t2 = new Transaccion();
                 t2.setTipo(TipoTransaccion.DEPOSITO);
                 t2.setEstado(EstadoTransaccion.EXITOSA);
@@ -207,7 +224,6 @@ public class DataLoader {
                 t2.setCuentaDestino(cta2);
                 transaccionRepo.save(t2);
 
-                // 3. Transferencia Bryan → Laura
                 Transaccion t3 = new Transaccion();
                 t3.setTipo(TipoTransaccion.TRANSFERENCIA);
                 t3.setEstado(EstadoTransaccion.EXITOSA);
@@ -216,58 +232,38 @@ public class DataLoader {
                 t3.setCuentaDestino(cta4);
                 transaccionRepo.save(t3);
 
-                // 4. Retiro de Ana
                 Transaccion t4 = new Transaccion();
                 t4.setTipo(TipoTransaccion.RETIRO);
                 t4.setEstado(EstadoTransaccion.EXITOSA);
-                t4.setMonto(new BigDecimal("100000.00"));
+                t4.setMonto(new BigDecimal("200000.00"));
                 t4.setCuentaOrigen(cta2);
                 t4.setCuentaDestino(null);
                 transaccionRepo.save(t4);
 
-                // 5. Retiro fallido — Laura intentó retirar más de su saldo
                 Transaccion t5 = new Transaccion();
-                t5.setTipo(TipoTransaccion.RETIRO);
-                t5.setEstado(EstadoTransaccion.FALLIDA);
-                t5.setMonto(new BigDecimal("200000.00"));
-                t5.setCuentaOrigen(cta4);
-                t5.setCuentaDestino(null);
+                t5.setTipo(TipoTransaccion.DEPOSITO);
+                t5.setEstado(EstadoTransaccion.EXITOSA);
+                t5.setMonto(new BigDecimal("100000.00"));
+                t5.setCuentaOrigen(null);
+                t5.setCuentaDestino(cta4);
                 transaccionRepo.save(t5);
             }
 
-            // ── 5 Registros de Auditoría ──────────────────────────────────────
             if (auditoriaRepo.count() == 0) {
-
-                Auditoria a1 = new Auditoria();
-                a1.setAccion("LOGIN");
-                a1.setUsuario(u1);
-                a1.setDetalle("Inicio de sesión exitoso — bryan");
-                auditoriaRepo.save(a1);
-
-                Auditoria a2 = new Auditoria();
-                a2.setAccion("LOGIN");
-                a2.setUsuario(u2);
-                a2.setDetalle("Inicio de sesión exitoso — ana");
-                auditoriaRepo.save(a2);
-
-                Auditoria a3 = new Auditoria();
-                a3.setAccion("CIERRE_CUENTA");
-                a3.setUsuario(u5);
-                a3.setDetalle("Cuenta " + cta5.getNumeroCuenta() + " cerrada por el cliente.");
-                auditoriaRepo.save(a3);
-
-                Auditoria a4 = new Auditoria();
-                a4.setAccion("BLOQUEO_CUENTA");
-                a4.setUsuario(u1);
-                a4.setDetalle("Usuario jorge bloqueado por intentos fallidos.");
-                auditoriaRepo.save(a4);
-
-                Auditoria a5 = new Auditoria();
-                a5.setAccion("CONSULTA_SALDO");
-                a5.setUsuario(u3);
-                a5.setDetalle("Consulta de saldo de cuenta " + cta3.getNumeroCuenta());
-                auditoriaRepo.save(a5);
+                auditoriaRepo.save(crearAuditoria("LOGIN", u1, "Inicio de sesión exitoso de bryan"));
+                auditoriaRepo.save(crearAuditoria("CONSULTA_PERFIL", u2, "Consulta de perfil de cliente"));
+                auditoriaRepo.save(crearAuditoria("CIERRE_CUENTA", u3, "Cierre exitoso de la cuenta 00030001"));
+                auditoriaRepo.save(crearAuditoria("INTENTO_CIERRE", u4, "Intento de cierre rechazado por saldo pendiente"));
+                auditoriaRepo.save(crearAuditoria("BLOQUEO_USUARIO", u5, "Usuario bloqueado para pruebas de seguridad"));
             }
         };
+    }
+
+    private Auditoria crearAuditoria(String accion, Usuario usuario, String detalle) {
+        Auditoria auditoria = new Auditoria();
+        auditoria.setAccion(accion);
+        auditoria.setUsuario(usuario);
+        auditoria.setDetalle(detalle);
+        return auditoria;
     }
 }

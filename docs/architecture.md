@@ -6,6 +6,10 @@ El sistema usa **arquitectura en capas** (Layered Architecture). Cada capa tiene
 
 ![Arquitectura general](./diagrams/architecture.svg)
 
+## Diagrama de paquetes y componentes
+
+![Diagrama de paquetes y componentes](./diagrams/package-components.png)
+
 ## Capas
 
 | Capa | Paquete | Responsabilidad |

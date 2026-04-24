@@ -50,10 +50,10 @@ public class CuentaServiceImpl implements CuentaService {
      */
     @Override
     @Transactional
-    public CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud) {
+    public CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud, String username) {
 
         // ── Escenario 4: Re-autenticación ─────────────────────────────────
-        Usuario usuario = usuarioRepository.findByUsername(solicitud.getUsername())
+        Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
 
         boolean contrasenaValida = passwordEncoder.matches(

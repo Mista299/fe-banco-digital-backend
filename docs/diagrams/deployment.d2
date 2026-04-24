@@ -1,0 +1,207 @@
+# Diagrama de Despliegue — Banco Digital
+# Infraestructura completa: dispositivos cliente (web / móvil), red pública, nodo servidor
+# (on-premise / cloud VM), virtualización Docker, capas Spring Boot 3 / Java 17 y PostgreSQL 14.
+
+direction: down
+
+# ══════════════════════════════════════════════════════════════════
+#  DISPOSITIVOS CLIENTE
+# ══════════════════════════════════════════════════════════════════
+
+web_client: "<<device>>\nNavegador Web" {
+  style.fill: "#1E3A8A"
+  style.font-color: "#FFFFFF"
+  style.stroke: "#1E40AF"
+  style.border-radius: 8
+
+  spa: "<<artifact>>\nSPA  (JS / HTML / CSS)" {
+    style.fill: "#DBEAFE"
+    style.font-color: "#1E3A8A"
+    style.stroke: "#3B82F6"
+  }
+}
+
+mobile_client: "<<device>>\nDispositivo Móvil  (Android / iOS)" {
+  style.fill: "#14532D"
+  style.font-color: "#FFFFFF"
+  style.stroke: "#166534"
+  style.border-radius: 8
+
+  app: "<<artifact>>\nApp Móvil" {
+    style.fill: "#DCFCE7"
+    style.font-color: "#14532D"
+    style.stroke: "#22C55E"
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════
+#  RED PÚBLICA
+# ══════════════════════════════════════════════════════════════════
+
+internet: "Internet / CDN" {
+  shape: cloud
+  style.fill: "#374151"
+  style.font-color: "#FFFFFF"
+  style.stroke: "#111827"
+}
+
+# ══════════════════════════════════════════════════════════════════
+#  INFRAESTRUCTURA — ON-PREMISE / CLOUD VM
+# ══════════════════════════════════════════════════════════════════
+
+infra: "<<node>>\nServidor de Producción  (On-Premise · Ubuntu 22.04 / Cloud VM)" {
+  style.fill: "#78350F"
+  style.font-color: "#FFFFFF"
+  style.stroke: "#92400E"
+
+  # ── Reverse Proxy / SSL ──────────────────────────────────────
+  nginx: "<<artifact>>\nNginx 1.x  —  Reverse Proxy / SSL Termination" {
+    style.fill: "#FEF3C7"
+    style.font-color: "#78350F"
+    style.stroke: "#D97706"
+
+    ssl_term: "SSL/TLS 1.3  :443  →  :8080" {
+      shape: rectangle
+      style.fill: "#FDE68A"
+      style.font-color: "#713F12"
+      style.stroke: "#B45309"
+    }
+  }
+
+  # ── Virtualización por contenedores ─────────────────────────
+  docker: "<<node>>\nDocker Host  —  Virtualización de contenedores" {
+    style.fill: "#0C4A6E"
+    style.font-color: "#FFFFFF"
+    style.stroke: "#075985"
+
+    app: "<<container>>\nbanco-digital-app\nopenjdk:17-jre-slim  ·  :8080" {
+      style.fill: "#BAE6FD"
+      style.font-color: "#0C4A6E"
+      style.stroke: "#0284C7"
+
+      jvm: "JVM  —  Java 17  ·  Spring Boot 3" {
+        style.fill: "#F0F9FF"
+        style.font-color: "#0C4A6E"
+        style.stroke: "#0EA5E9"
+
+        security: "<<layer>>  security\nFiltroJwt  ·  JwtUtil\nConfiguracionSeguridad  ·  UsuarioDetallesService" {
+          shape: rectangle
+          style.fill: "#0F172A"
+          style.font-color: "#E2E8F0"
+          style.stroke: "#475569"
+        }
+
+        controller: "<<layer>>  controller\nAutenticacionController  ·  ClienteController\nCuentaController  ·  TransaccionController\nProfileController  ·  RegistroUsuarioController\nAccountSecurityController" {
+          shape: rectangle
+          style.fill: "#3730A3"
+          style.font-color: "#EEF2FF"
+          style.stroke: "#4F46E5"
+        }
+
+        exception: "<<layer>>  exception\nGlobalExceptionHandler\n(13 excepciones de negocio)" {
+          shape: rectangle
+          style.fill: "#991B1B"
+          style.font-color: "#FEE2E2"
+          style.stroke: "#DC2626"
+        }
+
+        service: "<<layer>>  service\nAutenticacionServiceImpl  ·  ClienteServiceImpl\nCuentaServiceImpl  ·  TransaccionServiceImpl\nRefreshTokenServiceImpl  ·  RegistroUsuarioServiceImpl\nAccountSecurityServiceImpl  ·  NumeroCuentaServiceImpl" {
+          shape: rectangle
+          style.fill: "#064E3B"
+          style.font-color: "#D1FAE5"
+          style.stroke: "#059669"
+        }
+
+        mapper: "<<layer>>  mapper\n5 Mappers  (Autenticacion · Usuario · Cuenta · Profile · Transaccion)" {
+          shape: rectangle
+          style.fill: "#92400E"
+          style.font-color: "#FEF3C7"
+          style.stroke: "#D97706"
+        }
+
+        repository: "<<layer>>  repository\n7 Repositories  (Spring Data JPA)\nCliente · Usuario · Cuenta · Transaccion\nRol · Auditoria · RefreshToken" {
+          shape: rectangle
+          style.fill: "#4C1D95"
+          style.font-color: "#EDE9FE"
+          style.stroke: "#7C3AED"
+        }
+      }
+    }
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════
+#  SERVIDOR DE BASE DE DATOS
+# ══════════════════════════════════════════════════════════════════
+
+db_server: "<<node>>\nServidor de Base de Datos  (On-Premise / Cloud Managed DB)" {
+  style.fill: "#713F12"
+  style.font-color: "#FFFFFF"
+  style.stroke: "#92400E"
+
+  postgres: "<<artifact>>\nPostgreSQL 14+\nbanco2026  ·  :5432" {
+    shape: cylinder
+    style.fill: "#FEF9C3"
+    style.font-color: "#713F12"
+    style.stroke: "#CA8A04"
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════
+#  COMUNICACIONES Y PROTOCOLOS
+# ══════════════════════════════════════════════════════════════════
+
+web_client.spa -> internet: "HTTPS / TLS 1.3  :443" {
+  style.stroke: "#60A5FA"
+  style.stroke-width: 2
+}
+
+mobile_client.app -> internet: "HTTPS / TLS 1.3  :443" {
+  style.stroke: "#4ADE80"
+  style.stroke-width: 2
+}
+
+internet -> infra.nginx.ssl_term: "HTTPS  :443" {
+  style.stroke: "#FCD34D"
+  style.stroke-width: 2
+}
+
+infra.nginx.ssl_term -> infra.docker.app.jvm.security: "HTTP  :8080  [Bearer JWT]" {
+  style.stroke: "#38BDF8"
+  style.stroke-width: 2
+}
+
+infra.docker.app.jvm.security -> infra.docker.app.jvm.controller: "request autenticada" {
+  style.stroke: "#818CF8"
+  style.stroke-width: 2
+  style.stroke-dash: 5
+}
+
+infra.docker.app.jvm.controller -> infra.docker.app.jvm.service: "delega (via interfaz)" {
+  style.stroke: "#34D399"
+  style.stroke-width: 2
+  style.stroke-dash: 5
+}
+
+infra.docker.app.jvm.service -> infra.docker.app.jvm.mapper: "Entidad ↔ DTO" {
+  style.stroke: "#FCA5A5"
+  style.stroke-width: 2
+  style.stroke-dash: 5
+}
+
+infra.docker.app.jvm.service -> infra.docker.app.jvm.repository: "consulta / persiste  (@Transactional)" {
+  style.stroke: "#C084FC"
+  style.stroke-width: 2
+  style.stroke-dash: 5
+}
+
+infra.docker.app.jvm.exception -> infra.docker.app.jvm.controller: "captura excepciones" {
+  style.stroke: "#F87171"
+  style.stroke-width: 2
+  style.stroke-dash: 5
+}
+
+infra.docker.app.jvm.repository -> db_server.postgres: "Spring Data JPA\nJDBC / TCP  :5432" {
+  style.stroke: "#FDE047"
+  style.stroke-width: 2
+}
