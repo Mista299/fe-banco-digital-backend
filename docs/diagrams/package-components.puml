@@ -1,0 +1,191 @@
+@startuml package-components
+!pragma layout smetana
+top to bottom direction
+
+title <b>Diagrama de Paquetes y Componentes</b>\nBanco Digital — Java 17 · Spring Boot 3 · PostgreSQL
+
+skinparam {
+  BackgroundColor #FFFFFF
+  DefaultFontName Arial
+  DefaultFontSize 12
+
+  ArrowColor #444444
+  ArrowFontColor #333333
+  ArrowFontSize 11
+  ArrowThickness 1
+
+  PackageBackgroundColor #FAFAFA
+  PackageBorderColor #555555
+  PackageBorderThickness 2
+  PackageFontStyle bold
+  PackageFontSize 14
+  PackageFontColor #111111
+
+  ComponentBackgroundColor #FFFFFF
+  ComponentBorderColor #444444
+  ComponentBorderThickness 1
+  ComponentFontSize 12
+  ComponentFontColor #111111
+
+  InterfaceBackgroundColor #FFFFFF
+  InterfaceBorderColor #444444
+  InterfaceFontSize 12
+  InterfaceFontColor #111111
+
+  DatabaseBackgroundColor #FFFFFF
+  DatabaseBorderColor #333333
+  DatabaseFontSize 13
+
+  ActorBorderColor #333333
+  ActorFontSize 13
+
+  NoteBackgroundColor #FFFFF0
+  NoteBorderColor #AAAAAA
+  NoteFontSize 11
+
+  Shadowing false
+  RoundCorner 6
+}
+
+' ============================================================
+' ACTOR
+' ============================================================
+actor "Cliente HTTP" as HTTP
+
+' ============================================================
+' SECURITY
+' ============================================================
+package "security" #FFF3E0 {
+  component [FiltroJwt]
+  component [JwtUtil]
+  note bottom of [FiltroJwt]
+    + ConfiguracionSeguridad
+    + UsuarioDetallesService
+  end note
+}
+
+' ============================================================
+' CONTROLLER
+' ============================================================
+package "controller" #F1F8E9 {
+  component [AutenticacionController]
+  component [ClienteController]
+  note right of [ClienteController]
+    + CuentaController
+    + TransaccionController
+    + ProfileController
+    + AccountSecurityController
+    + RegistroUsuarioController
+  end note
+}
+
+' ============================================================
+' EXCEPTION
+' ============================================================
+package "exception" #FCE4EC {
+  component [GlobalExceptionHandler]
+  note right of [GlobalExceptionHandler]
+    13 excepciones de negocio
+    (ej: ClienteNoEncontradoException,
+    TokenInvalidoException, ...)
+  end note
+}
+
+' ============================================================
+' SERVICE
+' ============================================================
+package "service" #E3F2FD {
+  interface "XxxService" as ISvc
+  component [XxxServiceImpl]
+  note right of [XxxServiceImpl]
+    9 pares interfaz / impl:
+    Autenticacion · Cliente · Cuenta
+    Transaccion · Profile · AccountSecurity
+    RefreshToken · RegistroUsuario · NumeroCuenta
+  end note
+  [XxxServiceImpl] ..|> ISvc
+}
+
+' ============================================================
+' MAPPER
+' ============================================================
+package "mapper" #EDE7F6 {
+  component [XxxMapper]
+  note right of [XxxMapper]
+    5 mappers:
+    Autenticacion · Usuario · Cuenta
+    Profile · Transaccion
+  end note
+}
+
+' ============================================================
+' DTO
+' ============================================================
+package "dto" #ECEFF1 {
+  component [XxxRequestDTO]  <<DTO>>
+  component [XxxResponseDTO] <<DTO>>
+  note right of [XxxResponseDTO]
+    11 DTOs de entrada / salida
+    (Login, Registro, Profile,
+    Movimiento, Cierre, ...)
+  end note
+}
+
+' ============================================================
+' REPOSITORY
+' ============================================================
+package "repository" #FFFDE7 {
+  component [XxxRepository]
+  note right of [XxxRepository]
+    7 repositories:
+    Cliente · Usuario · Cuenta
+    Transaccion · Rol · Auditoria
+    RefreshToken
+  end note
+}
+
+' ============================================================
+' ENTITY
+' ============================================================
+package "entity" #E1F5FE {
+  component [XxxEntity] <<entity>>
+  note right of [XxxEntity]
+    7 entidades JPA:
+    Cliente · Usuario · Cuenta
+    Transaccion · Rol · Auditoria
+    RefreshToken
+    + 6 enumeraciones
+  end note
+}
+
+' ============================================================
+' BASE DE DATOS
+' ============================================================
+database "PostgreSQL" as DB
+
+' ============================================================
+' RELACIONES ENTRE CAPAS
+' ============================================================
+
+HTTP          -->  [FiltroJwt]              : HTTP Request\n[Bearer Token]
+[FiltroJwt]   ..>  [JwtUtil]               : valida token
+
+[FiltroJwt]   -->  [AutenticacionController] : request autenticada
+[FiltroJwt]   -->  [ClienteController]
+
+[GlobalExceptionHandler] ..>  [AutenticacionController] : <<captura>>
+
+[AutenticacionController] ..>  ISvc  : <<use>>
+[ClienteController]       ..>  ISvc  : <<use>>
+
+ISvc           ..>  [XxxMapper]      : Entidad ↔ DTO
+ISvc           ..>  [XxxRepository]  : consulta / persiste
+
+[XxxMapper]    ..>  [XxxRequestDTO]  : <<consume>>
+[XxxMapper]    ..>  [XxxResponseDTO] : <<produce>>
+[XxxMapper]    ..>  [XxxEntity]      : <<transforma>>
+
+[XxxRepository] ..>  [XxxEntity]     : <<opera>>
+[XxxRepository]  -->  DB             : Spring Data JPA
+
+@enduml

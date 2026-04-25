@@ -9,6 +9,14 @@
 - Lombok, Spring Validation, SpringDoc OpenAPI (Swagger)
 - Tests: H2 en memoria (`MODE=PostgreSQL`, `create-drop`) — no requiere PostgreSQL externo
 
+## Variables de entorno requeridas (`.env`, gitignored)
+- `JWT_SECRET` — **obligatorio**, sin default. La app no arranca sin él.
+- `DB_URL`, `DB_USER`, `DB_PASS` — conexión a PostgreSQL
+- `DDL_AUTO` — `update` en local, `create` por defecto para entornos limpios
+- `SHOW_SQL` — `false` por defecto; nunca `true` en producción
+- `HTTPS_SEGURO` — `false` en local, `true` en producción (activa `.secure()` y `SameSite=Strict` en cookies)
+- `CORS_ORIGENES` — lista separada por comas de orígenes permitidos
+
 ## Módulos principales
 - `controller/` → recibe HTTP, delega al service, retorna `ResponseEntity`. Sin lógica de negocio.
 - `service/` → interfaz + impl. Toda la lógica de negocio, validaciones, orquestación.
@@ -45,6 +53,33 @@
 - ❌ Endpoints nuevos sin prefijo `/api/v1/`.
 - ❌ Servicios sin interfaz separada.
 - ❌ Try-catch en controllers o services salvo casos muy específicos.
+- ❌ Aceptar el ID del usuario o cliente en el body del request para operaciones sobre sus propios recursos (IDOR). Usar siempre `@AuthenticationPrincipal` y derivar el ID desde el token JWT.
+- ❌ Hardcodear secretos (JWT, contraseñas, claves) en el código o en `application.properties`. Todo secreto va en `.env`.
+- ❌ `spring.jpa.show-sql=true` en producción.
+
+## Patrón de autorización por propiedad (obligatorio)
+Todo endpoint que opera sobre recursos de un usuario específico debe verificar que el recurso pertenece al usuario autenticado:
+
+```java
+// En el controller:
+@GetMapping("/recurso/{id}")
+public ResponseEntity<...> obtener(
+        @PathVariable Long id,
+        @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+    return ResponseEntity.ok(service.obtener(id, usuarioAutenticado.getUsername()));
+}
+
+// En el service impl:
+public Dto obtener(Long id, String username) {
+    Usuario usuario = usuarioRepo.findByUsername(username)
+            .orElseThrow(AutenticacionFallidaException::new);
+    // verificar que el recurso con `id` pertenece a usuario.getCliente()
+    // si no pertenece → throw new AccesoNoAutorizadoException() (→ 403)
+}
+```
+
+- `AccesoNoAutorizadoException` → HTTP 403 Forbidden (usuario autenticado pero sin permiso sobre ese recurso).
+- Aplica a: `TransaccionService`, `ClienteService`, `ProfileService`, `AccountSecurityService`, `CuentaService`.
 
 ## HU del Sprint 1 (activo)
 - HU-01 Registro de nuevos usuarios → cristian
@@ -56,7 +91,7 @@
 
 ## Comandos frecuentes
 ```bash
-./run.sh                                                   # carga .env y ejecuta
+./scripts/run.sh                                           # carga .env y ejecuta
 ./mvnw spring-boot:run                                     # sin .env
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=seed    # con datos de prueba
 ./mvnw test                                                # tests con H2

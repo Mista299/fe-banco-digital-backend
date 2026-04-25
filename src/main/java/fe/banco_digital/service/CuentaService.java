@@ -9,7 +9,7 @@ import java.util.List;
 public interface CuentaService {
 
     // Escenarios 1, 2 y 4
-    CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud);
+    CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud, String username);
 
     // Escenario 3
     List<CuentaResumenDTO> obtenerCuentasDelCliente(String username);

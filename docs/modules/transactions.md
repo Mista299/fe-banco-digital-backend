@@ -16,6 +16,15 @@ Registra y ejecuta los movimientos financieros del sistema: depósitos, retiros 
 - No valida identidad del usuario — eso lo hace el módulo de autenticación
 - No gestiona transferencias interbancarias (ACH) — previsto para Sprint 2
 
+## Endpoints de consulta
+
+| Método | Ruta | Descripción | Auth requerida |
+|--------|------|-------------|----------------|
+| `GET` | `/api/v1/transacciones/cuenta/{idCuenta}` | Movimientos de una cuenta | Sí |
+| `GET` | `/api/v1/transacciones/cuenta/{idCuenta}/filtro` | Movimientos filtrados por fechas | Sí |
+
+> **Verificación de propiedad:** antes de devolver movimientos, el servicio verifica que la cuenta `{idCuenta}` pertenezca al usuario autenticado. Si no pertenece, responde `403 Forbidden`.
+
 ## Modelo de datos
 
 | Campo | Tipo | Descripción |
@@ -39,7 +48,8 @@ Registra y ejecuta los movimientos financieros del sistema: depósitos, retiros 
 
 | Módulo / Clase | Para qué |
 |----------------|----------|
-| `CuentaRepository` | Leer y actualizar saldos |
+| `CuentaRepository` | Leer y actualizar saldos; verificar propiedad de la cuenta |
 | `TransaccionRepository` | Persistir el registro de la operación |
 | `TransaccionMapper` | Convertir `Transaccion` → `TransaccionDTO` |
 | `AuditoriaRepository` | Registrar la acción en el log de auditoría |
+| `UsuarioRepository` | Obtener el cliente del usuario autenticado para validar propiedad |

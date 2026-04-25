@@ -30,14 +30,20 @@ Gestiona el ciclo completo de autenticación: registro de usuarios, login con JW
 | `POST` | `/api/v1/auth/refresh` | Renovar access token | No (usa refresh token) |
 | `POST` | `/api/v1/auth/logout` | Cerrar sesión | No (usa refresh token) |
 
-## Tokens
+## Tokens y cookies
 
 | Token | Duración | Almacenamiento | Para qué |
 |-------|----------|----------------|----------|
-| Access Token (JWT) | 10 minutos | Solo en el cliente | Acceder a rutas protegidas |
-| Refresh Token (UUID) | 7 días | BD + cliente | Renovar el access token |
+| Access Token (JWT) | 10 minutos | Cookie `HttpOnly` | Acceder a rutas protegidas |
+| Refresh Token (UUID) | 7 días | BD + cookie `HttpOnly` | Renovar el access token |
 
 El access token es **stateless** — el servidor no lo guarda. El refresh token es **stateful** — se persiste en la tabla `refresh_token` y se puede revocar.
+
+Los tokens viajan únicamente en cookies `HttpOnly` (JavaScript no puede leerlas). En producción con HTTPS, las cookies también tienen `.secure()` y `SameSite=Strict` activados mediante la variable de entorno `HTTPS_SEGURO=true`.
+
+## CORS
+
+Los orígenes permitidos se configuran en la variable de entorno `CORS_ORIGENES` (separados por coma). Por defecto: `http://localhost:3000,http://localhost:5173`.
 
 ## Cómo se usa
 
@@ -64,21 +70,12 @@ Content-Type: application/json
 }
 ```
 
-Respuesta:
+Respuesta: `200 OK` con cookies `HttpOnly` seteadas. El cuerpo solo contiene:
 ```json
-{
-  "accessToken": "eyJ...",
-  "refreshToken": "550e8400-e29b-41d4-a716-...",
-  "tipo": "Bearer",
-  "expiraEn": 600000
-}
+{ "mensaje": "Sesión iniciada exitosamente" }
 ```
 
-**Usar el access token en rutas protegidas:**
-```http
-GET /api/v1/profile/1
-Authorization: Bearer eyJ...
-```
+**Las rutas protegidas se acceden automáticamente** con las cookies de sesión (el navegador las envía solo). No se necesita `Authorization: Bearer` en el header.
 
 ## Dependencias
 

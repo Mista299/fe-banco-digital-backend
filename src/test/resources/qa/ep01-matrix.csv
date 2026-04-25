@@ -1,0 +1,20 @@
+HU_ID,HU_Title,Scenario,Priority,Automatable,Notes
+HU-01,Registro de Nuevos Usuarios,Escenario 1: registro exitoso,High,No,Requiere flujo UI / formulario
+HU-01,Registro de Nuevos Usuarios,Escenario 2: ID duplicado,High,Yes,Test API/backend validation
+HU-01,Registro de Nuevos Usuarios,Escenario 3: validacion campos obligatorios,High,Yes,API + unit tests
+HU-02,Creación Automatica de Cuenta Bancaria,Escenario 1: número de cuenta generado,High,Yes,Verificar cuenta creada en DB
+HU-02,Creación Automatica de Cuenta Bancaria,Escenario 2: notificación apertura,Medium,No,Notificación push (out of scope)
+HU-03,Consulta de Perfil de Clientes,Escenario 1: visualización exitosa,High,Yes,API `GET /api/profile/{userId}`
+HU-03,Consulta de Perfil de Clientes,Escenario 2: manejo error DB,High,Yes,Simular fallo DB en integración
+HU-04,Actualizacion de información del Cliente,Escenario 1: actualización exitosa,High,Yes,API PUT/POST tests
+HU-04,Actualizacion de información del Cliente,Escenario 2: datos inválidos,High,Yes,Validaciones en DTO
+HU-04,Actualizacion de información del Cliente,Escenario 3: campos no editables,Medium,No,UI enforcement
+HU-04,Actualizacion de información del Cliente,Escenario 4: cancelación de cambios,Medium,No,UI behavior
+HU-05,Cierre del Producto Financiero,Escenario 1: cierre con saldo 0,High,Yes,API state change
+HU-05,Cierre del Producto Financiero,Escenario 2: impedimento por saldo,High,Yes,Negative test
+HU-05,Cierre del Producto Financiero,Escenario 3: visualización cuenta inactiva,Medium,No,UI
+HU-05,Cierre del Producto Financiero,Escenario 4: re-autenticación,High,Yes,Requires auth flow
+HU-08,Bloqueo preventivo,Escenario 1: bloqueo exitoso,High,Yes,API state change
+HU-08,Bloqueo preventivo,Escenario 2: notificación bloqueo,Medium,No,Push notifications
+HU-14,Movimientos y saldos históricos,Escenario 1: visualización,Medium,Yes,API list + filters
+HU-14,Movimientos y saldos históricos,Escenario 2: filtros por fecha,Medium,Yes,API filters
