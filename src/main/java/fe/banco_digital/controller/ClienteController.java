@@ -10,7 +10,10 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
@@ -25,24 +28,22 @@ public class ClienteController {
         this.clienteService = clienteService;
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/me")
     @Operation(
-            summary = "Actualizar datos del cliente",
+            summary = "Actualizar datos del cliente autenticado",
             description = "Permite actualizar teléfono y correo electrónico. "
                     + "El documento y el número de cuenta son de solo lectura y no se pueden modificar."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Datos actualizados correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos inválidos (ej: formato de email incorrecto)"),
-            @ApiResponse(responseCode = "403", description = "No tienes permiso para modificar este cliente"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
     public ResponseEntity<Map<String, String>> actualizar(
-            @PathVariable Long id,
             @Valid @RequestBody ActualizarClienteDTO dto,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
-        clienteService.actualizar(id, dto, usuarioAutenticado.getUsername());
+        clienteService.actualizar(dto, usuarioAutenticado.getUsername());
         return ResponseEntity.ok(Map.of("mensaje", "Tus datos se han actualizado correctamente"));
     }
 }

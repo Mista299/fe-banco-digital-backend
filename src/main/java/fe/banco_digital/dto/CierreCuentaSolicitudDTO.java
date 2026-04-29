@@ -1,17 +1,21 @@
 package fe.banco_digital.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class CierreCuentaSolicitudDTO {
+
+    @NotNull(message = "El id de la cuenta es obligatorio.")
     private Long idCuenta;
-    private String username;
-    private String contrasena;  // "password" → español
+
+    @NotBlank(message = "La contraseña es obligatoria.")
+    private String contrasena;
 
     public CierreCuentaSolicitudDTO() {}
 
     public Long getIdCuenta() { return idCuenta; }
-    public String getUsername() { return username; }
-    public String getContrasena() { return contrasena; }
-
     public void setIdCuenta(Long idCuenta) { this.idCuenta = idCuenta; }
-    public void setUsername(String username) { this.username = username; }
+
+    public String getContrasena() { return contrasena; }
     public void setContrasena(String contrasena) { this.contrasena = contrasena; }
 }

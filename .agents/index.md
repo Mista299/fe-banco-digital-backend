@@ -17,6 +17,7 @@
 - [design/database.md](./design/database.md) — modelo entidad-relación, tablas, enums JPA
 - [design/methodology.md](./design/methodology.md) — reglas de código, Git Flow, estructura de carpetas
 - [design/async.md](./design/async.md) — asincronismo: eventos de auditoría, pool de hilos, registro de fallos
+- [design/endpoints.md](./design/endpoints.md) — contrato de endpoints: qué datos vienen del token vs. del request, verificación de propiedad
 - [sprint/current.md](./sprint/current.md) — sprint activo y HU priorizadas
 
 ## Convenciones

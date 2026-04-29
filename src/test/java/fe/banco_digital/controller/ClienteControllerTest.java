@@ -54,9 +54,9 @@ class ClienteControllerTest {
         dto.setEmail("valid@example.com");
         dto.setTelefono("3001234567");
 
-        doNothing().when(clienteService).actualizar(Mockito.eq(1L), Mockito.any(ActualizarClienteDTO.class), Mockito.eq("testuser"));
+        doNothing().when(clienteService).actualizar(Mockito.any(ActualizarClienteDTO.class), Mockito.eq("testuser"));
 
-        mockMvc.perform(put("/api/v1/clientes/1")
+        mockMvc.perform(put("/api/v1/clientes/me")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -69,7 +69,7 @@ class ClienteControllerTest {
         dto.setEmail("not-an-email");
         dto.setTelefono("3001234567");
 
-        mockMvc.perform(put("/api/v1/clientes/1")
+        mockMvc.perform(put("/api/v1/clientes/me")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())

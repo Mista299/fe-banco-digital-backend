@@ -3,7 +3,6 @@ package fe.banco_digital.service;
 import fe.banco_digital.dto.ActualizarClienteDTO;
 import fe.banco_digital.entity.Cliente;
 import fe.banco_digital.entity.Usuario;
-import fe.banco_digital.exception.AccesoNoAutorizadoException;
 import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.ClienteNoEncontradoException;
 import fe.banco_digital.repository.ClienteRepository;
@@ -24,16 +23,13 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional
-    public void actualizar(Long id, ActualizarClienteDTO dto, String username) {
+    public void actualizar(ActualizarClienteDTO dto, String username) {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
 
-        if (!usuario.getCliente().getIdCliente().equals(id)) {
-            throw new AccesoNoAutorizadoException();
-        }
-
-        Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ClienteNoEncontradoException(id));
+        Long idCliente = usuario.getCliente().getIdCliente();
+        Cliente cliente = clienteRepository.findById(idCliente)
+                .orElseThrow(() -> new ClienteNoEncontradoException(idCliente));
 
         cliente.setTelefono(dto.getTelefono());
         cliente.setEmail(dto.getEmail());

@@ -85,6 +85,7 @@ public Dto obtener(Long id, String username) {
 
 - `AccesoNoAutorizadoException` → HTTP 403 Forbidden (usuario autenticado pero sin permiso sobre ese recurso).
 - Aplica a: `TransaccionService`, `ClienteService`, `ProfileService`, `AccountSecurityService`, `CuentaService`.
+- Ver tabla completa de qué datos extrae cada endpoint del token en [`design/endpoints.md`](design/endpoints.md).
 
 ## HU del Sprint 1 (activo)
 - HU-01 Registro de nuevos usuarios → cristian
