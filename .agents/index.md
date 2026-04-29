@@ -16,6 +16,7 @@
 - [design/auth.md](./design/auth.md) — diseño JWT dual-token, flujos de registro/login/refresh/logout
 - [design/database.md](./design/database.md) — modelo entidad-relación, tablas, enums JPA
 - [design/methodology.md](./design/methodology.md) — reglas de código, Git Flow, estructura de carpetas
+- [design/async.md](./design/async.md) — asincronismo: eventos de auditoría, pool de hilos, registro de fallos
 - [sprint/current.md](./sprint/current.md) — sprint activo y HU priorizadas
 
 ## Convenciones

@@ -25,6 +25,9 @@
 - `entity/` → clases `@Entity` con Lombok. Nunca salen del repository sin pasar por el mapper.
 - `dto/` → objetos de entrada/salida. Protegen las entidades de quedar expuestas.
 - `exception/` → excepciones de negocio + `GlobalExceptionHandler` (`@RestControllerAdvice`).
+- `config/` → configuración de infraestructura transversal (pool de hilos async, etc.).
+- `event/` → objetos de evento de dominio (p.ej. `AuditoriaEvent`). Solo transportan datos.
+- `listener/` → consumidores de eventos (`@Async` + `@TransactionalEventListener`). Corren después del commit en hilos separados.
 - `security/` → `JwtUtil`, `FiltroJwt`, `UsuarioDetallesService`, `ConfiguracionSeguridad`.
 
 ## Relaciones clave entre módulos
@@ -34,6 +37,8 @@
 - `GlobalExceptionHandler` captura excepciones lanzadas desde Service y devuelve HTTP coherente.
 - `FiltroJwt` intercepta cada request antes de llegar al controller y valida el JWT.
 - `RefreshToken` es una entidad JPA persistida en BD — el access token es stateless, el refresh es stateful.
+- `TransaccionServiceImpl` publica `AuditoriaEvent` al final de cada operación exitosa; `AuditoriaEventListener` lo procesa de forma asíncrona tras el commit en el pool `auditoria-*`.
+- `RegistroFalloService` usa `Propagation.REQUIRES_NEW` para persistir transacciones fallidas en una transacción independiente (sobrevive al rollback del padre).
 
 ## Restricciones de negocio
 - `BigDecimal` obligatorio para todo valor monetario (`DECIMAL(19,4)` en BD).

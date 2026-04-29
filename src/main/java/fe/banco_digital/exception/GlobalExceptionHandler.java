@@ -20,6 +20,23 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(SaldoInsuficienteException.class)
+    public ResponseEntity<Map<String, Object>> manejarSaldoInsuficiente(SaldoInsuficienteException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(CuentaBloqueadaException.class)
+    public ResponseEntity<Map<String, Object>> manejarCuentaBloqueada(CuentaBloqueadaException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<Map<String, Object>> manejarConflictoConcurrencia(
+            org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT,
+                "La operación no pudo completarse por una modificación concurrente. Intente nuevamente.");
+    }
+
     @ExceptionHandler(AutenticacionFallidaException.class)
     public ResponseEntity<Map<String, Object>> manejarAutenticacionFallida(AutenticacionFallidaException ex) {
         return construirRespuesta(HttpStatus.UNAUTHORIZED, ex.getMessage());
