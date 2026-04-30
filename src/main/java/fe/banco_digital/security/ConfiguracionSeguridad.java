@@ -81,6 +81,7 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/registro/**",
+                                "/api/v1/depositos/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",

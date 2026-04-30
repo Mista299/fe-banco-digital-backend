@@ -1,5 +1,6 @@
 package fe.banco_digital.exception;
 
+import fe.banco_digital.dto.RechazoDepositoDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -14,6 +15,11 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DepositoRechazadoException.class)
+    public ResponseEntity<RechazoDepositoDTO> manejarDepositoRechazado(DepositoRechazadoException ex) {
+        return ResponseEntity.unprocessableEntity().body(ex.getRechazo());
+    }
 
     @ExceptionHandler(SaldoPendienteException.class)
     public ResponseEntity<Map<String, Object>> manejarSaldoPendiente(SaldoPendienteException ex) {
