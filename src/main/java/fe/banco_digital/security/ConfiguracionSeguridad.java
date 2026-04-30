@@ -30,6 +30,9 @@ public class ConfiguracionSeguridad {
     @Value("${app.cors.origenes:http://localhost:3000,http://localhost:5173}")
     private String corsOrigenes;
 
+    @Value("${app.gateway.secreto}")
+    private String gatewaySecreto;
+
     private final UsuarioDetallesService usuarioDetallesService;
     private final JwtUtil jwtUtil;
 
@@ -58,6 +61,11 @@ public class ConfiguracionSeguridad {
     @Bean
     public FiltroJwt filtroJwt() {
         return new FiltroJwt(jwtUtil, usuarioDetallesService);
+    }
+
+    @Bean
+    public FiltroHmacGateway filtroHmacGateway() {
+        return new FiltroHmacGateway(gatewaySecreto);
     }
 
     @Bean
@@ -102,6 +110,7 @@ public class ConfiguracionSeguridad {
                         })
                 )
                 .authenticationProvider(proveedorAutenticacion())
+                .addFilterBefore(filtroHmacGateway(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(filtroJwt(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
