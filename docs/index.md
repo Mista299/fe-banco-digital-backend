@@ -26,6 +26,21 @@ Sistema de banca digital (backend REST) construido con Java 17 + Spring Boot 3 +
 | [Cuentas](./modules/accounts.md) | Cuentas bancarias, estados y tipos |
 | [Transacciones](./modules/transactions.md) | Depósitos, retiros y transferencias |
 
+## Historias de usuario
+
+| Documento | Descripción |
+|-----------|-------------|
+| [HU-07 — Dashboard de cuentas](./hu/hu-07-dashboard-cuentas.md) | Endpoint de listado de cuentas con número enmascarado y estados visuales |
+| [HU-09 — Depósito gateway HMAC](./hu/hu-09-deposito-gateway-hmac.md) | Recepción de notificaciones de pasarela con autenticación HMAC-SHA256 |
+
+## Casos de prueba
+
+| Documento | Descripción |
+|-----------|-------------|
+| [HU-01 — Registro](./tests/hu-01-test-cases.md) | Casos de prueba del registro de nuevos usuarios |
+| [HU-07 — Dashboard](./tests/hu-07-test-cases.md) | Casos de prueba del dashboard de cuentas |
+| [HU-09 — Gateway HMAC](./tests/hu-09-test-cases.md) | Casos de prueba del depósito por pasarela |
+
 ## Decisiones técnicas
 
 | Documento | Descripción |
