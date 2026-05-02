@@ -34,7 +34,7 @@ public class FiltroHmacGateway extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/v1/depositos/");
+        return !"/api/v1/depositos/notificacion".equals(request.getRequestURI());
     }
 
     @Override
