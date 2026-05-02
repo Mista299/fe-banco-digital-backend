@@ -8,6 +8,11 @@ public class MovimientoDTO {
     private LocalDateTime fechaHora;
     private String concepto;
     private BigDecimal monto;
+
+    // NUEVOS CAMPOS
+    private String tipo; // INGRESO / EGRESO
+    private String signo; // "+" o "-"
+
     private BigDecimal saldoResultante;
 
     public MovimientoDTO() {
@@ -35,6 +40,22 @@ public class MovimientoDTO {
 
     public void setMonto(BigDecimal monto) {
         this.monto = monto;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public String getSigno() {
+        return signo;
+    }
+
+    public void setSigno(String signo) {
+        this.signo = signo;
     }
 
     public BigDecimal getSaldoResultante() {

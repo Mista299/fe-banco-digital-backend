@@ -18,6 +18,7 @@ import fe.banco_digital.exception.CuentaBloqueadaException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
 import fe.banco_digital.exception.CuentaYaCerradaException;
 import fe.banco_digital.exception.SaldoInsuficienteException;
+import fe.banco_digital.exception.SinMovimientosException;
 import fe.banco_digital.mapper.TransaccionMapper;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.TransaccionRepository;
@@ -33,188 +34,216 @@ import java.util.List;
 @Service
 public class TransaccionServiceImpl implements TransaccionService {
 
-    private final TransaccionRepository transaccionRepository;
-    private final TransaccionMapper transaccionMapper;
-    private final UsuarioRepository usuarioRepository;
-    private final CuentaRepository cuentaRepository;
-    private final ApplicationEventPublisher eventPublisher;
-    private final RegistroFalloService registroFalloService;
+        private final TransaccionRepository transaccionRepository;
+        private final TransaccionMapper transaccionMapper;
+        private final UsuarioRepository usuarioRepository;
+        private final CuentaRepository cuentaRepository;
+        private final ApplicationEventPublisher eventPublisher;
+        private final RegistroFalloService registroFalloService;
 
-    public TransaccionServiceImpl(TransaccionRepository transaccionRepository,
-                                   TransaccionMapper transaccionMapper,
-                                   UsuarioRepository usuarioRepository,
-                                   CuentaRepository cuentaRepository,
-                                   ApplicationEventPublisher eventPublisher,
-                                   RegistroFalloService registroFalloService) {
-        this.transaccionRepository = transaccionRepository;
-        this.transaccionMapper = transaccionMapper;
-        this.usuarioRepository = usuarioRepository;
-        this.cuentaRepository = cuentaRepository;
-        this.eventPublisher = eventPublisher;
-        this.registroFalloService = registroFalloService;
-    }
-
-    @Override
-    @Transactional
-    public TransaccionRespuestaDTO depositar(DepositoSolicitudDTO solicitud, String username) {
-        Usuario usuario = resolverUsuario(username);
-        Cuenta cuenta = resolverCuentaConLock(solicitud.getIdCuenta(),
-                usuario.getCliente().getIdCliente());
-        validarCuentaOperativa(cuenta);
-
-        cuenta.setSaldo(cuenta.getSaldo().add(solicitud.getMonto()));
-        cuentaRepository.save(cuenta);
-
-        Transaccion t = registrarTransaccion(null, cuenta,
-                TipoTransaccion.DEPOSITO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
-
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "DEPOSITO",
-                usuario.getIdUsuario(),
-                "Depósito de " + solicitud.getMonto() + " en cuenta " + cuenta.getNumeroCuenta()));
-
-        return construirRespuesta(t, cuenta.getSaldo(), "Depósito realizado exitosamente.");
-    }
-
-    @Override
-    @Transactional
-    public TransaccionRespuestaDTO retirar(RetiroSolicitudDTO solicitud, String username) {
-        Usuario usuario = resolverUsuario(username);
-        Cuenta cuenta = resolverCuentaConLock(solicitud.getIdCuenta(),
-                usuario.getCliente().getIdCliente());
-        validarCuentaOperativa(cuenta);
-
-        if (cuenta.getSaldo().compareTo(solicitud.getMonto()) < 0) {
-            registroFalloService.registrarFallo(cuenta, null,
-                    TipoTransaccion.RETIRO, solicitud.getMonto());
-            throw new SaldoInsuficienteException();
+        public TransaccionServiceImpl(TransaccionRepository transaccionRepository,
+                        TransaccionMapper transaccionMapper,
+                        UsuarioRepository usuarioRepository,
+                        CuentaRepository cuentaRepository,
+                        ApplicationEventPublisher eventPublisher,
+                        RegistroFalloService registroFalloService) {
+                this.transaccionRepository = transaccionRepository;
+                this.transaccionMapper = transaccionMapper;
+                this.usuarioRepository = usuarioRepository;
+                this.cuentaRepository = cuentaRepository;
+                this.eventPublisher = eventPublisher;
+                this.registroFalloService = registroFalloService;
         }
 
-        cuenta.setSaldo(cuenta.getSaldo().subtract(solicitud.getMonto()));
-        cuentaRepository.save(cuenta);
+        @Override
+        @Transactional
+        public TransaccionRespuestaDTO depositar(DepositoSolicitudDTO solicitud, String username) {
+                Usuario usuario = resolverUsuario(username);
+                Cuenta cuenta = resolverCuentaConLock(solicitud.getIdCuenta(),
+                                usuario.getCliente().getIdCliente());
+                validarCuentaOperativa(cuenta);
 
-        Transaccion t = registrarTransaccion(cuenta, null,
-                TipoTransaccion.RETIRO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
+                cuenta.setSaldo(cuenta.getSaldo().add(solicitud.getMonto()));
+                cuentaRepository.save(cuenta);
 
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "RETIRO",
-                usuario.getIdUsuario(),
-                "Retiro de " + solicitud.getMonto() + " de cuenta " + cuenta.getNumeroCuenta()));
+                Transaccion t = registrarTransaccion(null, cuenta,
+                                TipoTransaccion.DEPOSITO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
 
-        return construirRespuesta(t, cuenta.getSaldo(), "Retiro realizado exitosamente.");
-    }
+                eventPublisher.publishEvent(new AuditoriaEvent(this, "DEPOSITO",
+                                usuario.getIdUsuario(),
+                                "Depósito de " + solicitud.getMonto() + " en cuenta " + cuenta.getNumeroCuenta()));
 
-    // Locks siempre en orden ascendente de idCuenta para prevenir deadlocks
-    @Override
-    @Transactional
-    public TransaccionRespuestaDTO transferir(TransferenciaSolicitudDTO solicitud, String username) {
-        Usuario usuario = resolverUsuario(username);
-
-        Cuenta destinoRef = cuentaRepository
-                .findByNumeroCuenta(solicitud.getNumeroCuentaDestino())
-                .orElseThrow(() -> new CuentaNoEncontradaException(-1L));
-
-        Long idOrigen = solicitud.getIdCuentaOrigen();
-        Long idDestino = destinoRef.getIdCuenta();
-
-        cuentaRepository.findByIdCuentaAndCliente_IdCliente(idOrigen,
-                usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
-
-        Cuenta primerLock = cuentaRepository
-                .findByIdCuentaConLock(Math.min(idOrigen, idDestino))
-                .orElseThrow(() -> new CuentaNoEncontradaException(Math.min(idOrigen, idDestino)));
-        Cuenta segundoLock = cuentaRepository
-                .findByIdCuentaConLock(Math.max(idOrigen, idDestino))
-                .orElseThrow(() -> new CuentaNoEncontradaException(Math.max(idOrigen, idDestino)));
-
-        Cuenta origen  = primerLock.getIdCuenta().equals(idOrigen) ? primerLock : segundoLock;
-        Cuenta destino = primerLock.getIdCuenta().equals(idDestino) ? primerLock : segundoLock;
-
-        validarCuentaOperativa(origen);
-        if (destino.getEstado() != EstadoCuenta.ACTIVA) {
-            registroFalloService.registrarFallo(origen, destino,
-                    TipoTransaccion.TRANSFERENCIA, solicitud.getMonto());
-            throw new CuentaBloqueadaException(destino.getNumeroCuenta());
-        }
-        if (origen.getSaldo().compareTo(solicitud.getMonto()) < 0) {
-            registroFalloService.registrarFallo(origen, destino,
-                    TipoTransaccion.TRANSFERENCIA, solicitud.getMonto());
-            throw new SaldoInsuficienteException();
+                return construirRespuesta(t, cuenta.getSaldo(), "Depósito realizado exitosamente.");
         }
 
-        origen.setSaldo(origen.getSaldo().subtract(solicitud.getMonto()));
-        destino.setSaldo(destino.getSaldo().add(solicitud.getMonto()));
-        cuentaRepository.save(origen);
-        cuentaRepository.save(destino);
+        @Override
+        @Transactional
+        public TransaccionRespuestaDTO retirar(RetiroSolicitudDTO solicitud, String username) {
+                Usuario usuario = resolverUsuario(username);
+                Cuenta cuenta = resolverCuentaConLock(solicitud.getIdCuenta(),
+                                usuario.getCliente().getIdCliente());
+                validarCuentaOperativa(cuenta);
 
-        Transaccion t = registrarTransaccion(origen, destino,
-                TipoTransaccion.TRANSFERENCIA, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
+                if (cuenta.getSaldo().compareTo(solicitud.getMonto()) < 0) {
+                        registroFalloService.registrarFallo(cuenta, null,
+                                        TipoTransaccion.RETIRO, solicitud.getMonto());
+                        throw new SaldoInsuficienteException();
+                }
 
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "TRANSFERENCIA",
-                usuario.getIdUsuario(),
-                "Transferencia de " + solicitud.getMonto()
-                        + " desde " + origen.getNumeroCuenta()
-                        + " hacia " + destino.getNumeroCuenta()));
+                cuenta.setSaldo(cuenta.getSaldo().subtract(solicitud.getMonto()));
+                cuentaRepository.save(cuenta);
 
-        return construirRespuesta(t, origen.getSaldo(), "Transferencia realizada exitosamente.");
-    }
+                Transaccion t = registrarTransaccion(cuenta, null,
+                                TipoTransaccion.RETIRO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<MovimientoDTO> obtenerMovimientos(Long idCuenta, String username) {
-        verificarPropietario(idCuenta, username);
-        return transaccionMapper.aListaDTO(
-                transaccionRepository.findByCuentaIdOrderByFechaDesc(idCuenta), idCuenta);
-    }
+                eventPublisher.publishEvent(new AuditoriaEvent(this, "RETIRO",
+                                usuario.getIdUsuario(),
+                                "Retiro de " + solicitud.getMonto() + " de cuenta " + cuenta.getNumeroCuenta()));
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<MovimientoDTO> obtenerMovimientosPorFecha(Long idCuenta,
-            LocalDateTime fechaInicio, LocalDateTime fechaFin, String username) {
-        verificarPropietario(idCuenta, username);
-        return transaccionMapper.aListaDTO(
-                transaccionRepository.findByCuentaIdAndFechaBetweenOrderByFechaDesc(
-                        idCuenta, fechaInicio, fechaFin), idCuenta);
-    }
+                return construirRespuesta(t, cuenta.getSaldo(), "Retiro realizado exitosamente.");
+        }
 
-    private Usuario resolverUsuario(String username) {
-        return usuarioRepository.findByUsername(username)
-                .orElseThrow(AutenticacionFallidaException::new);
-    }
+        // Locks siempre en orden ascendente de idCuenta para prevenir deadlocks
+        @Override
+        @Transactional
+        public TransaccionRespuestaDTO transferir(TransferenciaSolicitudDTO solicitud, String username) {
+                Usuario usuario = resolverUsuario(username);
 
-    private Cuenta resolverCuentaConLock(Long idCuenta, Long idCliente) {
-        cuentaRepository.findByIdCuentaAndCliente_IdCliente(idCuenta, idCliente)
-                .orElseThrow(AccesoNoAutorizadoException::new);
-        return cuentaRepository.findByIdCuentaConLock(idCuenta)
-                .orElseThrow(() -> new CuentaNoEncontradaException(idCuenta));
-    }
+                Cuenta destinoRef = cuentaRepository
+                                .findByNumeroCuenta(solicitud.getNumeroCuentaDestino())
+                                .orElseThrow(() -> new CuentaNoEncontradaException(-1L));
 
-    private void validarCuentaOperativa(Cuenta cuenta) {
-        if (cuenta.getEstado() == EstadoCuenta.BLOQUEADA)
-            throw new CuentaBloqueadaException(cuenta.getNumeroCuenta());
-        if (cuenta.getEstado() == EstadoCuenta.INACTIVA)
-            throw new CuentaYaCerradaException(cuenta.getNumeroCuenta());
-    }
+                Long idOrigen = solicitud.getIdCuentaOrigen();
+                Long idDestino = destinoRef.getIdCuenta();
 
-    private Transaccion registrarTransaccion(Cuenta origen, Cuenta destino,
-            TipoTransaccion tipo, BigDecimal monto, EstadoTransaccion estado) {
-        Transaccion t = new Transaccion();
-        t.setCuentaOrigen(origen);
-        t.setCuentaDestino(destino);
-        t.setTipo(tipo);
-        t.setMonto(monto);
-        t.setEstado(estado);
-        t.setFecha(LocalDateTime.now());
-        return transaccionRepository.save(t);
-    }
+                cuentaRepository.findByIdCuentaAndCliente_IdCliente(idOrigen,
+                                usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
 
-    private TransaccionRespuestaDTO construirRespuesta(Transaccion t,
-            BigDecimal saldoResultante, String mensaje) {
-        return new TransaccionRespuestaDTO(t.getIdTransaccion(), t.getTipo().name(),
-                t.getMonto(), saldoResultante, t.getEstado().name(), t.getFecha(), mensaje);
-    }
+                Cuenta primerLock = cuentaRepository
+                                .findByIdCuentaConLock(Math.min(idOrigen, idDestino))
+                                .orElseThrow(() -> new CuentaNoEncontradaException(Math.min(idOrigen, idDestino)));
+                Cuenta segundoLock = cuentaRepository
+                                .findByIdCuentaConLock(Math.max(idOrigen, idDestino))
+                                .orElseThrow(() -> new CuentaNoEncontradaException(Math.max(idOrigen, idDestino)));
 
-    private void verificarPropietario(Long idCuenta, String username) {
-        Usuario usuario = resolverUsuario(username);
-        cuentaRepository.findByIdCuentaAndCliente_IdCliente(idCuenta,
-                usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
-    }
+                Cuenta origen = primerLock.getIdCuenta().equals(idOrigen) ? primerLock : segundoLock;
+                Cuenta destino = primerLock.getIdCuenta().equals(idDestino) ? primerLock : segundoLock;
+
+                validarCuentaOperativa(origen);
+
+                if (destino.getEstado() != EstadoCuenta.ACTIVA) {
+                        registroFalloService.registrarFallo(origen, destino,
+                                        TipoTransaccion.TRANSFERENCIA, solicitud.getMonto());
+                        throw new CuentaBloqueadaException(destino.getNumeroCuenta());
+                }
+
+                if (origen.getSaldo().compareTo(solicitud.getMonto()) < 0) {
+                        registroFalloService.registrarFallo(origen, destino,
+                                        TipoTransaccion.TRANSFERENCIA, solicitud.getMonto());
+                        throw new SaldoInsuficienteException();
+                }
+
+                origen.setSaldo(origen.getSaldo().subtract(solicitud.getMonto()));
+                destino.setSaldo(destino.getSaldo().add(solicitud.getMonto()));
+                cuentaRepository.save(origen);
+                cuentaRepository.save(destino);
+
+                Transaccion t = registrarTransaccion(origen, destino,
+                                TipoTransaccion.TRANSFERENCIA, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
+
+                eventPublisher.publishEvent(new AuditoriaEvent(this, "TRANSFERENCIA",
+                                usuario.getIdUsuario(),
+                                "Transferencia de " + solicitud.getMonto()
+                                                + " desde " + origen.getNumeroCuenta()
+                                                + " hacia " + destino.getNumeroCuenta()));
+
+                return construirRespuesta(t, origen.getSaldo(), "Transferencia realizada exitosamente.");
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<MovimientoDTO> obtenerMovimientos(Long idCuenta, String username) {
+
+                verificarPropietario(idCuenta, username);
+
+                List<Transaccion> lista = transaccionRepository.findByCuentaIdOrderByFechaDesc(idCuenta);
+
+                if (lista.isEmpty()) {
+                        throw new SinMovimientosException(
+                                        "Aún no registras movimientos en este periodo");
+                }
+
+                return transaccionMapper.aListaDTO(lista, idCuenta);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<MovimientoDTO> obtenerMovimientosPorFecha(Long idCuenta,
+                        LocalDateTime fechaInicio,
+                        LocalDateTime fechaFin,
+                        String username) {
+
+                verificarPropietario(idCuenta, username);
+
+                List<Transaccion> lista = transaccionRepository.findByCuentaIdAndFechaBetweenOrderByFechaDesc(
+                                idCuenta, fechaInicio, fechaFin);
+
+                if (lista.isEmpty()) {
+                        throw new SinMovimientosException(
+                                        "Aún no registras movimientos en este periodo");
+                }
+
+                return transaccionMapper.aListaDTO(lista, idCuenta);
+        }
+
+        private Usuario resolverUsuario(String username) {
+                return usuarioRepository.findByUsername(username)
+                                .orElseThrow(AutenticacionFallidaException::new);
+        }
+
+        private Cuenta resolverCuentaConLock(Long idCuenta, Long idCliente) {
+                cuentaRepository.findByIdCuentaAndCliente_IdCliente(idCuenta, idCliente)
+                                .orElseThrow(AccesoNoAutorizadoException::new);
+                return cuentaRepository.findByIdCuentaConLock(idCuenta)
+                                .orElseThrow(() -> new CuentaNoEncontradaException(idCuenta));
+        }
+
+        private void validarCuentaOperativa(Cuenta cuenta) {
+                if (cuenta.getEstado() == EstadoCuenta.BLOQUEADA)
+                        throw new CuentaBloqueadaException(cuenta.getNumeroCuenta());
+                if (cuenta.getEstado() == EstadoCuenta.INACTIVA)
+                        throw new CuentaYaCerradaException(cuenta.getNumeroCuenta());
+        }
+
+        private Transaccion registrarTransaccion(Cuenta origen, Cuenta destino,
+                        TipoTransaccion tipo, BigDecimal monto, EstadoTransaccion estado) {
+                Transaccion t = new Transaccion();
+                t.setCuentaOrigen(origen);
+                t.setCuentaDestino(destino);
+                t.setTipo(tipo);
+                t.setMonto(monto);
+                t.setEstado(estado);
+                t.setFecha(LocalDateTime.now());
+                return transaccionRepository.save(t);
+        }
+
+        private TransaccionRespuestaDTO construirRespuesta(Transaccion t,
+                        BigDecimal saldoResultante,
+                        String mensaje) {
+                return new TransaccionRespuestaDTO(
+                                t.getIdTransaccion(),
+                                t.getTipo().name(),
+                                t.getMonto(),
+                                saldoResultante,
+                                t.getEstado().name(),
+                                t.getFecha(),
+                                mensaje);
+        }
+
+        private void verificarPropietario(Long idCuenta, String username) {
+                Usuario usuario = resolverUsuario(username);
+                cuentaRepository.findByIdCuentaAndCliente_IdCliente(
+                                idCuenta,
+                                usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
+        }
 }

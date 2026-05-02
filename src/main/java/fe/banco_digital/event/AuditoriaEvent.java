@@ -15,7 +15,15 @@ public class AuditoriaEvent extends ApplicationEvent {
         this.detalle = detalle;
     }
 
-    public String getAccion() { return accion; }
-    public Long getIdUsuario() { return idUsuario; }
-    public String getDetalle() { return detalle; }
+    public String getAccion() {
+        return accion;
+    }
+
+    public Long getIdUsuario() {
+        return idUsuario;
+    }
+
+    public String getDetalle() {
+        return detalle;
+    }
 }

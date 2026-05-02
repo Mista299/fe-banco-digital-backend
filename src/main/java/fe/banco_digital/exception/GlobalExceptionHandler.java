@@ -25,6 +25,11 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(SinMovimientosException.class)
+    public ResponseEntity<Map<String, Object>> manejarSinMovimientos(SinMovimientosException ex) {
+        return construirRespuesta(HttpStatus.OK, ex.getMessage());
+    }
+
     @ExceptionHandler(CuentaBloqueadaException.class)
     public ResponseEntity<Map<String, Object>> manejarCuentaBloqueada(CuentaBloqueadaException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
@@ -88,7 +93,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> manejarValidaciones(MethodArgumentNotValidException ex) {
-        Map<String, Object> cuerpo = cuerpoBase(HttpStatus.BAD_REQUEST, "Los campos faltantes son obligatorios para continuar.");
+        Map<String, Object> cuerpo = cuerpoBase(HttpStatus.BAD_REQUEST,
+                "Los campos faltantes son obligatorios para continuar.");
         List<Map<String, String>> detalles = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -102,7 +108,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> manejarExcepcionGeneral(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(cuerpoBase(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar la información, intente más tarde"));
+                .body(cuerpoBase(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "No se pudo cargar la información, intente más tarde"));
     }
 
     private Map<String, String> aDetalleCampo(FieldError error) {
