@@ -1,8 +1,14 @@
 package fe.banco_digital.service;
 
+import fe.banco_digital.entity.TokenRetiro;
+
+import java.math.BigDecimal;
+
 public interface TokenRetiroService {
 
-    String generarToken(Long idCuenta);
+    TokenRetiro generarToken(Long idCuenta, BigDecimal monto);
 
-    boolean validarToken(String codigo);
+    void usarToken(String codigo);
+
+    void expirarTokens();
 }
