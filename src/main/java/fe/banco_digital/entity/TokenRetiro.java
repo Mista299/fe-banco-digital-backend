@@ -1,6 +1,7 @@
 package fe.banco_digital.entity;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -9,20 +10,33 @@ public class TokenRetiro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_token")
     private Long id;
 
-    @Column(nullable = false)
+    // ✅ código único de 6 dígitos
+    @Column(name = "codigo", nullable = false, unique = true, length = 6)
     private String codigo;
 
-    @Column(nullable = false)
+    @Column(name = "monto", nullable = false, precision = 19, scale = 4)
+    private BigDecimal monto;
+
+    @Column(name = "fecha_expiracion", nullable = false)
     private LocalDateTime fechaExpiracion;
 
-    @Column(nullable = false)
-    private boolean usado = false;
+    // ✅ estado del token (ACTIVO, USADO, EXPIRADO)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado", nullable = false)
+    private EstadoToken estado;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_cuenta", nullable = false)
     private Cuenta cuenta;
+
+    // ✅ (OPCIONAL RECOMENDADO) fecha de creación
+    @Column(name = "fecha_creacion", nullable = false)
+    private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+    // ===== GETTERS Y SETTERS =====
 
     public Long getId() {
         return id;
@@ -36,6 +50,14 @@ public class TokenRetiro {
         this.codigo = codigo;
     }
 
+    public BigDecimal getMonto() {
+        return monto;
+    }
+
+    public void setMonto(BigDecimal monto) {
+        this.monto = monto;
+    }
+
     public LocalDateTime getFechaExpiracion() {
         return fechaExpiracion;
     }
@@ -44,12 +66,12 @@ public class TokenRetiro {
         this.fechaExpiracion = fechaExpiracion;
     }
 
-    public boolean isUsado() {
-        return usado;
+    public EstadoToken getEstado() {
+        return estado;
     }
 
-    public void setUsado(boolean usado) {
-        this.usado = usado;
+    public void setEstado(EstadoToken estado) {
+        this.estado = estado;
     }
 
     public Cuenta getCuenta() {
@@ -58,5 +80,13 @@ public class TokenRetiro {
 
     public void setCuenta(Cuenta cuenta) {
         this.cuenta = cuenta;
+    }
+
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(LocalDateTime fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
     }
 }
