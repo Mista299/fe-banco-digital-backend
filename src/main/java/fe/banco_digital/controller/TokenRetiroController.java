@@ -1,11 +1,13 @@
 package fe.banco_digital.controller;
 
+import fe.banco_digital.entity.TokenRetiro;
 import fe.banco_digital.service.TokenRetiroService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RestController
-@RequestMapping("/retiro")
+@RequestMapping("/api/token-retiro")
 public class TokenRetiroController {
 
     private final TokenRetiroService service;
@@ -14,20 +16,18 @@ public class TokenRetiroController {
         this.service = service;
     }
 
-    @PostMapping("/generar/{idCuenta}")
-    public ResponseEntity<String> generar(@PathVariable Long idCuenta) {
-        String codigo = service.generarToken(idCuenta);
-        return ResponseEntity.ok(codigo);
+    // Generar token
+    @PostMapping("/generar")
+    public TokenRetiro generar(
+            @RequestParam Long idCuenta,
+            @RequestParam BigDecimal monto) {
+        return service.generarToken(idCuenta, monto);
     }
 
-    @PostMapping("/validar/{codigo}")
-    public ResponseEntity<String> validar(@PathVariable String codigo) {
-        boolean valido = service.validarToken(codigo);
-
-        if (valido) {
-            return ResponseEntity.ok("Token válido. Puede retirar dinero.");
-        } else {
-            return ResponseEntity.badRequest().body("Token inválido o expirado.");
-        }
+    // Usar token
+    @PostMapping("/usar")
+    public String usar(@RequestParam String codigo) {
+        service.usarToken(codigo);
+        return "Retiro exitoso";
     }
 }
