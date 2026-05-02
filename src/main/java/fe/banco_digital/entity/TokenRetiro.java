@@ -13,7 +13,7 @@ public class TokenRetiro {
     @Column(name = "id_token")
     private Long id;
 
-    // ✅ código único de 6 dígitos
+    //  código único de 6 dígitos
     @Column(name = "codigo", nullable = false, unique = true, length = 6)
     private String codigo;
 
@@ -23,7 +23,7 @@ public class TokenRetiro {
     @Column(name = "fecha_expiracion", nullable = false)
     private LocalDateTime fechaExpiracion;
 
-    // ✅ estado del token (ACTIVO, USADO, EXPIRADO)
+    //  estado del token (ACTIVO, USADO, EXPIRADO)
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false)
     private EstadoToken estado;
@@ -32,7 +32,7 @@ public class TokenRetiro {
     @JoinColumn(name = "id_cuenta", nullable = false)
     private Cuenta cuenta;
 
-    // ✅ (OPCIONAL RECOMENDADO) fecha de creación
+    //   fecha de creación
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
