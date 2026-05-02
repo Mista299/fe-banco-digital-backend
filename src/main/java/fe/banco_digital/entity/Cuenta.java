@@ -1,3 +1,4 @@
+package fe.banco_digital.entity;
 java.math.BigDecimal;
 
 import jakarta.persistence.Column;
