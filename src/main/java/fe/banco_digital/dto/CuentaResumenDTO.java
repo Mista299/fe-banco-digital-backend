@@ -9,28 +9,38 @@ public class CuentaResumenDTO {
 
     private Long idCuenta;
     private String numeroCuenta;
+    private String numeroEnmascarado;
     private String tipo;
     private BigDecimal saldo;
+    private boolean saldoDisponible;
     private String estado;
-    private boolean permiteTransacciones;  // Escenario 3
-    private String etiquetaVisual;         // "Cuenta Cerrada" — Escenario 3
+    private boolean permiteTransacciones;
+    private String etiquetaVisual;
 
-    // Constructor desde entidad — patrón del equipo
     public CuentaResumenDTO(Cuenta cuenta) {
         boolean estaCerrada = cuenta.getEstado() == EstadoCuenta.INACTIVA;
-        this.idCuenta = cuenta.getIdCuenta();
-        this.numeroCuenta = cuenta.getNumeroCuenta();
-        this.tipo = cuenta.getTipo().name();
-        this.saldo = cuenta.getSaldo();
-        this.estado = cuenta.getEstado().name();
-        this.permiteTransacciones = cuenta.getEstado() == EstadoCuenta.ACTIVA;  // Escenario 3
-        this.etiquetaVisual = estaCerrada ? "Cuenta Cerrada" : null;            // Escenario 3
+        this.idCuenta          = cuenta.getIdCuenta();
+        this.numeroCuenta      = cuenta.getNumeroCuenta();
+        this.numeroEnmascarado = enmascarar(cuenta.getNumeroCuenta());
+        this.tipo              = cuenta.getTipo().name();
+        this.saldo             = cuenta.getSaldo();
+        this.saldoDisponible   = true;
+        this.estado            = cuenta.getEstado().name();
+        this.permiteTransacciones = cuenta.getEstado() == EstadoCuenta.ACTIVA;
+        this.etiquetaVisual    = estaCerrada ? "Cuenta Cerrada" : null;
+    }
+
+    private static String enmascarar(String numero) {
+        if (numero == null || numero.length() <= 4) return numero;
+        return "*".repeat(numero.length() - 4) + numero.substring(numero.length() - 4);
     }
 
     public Long getIdCuenta() { return idCuenta; }
     public String getNumeroCuenta() { return numeroCuenta; }
+    public String getNumeroEnmascarado() { return numeroEnmascarado; }
     public String getTipo() { return tipo; }
     public BigDecimal getSaldo() { return saldo; }
+    public boolean isSaldoDisponible() { return saldoDisponible; }
     public String getEstado() { return estado; }
     public boolean isPermiteTransacciones() { return permiteTransacciones; }
     public String getEtiquetaVisual() { return etiquetaVisual; }
