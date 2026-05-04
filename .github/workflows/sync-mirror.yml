@@ -21,8 +21,7 @@ jobs:
         run: git clone git@github.com:Camilo-Marsel/Repo-Backend-Espejo.git /tmp/mirror
 
       - name: Sync source code (excluding .github)
-        run: |
-          run: rsync -av --exclude='.github' --exclude='.git' --delete . /tmp/mirror/
+        run: rsync -av --exclude='.github' --exclude='.git' --delete . /tmp/mirror/
 
       - name: Commit and push to mirror
         run: |
