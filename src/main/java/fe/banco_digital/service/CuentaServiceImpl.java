@@ -3,6 +3,8 @@ package fe.banco_digital.service;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
+import fe.banco_digital.dto.DashboardResponseDTO;
+import fe.banco_digital.entity.Auditoria;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.Usuario;
@@ -101,7 +103,7 @@ public class CuentaServiceImpl implements CuentaService {
      */
     @Override
     @Transactional(readOnly = true)
-    public List<CuentaResumenDTO> obtenerCuentasDelCliente(String username) {
+    public DashboardResponseDTO obtenerCuentasDelCliente(String username) {
 
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
@@ -109,8 +111,22 @@ public class CuentaServiceImpl implements CuentaService {
         List<Cuenta> cuentas = cuentaRepository
                 .findByCliente_IdCliente(usuario.getCliente().getIdCliente());
 
-        return cuentas.stream()
+        String nombre = usuario.getCliente().getNombre();
+        Cuenta cuenta = cuentas.stream()
+                .filter(c -> c.getEstado() == EstadoCuenta.ACTIVA)
+                .findFirst()
+                .orElse(null);
+        String numeroCuenta = cuenta != null ? cuenta.getNumeroCuenta() : "N/A";
+        String estado = cuenta != null ? cuenta.getEstado().name() : "N/A";
+        BigDecimal saldo = cuenta != null ? cuenta.getSaldo() : BigDecimal.ZERO;
+
+        String mensaje = "Bienvenido, " + nombre
+                + ". Tu número de cuenta es " + numeroCuenta
+                + " · Estado: " + estado
+                + " · Saldo: $" + saldo + " COP";
+
+        return new DashboardResponseDTO(mensaje, cuentas.stream()
                 .map(cuentaMapper::aCuentaResumenDTO)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 }
