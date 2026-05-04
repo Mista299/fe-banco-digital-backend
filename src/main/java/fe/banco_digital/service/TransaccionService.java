@@ -1,10 +1,6 @@
 package fe.banco_digital.service;
 
-import fe.banco_digital.dto.DepositoSolicitudDTO;
-import fe.banco_digital.dto.MovimientoDTO;
-import fe.banco_digital.dto.RetiroSolicitudDTO;
-import fe.banco_digital.dto.TransaccionRespuestaDTO;
-import fe.banco_digital.dto.TransferenciaSolicitudDTO;
+import fe.banco_digital.dto.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,4 +20,5 @@ public interface TransaccionService {
             LocalDateTime fechaInicio,
             LocalDateTime fechaFin,
             String username);
+    TransaccionRespuestaDTO ejecutarTransferenciaMismoBanco(TransferenciaSolicitudDTO dto, String username);
 }

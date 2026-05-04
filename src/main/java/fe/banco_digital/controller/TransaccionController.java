@@ -103,4 +103,21 @@ public class TransaccionController {
                 transaccionService.obtenerMovimientosPorFecha(
                         idCuenta, fechaInicio, fechaFin, usuarioAutenticado.getUsername()));
     }
+
+    @Operation(summary = "Ejecutar transferencia interna",
+            description = "Transfiere dinero entre dos cuentas del mismo banco de forma atómica")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Transferencia exitosa"),
+            @ApiResponse(responseCode = "404", description = "Cuenta destino no encontrada"),
+            @ApiResponse(responseCode = "409", description = "Saldo insuficiente o cuenta bloqueada"),
+            @ApiResponse(responseCode = "403", description = "La cuenta origen no pertenece al usuario")
+    })
+    @PostMapping("/transferencia")
+    public ResponseEntity<TransaccionRespuestaDTO> ejecutarTransferenciaMismoBanco(
+            @Valid @RequestBody TransferenciaSolicitudDTO dto,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+
+        return ResponseEntity.ok(
+                transaccionService.ejecutarTransferenciaMismoBanco(dto, usuarioAutenticado.getUsername()));
+    }
 }
