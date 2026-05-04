@@ -22,7 +22,7 @@ jobs:
 
       - name: Sync source code (excluding .github)
         run: |
-          rsync -av --exclude='.github' --delete . /tmp/mirror/
+          run: rsync -av --exclude='.github' --exclude='.git' --delete . /tmp/mirror/
 
       - name: Commit and push to mirror
         run: |
