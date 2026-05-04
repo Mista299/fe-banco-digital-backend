@@ -12,7 +12,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Push to mirror
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MIRROR_SSH_KEY }}
+
+      - name: Add mirror as remote and push
         run: |
-          git remote add mirror https://x-access-token:${{ secrets.MIRROR_PAT }}@github.com/Camilo-Marsel/Repo-Backend-Espejo.git
+          git remote add mirror git@github.com:Camilo-Marsel/Repo-Backend-Espejo.git
           git push mirror HEAD:main --force
