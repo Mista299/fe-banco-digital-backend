@@ -38,10 +38,10 @@ public class Cuenta {
 	private BigDecimal saldo = BigDecimal.ZERO;
 
 	// NUEVOS CAMPOS (HU10)
-    @Column(name = "saldo_disponible", precision = 19, scale = 4)
+    @Column(name = "saldo_disponible", precision = 19, scale = 4, nullable = false, columnDefinition = "DECIMAL(19,4) DEFAULT 0")
     private BigDecimal saldoDisponible = BigDecimal.ZERO;
 
-    @Column(name = "saldo_reservado", precision = 19, scale = 4)
+    @Column(name = "saldo_reservado", precision = 19, scale = 4, nullable = false, columnDefinition = "DECIMAL(19,4) DEFAULT 0")
     private BigDecimal saldoReservado = BigDecimal.ZERO;
 
 	@Enumerated(EnumType.STRING)

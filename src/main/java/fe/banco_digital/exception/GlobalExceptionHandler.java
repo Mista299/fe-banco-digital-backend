@@ -21,6 +21,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.unprocessableEntity().body(ex.getRechazo());
     }
 
+    @ExceptionHandler(RetiroRechazadoException.class)
+    public ResponseEntity<Map<String, Object>> manejarRetiroRechazado(RetiroRechazadoException ex) {
+        return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
     @ExceptionHandler(SaldoPendienteException.class)
     public ResponseEntity<Map<String, Object>> manejarSaldoPendiente(SaldoPendienteException ex) {
         return construirRespuesta(HttpStatus.CONFLICT, ex.getMessage());

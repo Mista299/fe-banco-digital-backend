@@ -90,6 +90,7 @@ public class ConfiguracionSeguridad {
                                 "/api/v1/auth/**",
                                 "/api/v1/registro/**",
                                 "/api/v1/depositos/**",
+                                "/api/v1/retiros/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",

@@ -12,7 +12,8 @@ public class CuentaResumenDTO {
     private String numeroEnmascarado;
     private String tipo;
     private BigDecimal saldo;
-    private boolean saldoDisponible;
+    private BigDecimal saldoDisponible;
+    private BigDecimal saldoReservado;
     private String estado;
     private boolean permiteTransacciones;
     private String etiquetaVisual;
@@ -24,7 +25,8 @@ public class CuentaResumenDTO {
         this.numeroEnmascarado = enmascarar(cuenta.getNumeroCuenta());
         this.tipo              = cuenta.getTipo().name();
         this.saldo             = cuenta.getSaldo();
-        this.saldoDisponible   = true;
+        this.saldoDisponible   = cuenta.getSaldoDisponible();
+        this.saldoReservado    = cuenta.getSaldoReservado();
         this.estado            = cuenta.getEstado().name();
         this.permiteTransacciones = cuenta.getEstado() == EstadoCuenta.ACTIVA;
         this.etiquetaVisual    = estaCerrada ? "Cuenta Cerrada" : null;
@@ -40,7 +42,8 @@ public class CuentaResumenDTO {
     public String getNumeroEnmascarado() { return numeroEnmascarado; }
     public String getTipo() { return tipo; }
     public BigDecimal getSaldo() { return saldo; }
-    public boolean isSaldoDisponible() { return saldoDisponible; }
+    public BigDecimal getSaldoDisponible() { return saldoDisponible; }
+    public BigDecimal getSaldoReservado() { return saldoReservado; }
     public String getEstado() { return estado; }
     public boolean isPermiteTransacciones() { return permiteTransacciones; }
     public String getEtiquetaVisual() { return etiquetaVisual; }

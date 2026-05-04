@@ -79,7 +79,7 @@ class CuentaServiceImplTest {
 
         assertThat(resultado).hasSize(2);
         assertThat(resultado.get(0).getNumeroEnmascarado()).isEqualTo("****0001");
-        assertThat(resultado.get(0).isSaldoDisponible()).isTrue();
+        assertThat(resultado.get(0).getSaldoDisponible()).isNotNull();
         assertThat(resultado.get(0).isPermiteTransacciones()).isTrue();
         assertThat(resultado.get(1).getNumeroEnmascarado()).isEqualTo("****0002");
     }

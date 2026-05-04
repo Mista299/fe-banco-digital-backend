@@ -1,13 +1,17 @@
 package fe.banco_digital.controller;
 
-import fe.banco_digital.entity.TokenRetiro;
+import fe.banco_digital.dto.GenerarTokenRetiroSolicitudDTO;
+import fe.banco_digital.dto.TokenRetiroEstadoDTO;
+import fe.banco_digital.dto.TokenRetiroRespuestaDTO;
 import fe.banco_digital.service.TokenRetiroService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-
 @RestController
-@RequestMapping("/api/token-retiro")
+@RequestMapping("/api/v1/token-retiro")
 public class TokenRetiroController {
 
     private final TokenRetiroService service;
@@ -16,18 +20,15 @@ public class TokenRetiroController {
         this.service = service;
     }
 
-    // Generar token
     @PostMapping("/generar")
-    public TokenRetiro generar(
-            @RequestParam Long idCuenta,
-            @RequestParam BigDecimal monto) {
-        return service.generarToken(idCuenta, monto);
+    public ResponseEntity<TokenRetiroRespuestaDTO> generar(
+            @Valid @RequestBody GenerarTokenRetiroSolicitudDTO solicitud,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        return ResponseEntity.ok(service.generarToken(solicitud, usuarioAutenticado.getUsername()));
     }
 
-    // Usar token
-    @PostMapping("/usar")
-    public String usar(@RequestParam String codigo) {
-        service.usarToken(codigo);
-        return "Retiro exitoso";
+    @GetMapping("/{codigo}")
+    public ResponseEntity<TokenRetiroEstadoDTO> consultarEstado(@PathVariable String codigo) {
+        return ResponseEntity.ok(service.consultarEstado(codigo));
     }
 }

@@ -32,9 +32,14 @@ public class FiltroHmacGateway extends OncePerRequestFilter {
         this.secretoBytes = secreto.getBytes(StandardCharsets.UTF_8);
     }
 
+    private static final java.util.Set<String> RUTAS_HMAC = java.util.Set.of(
+            "/api/v1/depositos/notificacion",
+            "/api/v1/retiros/notificacion"
+    );
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"/api/v1/depositos/notificacion".equals(request.getRequestURI());
+        return !RUTAS_HMAC.contains(request.getRequestURI());
     }
 
     @Override
