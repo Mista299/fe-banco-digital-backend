@@ -1,6 +1,7 @@
 package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.CuentaResumenDTO;
+import fe.banco_digital.dto.DashboardResponseDTO;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.TipoCuenta;
@@ -70,16 +71,18 @@ class CuentaControllerTest {
                 new CuentaResumenDTO(cuenta(1L, "00010001", TipoCuenta.AHORROS,   new BigDecimal("150000"), EstadoCuenta.ACTIVA)),
                 new CuentaResumenDTO(cuenta(2L, "00020002", TipoCuenta.CORRIENTE, new BigDecimal("75000"),  EstadoCuenta.ACTIVA))
         );
-        when(cuentaService.obtenerCuentasDelCliente("testuser")).thenReturn(dtos);
+        when(cuentaService.obtenerCuentasDelCliente("testuser"))
+                .thenReturn(new DashboardResponseDTO("Bienvenido", dtos));
 
         mockMvc.perform(get("/api/v1/cuentas/dashboard").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].numeroEnmascarado").value("****0001"))
-                .andExpect(jsonPath("$[0].saldoDisponible").value(true))
-                .andExpect(jsonPath("$[0].permiteTransacciones").value(true))
-                .andExpect(jsonPath("$[1].numeroEnmascarado").value("****0002"))
-                .andExpect(jsonPath("$[1].tipo").value("CORRIENTE"));
+                .andExpect(jsonPath("$.mensajeBienvenida").value("Bienvenido"))
+                .andExpect(jsonPath("$.cuentas.length()").value(2))
+                .andExpect(jsonPath("$.cuentas[0].numeroEnmascarado").value("****0001"))
+                .andExpect(jsonPath("$.cuentas[0].saldoDisponible").value(0))
+                .andExpect(jsonPath("$.cuentas[0].permiteTransacciones").value(true))
+                .andExpect(jsonPath("$.cuentas[1].numeroEnmascarado").value("****0002"))
+                .andExpect(jsonPath("$.cuentas[1].tipo").value("CORRIENTE"));
     }
 
     // Escenario 2: un único producto — lista con un elemento
@@ -88,13 +91,14 @@ class CuentaControllerTest {
         List<CuentaResumenDTO> dtos = List.of(
                 new CuentaResumenDTO(cuenta(1L, "00010001", TipoCuenta.AHORROS, new BigDecimal("200000"), EstadoCuenta.ACTIVA))
         );
-        when(cuentaService.obtenerCuentasDelCliente("testuser")).thenReturn(dtos);
+        when(cuentaService.obtenerCuentasDelCliente("testuser"))
+                .thenReturn(new DashboardResponseDTO("Bienvenido", dtos));
 
         mockMvc.perform(get("/api/v1/cuentas/dashboard").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].numeroEnmascarado").value("****0001"))
-                .andExpect(jsonPath("$[0].saldo").value(200000));
+                .andExpect(jsonPath("$.cuentas.length()").value(1))
+                .andExpect(jsonPath("$.cuentas[0].numeroEnmascarado").value("****0001"))
+                .andExpect(jsonPath("$.cuentas[0].saldo").value(200000));
     }
 
     // Escenario 3: cuenta inactiva — etiqueta visual y transacciones bloqueadas
@@ -104,22 +108,24 @@ class CuentaControllerTest {
                 new CuentaResumenDTO(cuenta(1L, "00010001", TipoCuenta.AHORROS, new BigDecimal("150000"), EstadoCuenta.ACTIVA)),
                 new CuentaResumenDTO(cuenta(2L, "00050001", TipoCuenta.AHORROS, BigDecimal.ZERO,          EstadoCuenta.INACTIVA))
         );
-        when(cuentaService.obtenerCuentasDelCliente("testuser")).thenReturn(dtos);
+        when(cuentaService.obtenerCuentasDelCliente("testuser"))
+                .thenReturn(new DashboardResponseDTO("Bienvenido", dtos));
 
         mockMvc.perform(get("/api/v1/cuentas/dashboard").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[1].etiquetaVisual").value("Cuenta Cerrada"))
-                .andExpect(jsonPath("$[1].permiteTransacciones").value(false))
-                .andExpect(jsonPath("$[1].saldoDisponible").value(true));
+                .andExpect(jsonPath("$.cuentas[1].etiquetaVisual").value("Cuenta Cerrada"))
+                .andExpect(jsonPath("$.cuentas[1].permiteTransacciones").value(false))
+                .andExpect(jsonPath("$.cuentas[1].saldoDisponible").value(0));
     }
 
     // Lista vacía cuando el cliente no tiene cuentas
     @Test
     void obtenerDashboard_retornaListaVacia_cuandoClienteSinCuentas() throws Exception {
-        when(cuentaService.obtenerCuentasDelCliente("testuser")).thenReturn(List.of());
+        when(cuentaService.obtenerCuentasDelCliente("testuser"))
+                .thenReturn(new DashboardResponseDTO("Bienvenido", List.of()));
 
         mockMvc.perform(get("/api/v1/cuentas/dashboard").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.cuentas.length()").value(0));
     }
 }

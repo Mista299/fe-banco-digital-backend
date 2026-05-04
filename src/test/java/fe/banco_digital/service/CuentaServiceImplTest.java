@@ -1,6 +1,7 @@
 package fe.banco_digital.service;
 
 import fe.banco_digital.dto.CuentaResumenDTO;
+import fe.banco_digital.dto.DashboardResponseDTO;
 import fe.banco_digital.entity.*;
 import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.mapper.CuentaMapper;
@@ -75,13 +76,14 @@ class CuentaServiceImplTest {
         when(usuarioRepository.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(cuentaRepository.findByCliente_IdCliente(1L)).thenReturn(cuentas);
 
-        List<CuentaResumenDTO> resultado = cuentaService.obtenerCuentasDelCliente("testuser");
+        DashboardResponseDTO resultado = cuentaService.obtenerCuentasDelCliente("testuser");
 
-        assertThat(resultado).hasSize(2);
-        assertThat(resultado.get(0).getNumeroEnmascarado()).isEqualTo("****0001");
-        assertThat(resultado.get(0).getSaldoDisponible()).isNotNull();
-        assertThat(resultado.get(0).isPermiteTransacciones()).isTrue();
-        assertThat(resultado.get(1).getNumeroEnmascarado()).isEqualTo("****0002");
+        assertThat(resultado.getCuentas()).hasSize(2);
+        assertThat(resultado.getCuentas().get(0).getNumeroEnmascarado()).isEqualTo("****0001");
+        assertThat(resultado.getCuentas().get(0).getSaldoDisponible()).isNotNull();
+        assertThat(resultado.getCuentas().get(0).isPermiteTransacciones()).isTrue();
+        assertThat(resultado.getCuentas().get(1).getNumeroEnmascarado()).isEqualTo("****0002");
+        assertThat(resultado.getMensajeBienvenida()).isNotBlank();
     }
 
     // Escenario 2: una sola cuenta → lista con un elemento
@@ -93,10 +95,10 @@ class CuentaServiceImplTest {
         when(usuarioRepository.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(cuentaRepository.findByCliente_IdCliente(2L)).thenReturn(cuentas);
 
-        List<CuentaResumenDTO> resultado = cuentaService.obtenerCuentasDelCliente("testuser");
+        DashboardResponseDTO resultado = cuentaService.obtenerCuentasDelCliente("testuser");
 
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).getSaldo()).isEqualByComparingTo("200000");
+        assertThat(resultado.getCuentas()).hasSize(1);
+        assertThat(resultado.getCuentas().get(0).getSaldo()).isEqualByComparingTo("200000");
     }
 
     // Escenario 3: cuenta inactiva → etiqueta y transacciones bloqueadas
@@ -113,10 +115,10 @@ class CuentaServiceImplTest {
         when(usuarioRepository.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(cuentaRepository.findByCliente_IdCliente(3L)).thenReturn(List.of(cerrada));
 
-        List<CuentaResumenDTO> resultado = cuentaService.obtenerCuentasDelCliente("testuser");
+        DashboardResponseDTO resultado = cuentaService.obtenerCuentasDelCliente("testuser");
 
-        assertThat(resultado.get(0).getEtiquetaVisual()).isEqualTo("Cuenta Cerrada");
-        assertThat(resultado.get(0).isPermiteTransacciones()).isFalse();
+        assertThat(resultado.getCuentas().get(0).getEtiquetaVisual()).isEqualTo("Cuenta Cerrada");
+        assertThat(resultado.getCuentas().get(0).isPermiteTransacciones()).isFalse();
     }
 
     // Usuario no existe → lanza excepción de autenticación
