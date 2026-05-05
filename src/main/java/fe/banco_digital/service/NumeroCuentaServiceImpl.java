@@ -4,6 +4,7 @@ import fe.banco_digital.repository.CuentaRepository;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class NumeroCuentaServiceImpl implements NumeroCuentaService {
