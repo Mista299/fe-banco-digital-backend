@@ -36,7 +36,6 @@ public class ClienteController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Datos actualizados correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos (ej: formato de email incorrecto)"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
     public ResponseEntity<Map<String, String>> actualizar(
