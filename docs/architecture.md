@@ -6,6 +6,10 @@ El sistema usa **arquitectura en capas** (Layered Architecture). Cada capa tiene
 
 ![Arquitectura general](./diagrams/architecture.svg)
 
+## Diagrama de paquetes y componentes
+
+![Diagrama de paquetes y componentes](./diagrams/package-components.png)
+
 ## Capas
 
 | Capa | Paquete | Responsabilidad |
@@ -18,6 +22,8 @@ El sistema usa **arquitectura en capas** (Layered Architecture). Cada capa tiene
 | Transferencia | `dto/` | Objetos de entrada/salida de la API |
 | Errores | `exception/` | Excepciones de negocio y `GlobalExceptionHandler` |
 | Seguridad | `security/` | JWT, filtros y configuración Spring Security |
+| Eventos | `event/` + `listener/` | Auditoría asíncrona tras cada operación exitosa |
+| Configuración | `config/` | Pool de hilos para tareas asíncronas |
 
 ## Reglas de comunicación
 
@@ -32,19 +38,25 @@ El sistema usa **arquitectura en capas** (Layered Architecture). Cada capa tiene
 src/main/java/fe/banco_digital/
 ├── controller/
 ├── service/
-│   ├── XxxService.java         ← interfaz
-│   └── XxxServiceImpl.java     ← implementación
+│   ├── XxxService.java            ← interfaz
+│   └── XxxServiceImpl.java        ← implementación
 ├── mapper/
 ├── repository/
 ├── entity/
 ├── dto/
 ├── exception/
 │   └── GlobalExceptionHandler.java
-└── security/
-    ├── JwtUtil.java
-    ├── FiltroJwt.java
-    ├── UsuarioDetallesService.java
-    └── ConfiguracionSeguridad.java
+├── security/
+│   ├── JwtUtil.java
+│   ├── FiltroJwt.java
+│   ├── UsuarioDetallesService.java
+│   └── ConfiguracionSeguridad.java
+├── event/
+│   └── AuditoriaEvent.java        ← evento publicado tras cada operación
+├── listener/
+│   └── AuditoriaEventListener.java ← persiste auditoría en hilo separado
+└── config/
+    └── ConfiguracionAsync.java    ← pool de hilos para tareas asíncronas
 ```
 
 ## Decisiones relacionadas

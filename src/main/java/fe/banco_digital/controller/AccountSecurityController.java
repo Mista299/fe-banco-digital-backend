@@ -2,7 +2,10 @@ package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.SolicitudBloqueoDTO;
 import fe.banco_digital.service.AccountSecurityService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,14 +19,18 @@ public class AccountSecurityController {
     }
 
     @PostMapping("/bloquear")
-    public ResponseEntity<String> bloquearCuenta(@RequestBody SolicitudBloqueoDTO solicitud) {
-        service.bloquearCuenta(solicitud.getIdUsuario(), solicitud.getPassword());
+    public ResponseEntity<String> bloquearCuenta(
+            @Valid @RequestBody SolicitudBloqueoDTO solicitud,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        service.bloquearCuenta(usuarioAutenticado.getUsername(), solicitud.getPassword());
         return ResponseEntity.ok("Cuenta bloqueada exitosamente");
     }
 
     @PostMapping("/desbloquear")
-    public ResponseEntity<String> desbloquearCuenta(@RequestBody SolicitudBloqueoDTO solicitud) {
-        service.desbloquearCuenta(solicitud.getIdUsuario(), solicitud.getPassword());
+    public ResponseEntity<String> desbloquearCuenta(
+            @Valid @RequestBody SolicitudBloqueoDTO solicitud,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        service.desbloquearCuenta(usuarioAutenticado.getUsername(), solicitud.getPassword());
         return ResponseEntity.ok("Cuenta desbloqueada exitosamente");
     }
 }

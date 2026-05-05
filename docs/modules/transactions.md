@@ -16,6 +16,18 @@ Registra y ejecuta los movimientos financieros del sistema: depósitos, retiros 
 - No valida identidad del usuario — eso lo hace el módulo de autenticación
 - No gestiona transferencias interbancarias (ACH) — previsto para Sprint 2
 
+## Endpoints
+
+| Método | Ruta | Descripción | Auth requerida |
+|--------|------|-------------|----------------|
+| `POST` | `/api/v1/transacciones/depositar` | Depositar dinero en una cuenta | Sí |
+| `POST` | `/api/v1/transacciones/retirar` | Retirar dinero de una cuenta | Sí |
+| `POST` | `/api/v1/transacciones/transferir` | Transferir entre cuentas | Sí |
+| `GET` | `/api/v1/transacciones/cuenta/{idCuenta}` | Movimientos de una cuenta | Sí |
+| `GET` | `/api/v1/transacciones/cuenta/{idCuenta}/filtro` | Movimientos filtrados por fechas | Sí |
+
+> **Por qué se envía `idCuenta` en el body:** un cliente puede tener varias cuentas y debe elegir sobre cuál operar. El `idCuenta` no es un ID de identidad — es la selección del recurso. El servidor siempre verifica que la cuenta pertenezca al cliente del token; si no, devuelve `403 Forbidden`.
+
 ## Modelo de datos
 
 | Campo | Tipo | Descripción |
@@ -39,7 +51,8 @@ Registra y ejecuta los movimientos financieros del sistema: depósitos, retiros 
 
 | Módulo / Clase | Para qué |
 |----------------|----------|
-| `CuentaRepository` | Leer y actualizar saldos |
+| `CuentaRepository` | Leer y actualizar saldos; verificar propiedad de la cuenta |
 | `TransaccionRepository` | Persistir el registro de la operación |
 | `TransaccionMapper` | Convertir `Transaccion` → `TransaccionDTO` |
 | `AuditoriaRepository` | Registrar la acción en el log de auditoría |
+| `UsuarioRepository` | Obtener el cliente del usuario autenticado para validar propiedad |

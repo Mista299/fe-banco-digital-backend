@@ -36,6 +36,9 @@ class AccountSecurityServiceImplTest {
     @Mock
     PasswordEncoder passwordEncoder;
 
+    @Mock
+    PasswordEncoder passwordEncoder;
+
     @InjectMocks
     AccountSecurityServiceImpl service;
 

@@ -5,6 +5,7 @@ import fe.banco_digital.entity.Cliente;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.Usuario;
+import fe.banco_digital.exception.AccesoNoAutorizadoException;
 import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.ClienteNoEncontradoException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
@@ -30,7 +31,14 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    public ProfileDTO getProfile(Long userId) {
+    public ProfileDTO getProfile(Long userId, String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(AutenticacionFallidaException::new);
+
+        if (!usuario.getCliente().getIdCliente().equals(userId)) {
+            throw new AccesoNoAutorizadoException();
+        }
+
         Cliente cliente = clienteRepository.findById(userId)
                 .orElseThrow(() -> new ClienteNoEncontradoException(userId));
 

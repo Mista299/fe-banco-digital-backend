@@ -17,6 +17,10 @@
 
 La aplicación sigue el patrón **Layered Architecture**. Cada capa tiene una única responsabilidad y solo puede comunicarse con la capa inmediatamente adyacente. Saltarse una capa está prohibido.
 
+## Diagrama de Paquetes y Componentes
+
+![Diagrama de paquetes y componentes](../../docs/diagrams/package-components.svg)
+
 ## Flujo de capas
 
 ![alt text](../imgs/flujo_capas.svg)
@@ -115,6 +119,28 @@ flowchart LR
 
 ---
 
+### ⚡ Event / Listener — asincronismo
+
+**Propósito:** desacoplar operaciones secundarias (auditoría) del flujo principal de negocio. El Service publica un evento; el Listener lo procesa en un hilo separado, después del commit.
+
+**Reglas:**
+- Los eventos se publican desde el Service, nunca desde el Controller.
+- El Listener solo mapea y persiste — sin lógica de negocio.
+- Siempre usar `@TransactionalEventListener(phase = AFTER_COMMIT)` para garantizar que el evento solo se procese si la transacción principal fue exitosa.
+
+> Detalle completo en [`async.md`](./async.md)
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#0891b2", "primaryTextColor": "#ffffff", "primaryBorderColor": "#0e7490", "lineColor": "#64748b", "fontSize": "13px"}} }%%
+
+flowchart LR
+  SV["Service\n@Transactional"] -->|"publishEvent()"| EP["ApplicationEventPublisher"]
+  EP -->|"AFTER_COMMIT\nhilo auditoria-*"| LI["AuditoriaEventListener\n@Async"]
+  LI -->|"INSERT"| DB[("auditoria")]
+```
+
+---
+
 ### ⚠️ Exception — manejo de errores
 
 **Propósito:** centralizar el manejo de errores. Todas las excepciones del negocio se lanzan desde el Service y se capturan en `GlobalExceptionHandler`, que devuelve una respuesta HTTP coherente al cliente.
@@ -186,6 +212,15 @@ src/main/java/fe/banco_digital/
 ├── exception/                ← ⚠️ Manejo de errores
 │   ├── CuentaNoEncontradaException.java
 │   └── GlobalExceptionHandler.java
+│
+├── config/                   ← ⚙️ Configuración de infraestructura
+│   └── ConfiguracionAsync.java    (pool de hilos para auditoría)
+│
+├── event/                    ← ⚡ Eventos de dominio
+│   └── AuditoriaEvent.java
+│
+├── listener/                 ← ⚡ Consumidores de eventos (async)
+│   └── AuditoriaEventListener.java
 │
 └── web/
     └── BancoDigitalApplication.java

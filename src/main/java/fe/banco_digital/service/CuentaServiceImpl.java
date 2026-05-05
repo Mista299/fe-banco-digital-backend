@@ -3,15 +3,15 @@ package fe.banco_digital.service;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
-import fe.banco_digital.entity.Auditoria;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.Usuario;
+import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.*;
 import fe.banco_digital.mapper.CuentaMapper;
-import fe.banco_digital.repository.AuditoriaRepository;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.UsuarioRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,19 +27,18 @@ public class CuentaServiceImpl implements CuentaService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final CuentaMapper cuentaMapper;
-    private final AuditoriaRepository auditoriaRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    // Inyección por constructor — patrón del equipo
     public CuentaServiceImpl(CuentaRepository cuentaRepository,
                              UsuarioRepository usuarioRepository,
                              PasswordEncoder passwordEncoder,
                              CuentaMapper cuentaMapper,
-                             AuditoriaRepository auditoriaRepository) {
+                             ApplicationEventPublisher eventPublisher) {
         this.cuentaRepository = cuentaRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.cuentaMapper = cuentaMapper;
-        this.auditoriaRepository = auditoriaRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -50,10 +49,10 @@ public class CuentaServiceImpl implements CuentaService {
      */
     @Override
     @Transactional
-    public CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud) {
+    public CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud, String username) {
 
         // ── Escenario 4: Re-autenticación ─────────────────────────────────
-        Usuario usuario = usuarioRepository.findByUsername(solicitud.getUsername())
+        Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
 
         boolean contrasenaValida = passwordEncoder.matches(
@@ -84,11 +83,9 @@ public class CuentaServiceImpl implements CuentaService {
         cuenta.setEstado(EstadoCuenta.INACTIVA);
         cuentaRepository.save(cuenta);
 
-        Auditoria auditoria = new Auditoria();
-        auditoria.setAccion("CIERRE_CUENTA");
-        auditoria.setUsuario(usuario);
-        auditoria.setDetalle("Cuenta " + cuenta.getNumeroCuenta() + " cerrada por el cliente.");
-        auditoriaRepository.save(auditoria);
+        eventPublisher.publishEvent(new AuditoriaEvent(this, "CIERRE_CUENTA",
+                usuario.getIdUsuario(),
+                "Cuenta " + cuenta.getNumeroCuenta() + " cerrada por el cliente."));
 
         return new CierreCuentaRespuestaDTO(
                 cuenta.getNumeroCuenta(),

@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "cuenta")
@@ -22,6 +23,10 @@ public class Cuenta {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id_cuenta")
 	private Long idCuenta;
+
+	@Version
+	@Column(name = "version", nullable = false)
+	private Long version = 0L;
 
 	@Column(name = "numero_cuenta", nullable = false, unique = true)
 	private String numeroCuenta;
@@ -47,6 +52,14 @@ public class Cuenta {
 
 	public void setIdCuenta(Long idCuenta) {
 		this.idCuenta = idCuenta;
+	}
+
+	public Long getVersion() {
+		return version;
+	}
+
+	public void setVersion(Long version) {
+		this.version = version;
 	}
 
 	public String getNumeroCuenta() {

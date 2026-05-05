@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -32,6 +33,9 @@ public class AutenticacionController {
 
     private static final String COOKIE_ACCESS  = "accessToken";
     private static final String COOKIE_REFRESH = "refreshToken";
+
+    @Value("${app.https:false}")
+    private boolean httpsSeguro;
 
     private final AutenticacionService autenticacionService;
     private final RefreshTokenService refreshTokenService;
@@ -101,22 +105,20 @@ public class AutenticacionController {
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private void setearCookies(HttpServletResponse response, String accessToken, String refreshToken) {
-        // Access token: disponible en toda la app, expira en 10 min
         ResponseCookie cookieAccess = ResponseCookie.from(COOKIE_ACCESS, accessToken)
-                .httpOnly(true)          // JavaScript no puede leerla
+                .httpOnly(true)
                 .path("/")
                 .maxAge(600)
-                // .secure(true)         // Descomentar en producción (HTTPS)
-                .sameSite("Lax")
+                .secure(httpsSeguro)
+                .sameSite(httpsSeguro ? "Strict" : "Lax")
                 .build();
 
-        // Refresh token: solo se envía al endpoint de refresh, expira en 7 días
         ResponseCookie cookieRefresh = ResponseCookie.from(COOKIE_REFRESH, refreshToken)
                 .httpOnly(true)
                 .path("/api/v1/auth/refresh")
                 .maxAge(7L * 24 * 60 * 60)
-                // .secure(true)         // Descomentar en producción (HTTPS)
-                .sameSite("Lax")
+                .secure(httpsSeguro)
+                .sameSite(httpsSeguro ? "Strict" : "Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookieAccess.toString());

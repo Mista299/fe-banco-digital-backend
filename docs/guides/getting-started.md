@@ -22,9 +22,23 @@ DB_USER=postgres
 DB_PASS=
 DDL_AUTO=update
 JWT_SECRET=clave-secreta-larga-minimo-32-caracteres
+SHOW_SQL=false
+HTTPS_SEGURO=false
+CORS_ORIGENES=http://localhost:3000,http://localhost:5173
 ```
 
-> `DDL_AUTO=update` conserva el esquema entre reinicios. En un entorno limpio, el valor por defecto es `create` (borra y recrea todo).
+> **`JWT_SECRET` es obligatorio** — la app no arranca sin él. Usa una cadena aleatoria de al menos 32 caracteres.
+>
+> `DDL_AUTO=update` conserva el esquema entre reinicios. En un entorno limpio el valor por defecto es `create` (borra y recrea todo).
+>
+> En **producción** (HTTPS), añadir `HTTPS_SEGURO=true` para activar `.secure()` y `SameSite=Strict` en las cookies de sesión.
+
+| Variable        | Descripción |
+|-----------------|-------------|
+| `JWT_SECRET`    | Secreto de firma de los access tokens JWT |
+| `SHOW_SQL`      | Loguea queries SQL — solo para debugging local |
+| `HTTPS_SEGURO`  | `true` en producción para cookies seguras |
+| `CORS_ORIGENES` | Orígenes del frontend permitidos, separados por coma |
 
 ## Ejecutar
 

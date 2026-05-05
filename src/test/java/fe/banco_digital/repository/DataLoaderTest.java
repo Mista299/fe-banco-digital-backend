@@ -11,18 +11,26 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DataLoaderTest {
 
-    @Mock ClienteRepository clienteRepo;
-    @Mock UsuarioRepository usuarioRepo;
-    @Mock RolRepository rolRepo;
-    @Mock CuentaRepository cuentaRepo;
-    @Mock TransaccionRepository transaccionRepo;
-    @Mock AuditoriaRepository auditoriaRepo;
-    @Mock PasswordEncoder passwordEncoder;
+    @Mock
+    ClienteRepository clienteRepo;
+    @Mock
+    UsuarioRepository usuarioRepo;
+    @Mock
+    RolRepository rolRepo;
+    @Mock
+    CuentaRepository cuentaRepo;
+    @Mock
+    TransaccionRepository transaccionRepo;
+    @Mock
+    AuditoriaRepository auditoriaRepo;
+    @Mock
+    PasswordEncoder passwordEncoder;
 
     @InjectMocks
     DataLoader dataLoader;
@@ -42,7 +50,7 @@ class DataLoaderTest {
         when(cuentaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(transaccionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(auditoriaRepo.save(any())).thenAnswer(i -> i.getArgument(0));
-
+        when(passwordEncoder.encode(anyString())).thenAnswer(i -> "hashed_" + i.getArgument(0));
 
         var runner = dataLoader.init(clienteRepo, usuarioRepo, rolRepo, cuentaRepo, transaccionRepo, auditoriaRepo, passwordEncoder);
         runner.run();

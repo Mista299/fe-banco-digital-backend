@@ -1,0 +1,33 @@
+name: Sync to Mirror
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MIRROR_SSH_KEY }}
+
+      - name: Clone mirror
+        run: git clone git@github.com:Camilo-Marsel/Repo-Backend-Espejo.git /tmp/mirror
+
+      - name: Sync source code (excluding .github)
+        run: rsync -av --exclude='.github' --exclude='.git' --delete . /tmp/mirror/
+
+      - name: Commit and push to mirror
+        run: |
+          cd /tmp/mirror
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+          git add -A
+          git diff --cached --quiet || git commit -m "sync: update from main"
+          git push origin main

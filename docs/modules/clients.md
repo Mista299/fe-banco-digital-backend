@@ -20,7 +20,9 @@ Gestiona la información personal de los clientes del banco y expone el perfil d
 | Método | Ruta | Descripción | Auth requerida |
 |--------|------|-------------|----------------|
 | `GET` | `/api/v1/profile/{userId}` | Consultar perfil del cliente | Sí |
-| `PUT` | `/api/v1/clientes/{id}` | Actualizar datos editables | Sí |
+| `PUT` | `/api/v1/clientes/me` | Actualizar datos editables del cliente autenticado | Sí |
+
+> **Origen del ID:** `PUT /api/v1/clientes/me` no recibe ningún ID en la URL ni en el body. El servidor extrae el `username` del JWT y desde ahí resuelve el `idCliente`. No es posible editar los datos de otro cliente desde este endpoint.
 
 ## Campos editables vs. de solo lectura
 
@@ -52,7 +54,7 @@ Respuesta:
 
 **Actualizar datos:**
 ```http
-PUT /api/v1/clientes/1
+PUT /api/v1/clientes/me
 Authorization: Bearer eyJ...
 Content-Type: application/json
 
@@ -62,10 +64,13 @@ Content-Type: application/json
 }
 ```
 
+> No se envía ningún ID. El servidor identifica al cliente por el token.
+
 ## Dependencias
 
 | Módulo / Clase | Para qué |
 |----------------|----------|
 | `ClienteRepository` | Consultar y actualizar datos del cliente |
 | `CuentaRepository` | Obtener la cuenta activa del cliente para el perfil |
+| `UsuarioRepository` | Verificar que el usuario autenticado es el propietario del recurso |
 | `ClienteMapper` | Convertir `Cliente` → `ProfileDTO` / `ClienteDTO` |
