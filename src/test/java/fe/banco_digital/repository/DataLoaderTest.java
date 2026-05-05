@@ -8,7 +8,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -56,12 +55,13 @@ class DataLoaderTest {
         var runner = dataLoader.init(clienteRepo, usuarioRepo, rolRepo, cuentaRepo, transaccionRepo, auditoriaRepo, passwordEncoder);
         runner.run();
 
-        // verify some saves were attempted
         verify(rolRepo, atLeastOnce()).save(any(Rol.class));
         verify(clienteRepo, atLeastOnce()).save(any(Cliente.class));
         verify(usuarioRepo, atLeastOnce()).save(any(Usuario.class));
         verify(cuentaRepo, atLeastOnce()).save(any(Cuenta.class));
         verify(transaccionRepo, atLeastOnce()).save(any(Transaccion.class));
         verify(auditoriaRepo, atLeastOnce()).save(any(Auditoria.class));
+
+        verify(passwordEncoder, never()).encode(any());
     }
 }

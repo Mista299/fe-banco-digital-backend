@@ -48,4 +48,18 @@ public class ProfileServiceImpl implements ProfileService {
 
         return ProfileMapper.toDTO(cliente, cuenta);
     }
+
+    @Override
+    public ProfileDTO getProfileByUsername(String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(AutenticacionFallidaException::new);
+
+        Cliente cliente = usuario.getCliente();
+
+        Cuenta cuenta = cuentaRepository
+                .findFirstByClienteIdClienteAndEstado(cliente.getIdCliente(), EstadoCuenta.ACTIVA)
+                .orElseThrow(() -> new CuentaNoEncontradaException(cliente.getIdCliente()));
+
+        return ProfileMapper.toDTO(cliente, cuenta);
+    }
 }

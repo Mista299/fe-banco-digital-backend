@@ -1,11 +1,9 @@
 package fe.banco_digital.service;
 
-import fe.banco_digital.entity.Auditoria;
 import fe.banco_digital.entity.Cliente;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.Usuario;
-import fe.banco_digital.repository.AuditoriaRepository;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -32,7 +31,10 @@ class AccountSecurityServiceImplTest {
     CuentaRepository cuentaRepo;
 
     @Mock
-    AuditoriaRepository auditoriaRepo;
+    ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    PasswordEncoder passwordEncoder;
 
     @Mock
     PasswordEncoder passwordEncoder;
@@ -70,7 +72,7 @@ class AccountSecurityServiceImplTest {
         service.bloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
-        verify(auditoriaRepo).save(any(Auditoria.class));
+        verify(eventPublisher).publishEvent(any());
     }
 
     @Test
@@ -96,7 +98,7 @@ class AccountSecurityServiceImplTest {
         service.desbloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
-        verify(auditoriaRepo).save(any(Auditoria.class));
+        verify(eventPublisher).publishEvent(any());
     }
 
     @Test
