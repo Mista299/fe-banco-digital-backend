@@ -110,7 +110,7 @@ public class AutenticacionController {
                 .path("/")
                 .maxAge(600)
                 .secure(httpsSeguro)
-                .sameSite(httpsSeguro ? "Strict" : "Lax")
+                .sameSite(httpsSeguro ? "None" : "Lax")
                 .build();
 
         ResponseCookie cookieRefresh = ResponseCookie.from(COOKIE_REFRESH, refreshToken)
@@ -118,7 +118,7 @@ public class AutenticacionController {
                 .path("/api/v1/auth/refresh")
                 .maxAge(7L * 24 * 60 * 60)
                 .secure(httpsSeguro)
-                .sameSite(httpsSeguro ? "Strict" : "Lax")
+                .sameSite(httpsSeguro ? "None" : "Lax")
                 .build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookieAccess.toString());
