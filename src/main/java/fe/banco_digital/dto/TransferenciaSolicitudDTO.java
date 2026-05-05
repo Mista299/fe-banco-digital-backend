@@ -10,6 +10,9 @@ public class TransferenciaSolicitudDTO {
     @NotNull(message = "El id de la cuenta origen es obligatorio.")
     private Long idCuentaOrigen;
 
+    @NotBlank(message = "El número de cuenta origen es obligatorio")
+    private String numeroCuentaOrigen;
+
     @NotBlank(message = "El número de cuenta destino es obligatorio.")
     private String numeroCuentaDestino;
 
@@ -19,6 +22,14 @@ public class TransferenciaSolicitudDTO {
 
     public Long getIdCuentaOrigen() { return idCuentaOrigen; }
     public void setIdCuentaOrigen(Long idCuentaOrigen) { this.idCuentaOrigen = idCuentaOrigen; }
+
+    public String getNumeroCuentaOrigen() {
+        return numeroCuentaOrigen;
+    }
+
+    public void setNumeroCuentaOrigen(String numeroCuentaOrigen) {
+        this.numeroCuentaOrigen = numeroCuentaOrigen;
+    }
 
     public String getNumeroCuentaDestino() { return numeroCuentaDestino; }
     public void setNumeroCuentaDestino(String numeroCuentaDestino) { this.numeroCuentaDestino = numeroCuentaDestino; }

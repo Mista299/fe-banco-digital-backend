@@ -30,6 +30,9 @@ public class ConfiguracionSeguridad {
     @Value("${app.cors.origenes:http://localhost:3000,http://localhost:5173}")
     private String corsOrigenes;
 
+    @Value("${app.gateway.secreto}")
+    private String gatewaySecreto;
+
     private final UsuarioDetallesService usuarioDetallesService;
     private final JwtUtil jwtUtil;
 
@@ -61,6 +64,11 @@ public class ConfiguracionSeguridad {
     }
 
     @Bean
+    public FiltroHmacGateway filtroHmacGateway() {
+        return new FiltroHmacGateway(gatewaySecreto);
+    }
+
+    @Bean
     public CorsConfigurationSource fuenteConfiguracionCors() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(corsOrigenes.split(",")));
@@ -81,6 +89,8 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/registro/**",
+                                "/api/v1/depositos/**",
+                                "/api/v1/retiros/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",
@@ -101,6 +111,7 @@ public class ConfiguracionSeguridad {
                         })
                 )
                 .authenticationProvider(proveedorAutenticacion())
+                .addFilterBefore(filtroHmacGateway(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(filtroJwt(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

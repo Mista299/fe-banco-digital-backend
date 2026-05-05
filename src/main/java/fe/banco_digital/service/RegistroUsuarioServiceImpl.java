@@ -113,6 +113,7 @@ public class RegistroUsuarioServiceImpl implements RegistroUsuarioService {
         response.setIdCuenta(cuentaGuardada.getIdCuenta());
         response.setNumeroCuenta(cuentaGuardada.getNumeroCuenta());
         response.setSaldo(cuentaGuardada.getSaldo());
+        response.setEstadoCuenta(cuentaGuardada.getEstado().name());
         response.setMensaje("Cliente registrado exitosamente, junto al número de cuenta y saldo.");
         return response;
     }

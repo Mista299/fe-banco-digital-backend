@@ -1,10 +1,6 @@
 package fe.banco_digital.service;
 
-import fe.banco_digital.dto.DepositoSolicitudDTO;
-import fe.banco_digital.dto.MovimientoDTO;
-import fe.banco_digital.dto.RetiroSolicitudDTO;
-import fe.banco_digital.dto.TransaccionRespuestaDTO;
-import fe.banco_digital.dto.TransferenciaSolicitudDTO;
+import fe.banco_digital.dto.*;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.EstadoTransaccion;
@@ -217,4 +213,57 @@ public class TransaccionServiceImpl implements TransaccionService {
         cuentaRepository.findByIdCuentaAndCliente_IdCliente(idCuenta,
                 usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
     }
+
+    @Override
+    @Transactional  // escenario 4 — atomicidad total
+    public TransaccionRespuestaDTO ejecutarTransferenciaMismoBanco(TransferenciaSolicitudDTO dto, String username) {
+
+        // ── Escenario 3: Validar cuenta destino ANTES de llamar al motor ──────
+        // Si no existe, lanzamos excepción inmediata y ahorramos recursos.
+        Cuenta destino = cuentaRepository
+                .findByNumeroCuenta(dto.getNumeroCuentaDestino())
+                .orElseThrow(() -> new CuentaNoEncontradaException(Long.parseLong(dto.getNumeroCuentaDestino())));
+
+        // ── Validar cuenta origen: pertenece al usuario autenticado ───────────
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(AutenticacionFallidaException::new);
+
+        Cuenta origen = cuentaRepository
+                .findByNumeroCuentaAndCliente_IdCliente(
+                        dto.getNumeroCuentaOrigen(),
+                        usuario.getCliente().getIdCliente())
+                .orElseThrow(AccesoNoAutorizadoException::new);
+
+        // ── Escenario 2: Motor de validación de fondos ────────────────────────
+        // Se ejecuta SOLO si la cuenta destino existe (escenario 3 pasó).
+        if (origen.getEstado() == EstadoCuenta.BLOQUEADA) {
+            throw new CuentaBloqueadaException(origen.getNumeroCuenta());
+        }
+        if (destino.getEstado() == EstadoCuenta.BLOQUEADA) {
+            throw new CuentaBloqueadaException(destino.getNumeroCuenta());
+        }
+        if (origen.getSaldo().compareTo(dto.getMonto()) < 0) {
+            throw new SaldoInsuficienteException();
+        }
+
+        // ── Escenarios 1 + 4: Movimiento atómico + persistencia contable ─────
+        // Spring garantiza rollback total si cualquier línea falla.
+        origen.setSaldo(origen.getSaldo().subtract(dto.getMonto()));
+        destino.setSaldo(destino.getSaldo().add(dto.getMonto()));
+        cuentaRepository.save(origen);
+        cuentaRepository.save(destino);
+
+        Transaccion tx = new Transaccion();
+        tx.setCuentaOrigen(origen);
+        tx.setCuentaDestino(destino);
+        tx.setMonto(dto.getMonto());
+        tx.setTipo(TipoTransaccion.TRANSFERENCIA);
+        tx.setEstado(EstadoTransaccion.EXITOSA);
+        tx.setFecha(LocalDateTime.now());           // ISO 8601 — escenario 4
+        Transaccion txGuardada = transaccionRepository.save(tx);
+
+        // ── Escenario 1: Respuesta con notificación "Transferencia Exitosa" ───
+        return construirRespuesta(tx, origen.getSaldo(), "Transferencia realizada exitosamente.");
+    }
+
 }

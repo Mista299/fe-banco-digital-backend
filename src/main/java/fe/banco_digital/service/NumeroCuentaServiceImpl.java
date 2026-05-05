@@ -22,8 +22,8 @@ public class NumeroCuentaServiceImpl implements NumeroCuentaService {
     public String generarNumeroCuenta() {
         String numero;
         do {
-            long valor = secureRandom.nextLong(MINIMO, MINIMO + RANGO);
-            numero = String.valueOf(valor);
+            long sufijo = ThreadLocalRandom.current().nextLong(1000000L, 9999999L);
+            numero = "500" + sufijo;
         } while (cuentaRepository.existsByNumeroCuenta(numero));
         return numero;
     }
