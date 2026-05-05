@@ -44,6 +44,9 @@ public class Cuenta {
     @Column(name = "saldo_reservado", precision = 19, scale = 4, nullable = false, columnDefinition = "DECIMAL(19,4) DEFAULT 0")
     private BigDecimal saldoReservado = BigDecimal.ZERO;
 
+	@Column(name = "cvc", length = 3)
+	private String cvc;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "estado", nullable = false)
 	private EstadoCuenta estado = EstadoCuenta.ACTIVA;
@@ -113,6 +116,14 @@ public void setSaldoReservado(BigDecimal saldoReservado) {
 
 	public void setEstado(EstadoCuenta estado) {
 		this.estado = estado;
+	}
+
+	public String getCvc() {
+		return cvc;
+	}
+
+	public void setCvc(String cvc) {
+		this.cvc = cvc;
 	}
 
 	public Cliente getCliente() {

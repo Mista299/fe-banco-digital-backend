@@ -163,6 +163,7 @@ public class DataLoader {
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.ACTIVA);
                 cta.setSaldo(new BigDecimal("850000.00"));
+                cta.setCvc("471");
                 cta.setCliente(c1);
                 return cuentaRepo.save(cta);
             });
@@ -173,6 +174,7 @@ public class DataLoader {
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.ACTIVA);
                 cta.setSaldo(new BigDecimal("1200000.00"));
+                cta.setCvc("389");
                 cta.setCliente(c2);
                 return cuentaRepo.save(cta);
             });
@@ -183,6 +185,7 @@ public class DataLoader {
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.ACTIVA);
                 cta.setSaldo(BigDecimal.ZERO);
+                cta.setCvc("215");
                 cta.setCliente(c3);
                 return cuentaRepo.save(cta);
             });
@@ -193,6 +196,7 @@ public class DataLoader {
                 cta.setTipo(TipoCuenta.CORRIENTE);
                 cta.setEstado(EstadoCuenta.ACTIVA);
                 cta.setSaldo(new BigDecimal("50000.00"));
+                cta.setCvc("762");
                 cta.setCliente(c4);
                 return cuentaRepo.save(cta);
             });
@@ -203,6 +207,7 @@ public class DataLoader {
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.INACTIVA);
                 cta.setSaldo(BigDecimal.ZERO);
+                cta.setCvc("934");
                 cta.setCliente(c5);
                 return cuentaRepo.save(cta);
             });
