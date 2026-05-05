@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -36,6 +37,9 @@ class AccountSecurityServiceImplTest {
 
     @Mock
     PasswordEncoder passwordEncoder;
+
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     AccountSecurityServiceImpl service;
@@ -70,7 +74,7 @@ class AccountSecurityServiceImplTest {
         service.bloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
-        verify(auditoriaRepo).save(any(Auditoria.class));
+        verify(eventPublisher).publishEvent(any());
     }
 
     @Test
@@ -96,7 +100,7 @@ class AccountSecurityServiceImplTest {
         service.desbloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
-        verify(auditoriaRepo).save(any(Auditoria.class));
+        verify(eventPublisher).publishEvent(any());
     }
 
     @Test

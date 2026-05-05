@@ -10,7 +10,11 @@ import org.springframework.test.context.TestPropertySource;
 		"spring.datasource.driver-class-name=org.h2.Driver",
 		"spring.datasource.username=sa",
 		"spring.datasource.password=",
-		"spring.jpa.hibernate.ddl-auto=create-drop"
+		"spring.jpa.hibernate.ddl-auto=create-drop",
+		"jwt.secreto=test-secret-para-context-load-tests-minimo-32-chars",
+		"jwt.expiracion-access-ms=600000",
+		"jwt.expiracion-refresh-dias=7",
+		"app.gateway.secreto=test-gateway-secret"
 })
 class BancoDigitalApplicationTests {
 

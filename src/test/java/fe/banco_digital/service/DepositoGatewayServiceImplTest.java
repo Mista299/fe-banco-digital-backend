@@ -3,12 +3,15 @@ package fe.banco_digital.service;
 import fe.banco_digital.dto.ComprobanteDepositoDTO;
 import fe.banco_digital.dto.NotificacionDepositoDTO;
 import fe.banco_digital.entity.Cuenta;
+import fe.banco_digital.entity.DepositoPendiente;
 import fe.banco_digital.entity.EstadoCuenta;
+import fe.banco_digital.entity.EstadoDepositoPendiente;
 import fe.banco_digital.entity.EstadoTransaccion;
 import fe.banco_digital.entity.TipoTransaccion;
 import fe.banco_digital.entity.Transaccion;
 import fe.banco_digital.exception.DepositoRechazadoException;
 import fe.banco_digital.repository.CuentaRepository;
+import fe.banco_digital.repository.DepositoPendienteRepository;
 import fe.banco_digital.repository.TransaccionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,7 @@ class DepositoGatewayServiceImplTest {
 
     @Mock private CuentaRepository cuentaRepository;
     @Mock private TransaccionRepository transaccionRepository;
+    @Mock private DepositoPendienteRepository depositoPendienteRepository;
     @Mock private RegistroFalloService registroFalloService;
 
     @InjectMocks
@@ -39,6 +43,7 @@ class DepositoGatewayServiceImplTest {
 
     private Cuenta cuentaActiva;
     private NotificacionDepositoDTO notificacion;
+    private DepositoPendiente pendienteValido;
 
     @BeforeEach
     void setUp() {
@@ -52,6 +57,12 @@ class DepositoGatewayServiceImplTest {
         notificacion.setMonto(new BigDecimal("50000.00"));
         notificacion.setReferenciaGateway("REF-001");
         notificacion.setCanalOrigen("PSE");
+
+        pendienteValido = new DepositoPendiente();
+        pendienteValido.setNumeroCuenta("5001000001");
+        pendienteValido.setMonto(new BigDecimal("50000.00"));
+        pendienteValido.setEstado(EstadoDepositoPendiente.PENDIENTE);
+        pendienteValido.setFechaExpiracion(LocalDateTime.now().plusMinutes(10));
     }
 
     @Test
@@ -62,6 +73,8 @@ class DepositoGatewayServiceImplTest {
         transaccionGuardada.setEstado(EstadoTransaccion.EXITOSA);
         transaccionGuardada.setFecha(LocalDateTime.now());
 
+        when(depositoPendienteRepository.findByReferenciaGateway("REF-001"))
+                .thenReturn(Optional.of(pendienteValido));
         when(cuentaRepository.findByNumeroCuentaConLock("5001000001"))
                 .thenReturn(Optional.of(cuentaActiva));
         when(transaccionRepository.save(any())).thenReturn(transaccionGuardada);
@@ -83,6 +96,8 @@ class DepositoGatewayServiceImplTest {
         transaccionGuardada.setEstado(EstadoTransaccion.EXITOSA);
         transaccionGuardada.setFecha(LocalDateTime.now());
 
+        when(depositoPendienteRepository.findByReferenciaGateway("REF-001"))
+                .thenReturn(Optional.of(pendienteValido));
         when(cuentaRepository.findByNumeroCuentaConLock(any())).thenReturn(Optional.of(cuentaActiva));
         when(transaccionRepository.save(any())).thenReturn(transaccionGuardada);
 
@@ -100,6 +115,8 @@ class DepositoGatewayServiceImplTest {
 
     @Test
     void procesarNotificacion_rechazaCuentaNoEncontrada() {
+        when(depositoPendienteRepository.findByReferenciaGateway("REF-001"))
+                .thenReturn(Optional.of(pendienteValido));
         when(cuentaRepository.findByNumeroCuentaConLock(any())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> servicio.procesarNotificacion(notificacion))
@@ -116,6 +133,8 @@ class DepositoGatewayServiceImplTest {
     @Test
     void procesarNotificacion_rechazaCuentaBloqueada() {
         cuentaActiva.setEstado(EstadoCuenta.BLOQUEADA);
+        when(depositoPendienteRepository.findByReferenciaGateway("REF-001"))
+                .thenReturn(Optional.of(pendienteValido));
         when(cuentaRepository.findByNumeroCuentaConLock(any())).thenReturn(Optional.of(cuentaActiva));
 
         assertThatThrownBy(() -> servicio.procesarNotificacion(notificacion))
@@ -134,6 +153,8 @@ class DepositoGatewayServiceImplTest {
     @Test
     void procesarNotificacion_rechazaCuentaCerrada() {
         cuentaActiva.setEstado(EstadoCuenta.INACTIVA);
+        when(depositoPendienteRepository.findByReferenciaGateway("REF-001"))
+                .thenReturn(Optional.of(pendienteValido));
         when(cuentaRepository.findByNumeroCuentaConLock(any())).thenReturn(Optional.of(cuentaActiva));
 
         assertThatThrownBy(() -> servicio.procesarNotificacion(notificacion))
@@ -153,6 +174,8 @@ class DepositoGatewayServiceImplTest {
     void procesarNotificacion_noModificaSaldoCuandoRechaza() {
         cuentaActiva.setEstado(EstadoCuenta.BLOQUEADA);
         BigDecimal saldoOriginal = cuentaActiva.getSaldo();
+        when(depositoPendienteRepository.findByReferenciaGateway("REF-001"))
+                .thenReturn(Optional.of(pendienteValido));
         when(cuentaRepository.findByNumeroCuentaConLock(any())).thenReturn(Optional.of(cuentaActiva));
 
         assertThatThrownBy(() -> servicio.procesarNotificacion(notificacion))
