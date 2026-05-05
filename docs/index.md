@@ -26,21 +26,6 @@ Sistema de banca digital (backend REST) construido con Java 17 + Spring Boot 3 +
 | [Cuentas](./modules/accounts.md) | Cuentas bancarias, estados y tipos |
 | [Transacciones](./modules/transactions.md) | Depósitos, retiros y transferencias |
 
-## Historias de usuario
-
-| Documento | Descripción |
-|-----------|-------------|
-| [HU-07 — Dashboard de cuentas](./hu/hu-07-dashboard-cuentas.md) | Endpoint de listado de cuentas con número enmascarado y estados visuales |
-| [HU-09 — Depósito gateway HMAC](./hu/hu-09-deposito-gateway-hmac.md) | Recepción de notificaciones de pasarela con autenticación HMAC-SHA256 |
-
-## Casos de prueba
-
-| Documento | Descripción |
-|-----------|-------------|
-| [HU-01 — Registro](./tests/hu-01-test-cases.md) | Casos de prueba del registro de nuevos usuarios |
-| [HU-07 — Dashboard](./tests/hu-07-test-cases.md) | Casos de prueba del dashboard de cuentas |
-| [HU-09 — Gateway HMAC](./tests/hu-09-test-cases.md) | Casos de prueba del depósito por pasarela |
-
 ## Decisiones técnicas
 
 | Documento | Descripción |
@@ -55,3 +40,18 @@ Sistema de banca digital (backend REST) construido con Java 17 + Spring Boot 3 +
 | [architecture.svg](./diagrams/architecture.svg) | Capas del sistema y flujo general |
 | [auth-flow.svg](./diagrams/auth-flow.svg) | Flujo de autenticación JWT |
 | [database.svg](./diagrams/database.svg) | Modelo entidad-relación |
+
+## Historias de usuario
+
+| Documento | Descripción |
+|-----------|-------------|
+| [HU-01 Registro de usuarios](./hu/ft-01-hu-01-registro-nuevos-usuarios.md) | Registro de perfil, cliente y cuenta inicial |
+| [HU-12 Transferencia a otros bancos](./hu/hu-12-transferencia-fondos-otros-bancos.md) | Transferencias interbancarias mediante proceso ACH |
+| [HU-13 Motor de Validación](./hu/hu-13-motor-validacion.md) | Validación automática de saldo y estado de cuenta |
+| [Task 59 y Task 60](./hu/task-59-60-transacciones.md) | Registro de transacciones y campo tipo_operacion |
+
+## Casos de prueba
+
+| Documento | Descripción |
+|-----------|-------------|
+| [Casos HU-12 / HU-13](./tests/iteration-2-hu-12-hu-13-test-cases.md) | Matriz de pruebas para Iteration 2 |

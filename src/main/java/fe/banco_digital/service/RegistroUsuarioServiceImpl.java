@@ -24,14 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Set;
 
 @Service
 public class RegistroUsuarioServiceImpl implements RegistroUsuarioService {
-
-    private static final SecureRandom RNG = new SecureRandom();
 
     private final ClienteRepository clienteRepository;
     private final UsuarioRepository usuarioRepository;
@@ -93,7 +90,6 @@ public class RegistroUsuarioServiceImpl implements RegistroUsuarioService {
         cuenta.setTipo(TipoCuenta.AHORROS);
         cuenta.setEstado(EstadoCuenta.ACTIVA);
         cuenta.setSaldo(BigDecimal.ZERO);
-        cuenta.setCvc(String.format("%03d", RNG.nextInt(1000)));
         Cuenta cuentaGuardada = cuentaRepository.save(cuenta);
 
         Rol rolCliente = rolRepository.findByNombre(RolNombre.CLIENTE)
@@ -117,7 +113,6 @@ public class RegistroUsuarioServiceImpl implements RegistroUsuarioService {
         response.setIdCuenta(cuentaGuardada.getIdCuenta());
         response.setNumeroCuenta(cuentaGuardada.getNumeroCuenta());
         response.setSaldo(cuentaGuardada.getSaldo());
-        response.setEstadoCuenta(cuentaGuardada.getEstado().name());
         response.setMensaje("Cliente registrado exitosamente, junto al número de cuenta y saldo.");
         return response;
     }

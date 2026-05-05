@@ -1,6 +1,5 @@
 package fe.banco_digital.exception;
 
-import fe.banco_digital.dto.RechazoDepositoDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -15,16 +14,6 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    @ExceptionHandler(DepositoRechazadoException.class)
-    public ResponseEntity<RechazoDepositoDTO> manejarDepositoRechazado(DepositoRechazadoException ex) {
-        return ResponseEntity.unprocessableEntity().body(ex.getRechazo());
-    }
-
-    @ExceptionHandler(RetiroRechazadoException.class)
-    public ResponseEntity<Map<String, Object>> manejarRetiroRechazado(RetiroRechazadoException ex) {
-        return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
-    }
 
     @ExceptionHandler(SaldoPendienteException.class)
     public ResponseEntity<Map<String, Object>> manejarSaldoPendiente(SaldoPendienteException ex) {
@@ -95,6 +84,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CamposObligatoriosException.class)
     public ResponseEntity<Map<String, Object>> manejarCamposObligatorios(CamposObligatoriosException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+
+    @ExceptionHandler(OperacionNoPermitidaException.class)
+    public ResponseEntity<Map<String, Object>> manejarOperacionNoPermitida(OperacionNoPermitidaException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(TransaccionNoEncontradaException.class)
+    public ResponseEntity<Map<String, Object>> manejarTransaccionNoEncontrada(TransaccionNoEncontradaException ex) {
+        return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
