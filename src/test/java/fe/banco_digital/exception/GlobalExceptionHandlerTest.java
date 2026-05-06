@@ -1,10 +1,7 @@
 package fe.banco_digital.exception;
 
-import fe.banco_digital.dto.RegistroRequestDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.BeanUtils;
-import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -21,6 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@SuppressWarnings({"java:S1192", "java:S112"})
 class GlobalExceptionHandlerTest {
 
     private MockMvc mockMvc;
@@ -82,6 +80,84 @@ class GlobalExceptionHandlerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("No se pudo cargar")));
     }
 
+    @Test
+    void manejarDepositoRechazado() throws Exception {
+        mockMvc.perform(get("/test/deposito-rechazado"))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void manejarRetiroRechazado() throws Exception {
+        mockMvc.perform(get("/test/retiro-rechazado"))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void manejarSaldoPendiente() throws Exception {
+        mockMvc.perform(get("/test/saldo-pendiente"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void manejarSaldoInsuficiente() throws Exception {
+        mockMvc.perform(get("/test/saldo-insuficiente"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void manejarCuentaBloqueada() throws Exception {
+        mockMvc.perform(get("/test/cuenta-bloqueada"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void manejarAutenticacionFallida() throws Exception {
+        mockMvc.perform(get("/test/autenticacion-fallida"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void manejarCuentaNoEncontrada() throws Exception {
+        mockMvc.perform(get("/test/cuenta-no-encontrada"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void manejarCuentaYaCerrada() throws Exception {
+        mockMvc.perform(get("/test/cuenta-ya-cerrada"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void manejarIdentificacionDuplicada() throws Exception {
+        mockMvc.perform(get("/test/identificacion-duplicada"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void manejarEmailYaExiste() throws Exception {
+        mockMvc.perform(get("/test/email-ya-existe"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void manejarAccesoNoAutorizado() throws Exception {
+        mockMvc.perform(get("/test/acceso-no-autorizado"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void manejarCamposObligatorios() throws Exception {
+        mockMvc.perform(get("/test/campos-obligatorios"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void manejarConflictoConcurrencia() throws Exception {
+        mockMvc.perform(get("/test/concurrencia"))
+                .andExpect(status().isConflict());
+    }
+
     @RestController
     static class TestController {
 
@@ -117,7 +193,6 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/test/validacion")
         public void validacion() throws Exception {
-            // construct a MethodArgumentNotValidException with a FieldError
             Method method = TestController.class.getMethod("validacion");
             org.springframework.core.MethodParameter mp = new org.springframework.core.MethodParameter(method, -1);
             BeanPropertyBindingResult br = new BeanPropertyBindingResult(new Object(), "obj");
@@ -128,6 +203,73 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/generico")
         public void generico() {
             throw new RuntimeException("boom");
+        }
+
+        @GetMapping("/test/deposito-rechazado")
+        public void depositoRechazado() {
+            throw new DepositoRechazadoException(
+                    new fe.banco_digital.dto.RechazoDepositoDTO("Sin fondos", "00010001",
+                            java.math.BigDecimal.TEN, "REF-001", "ATM"));
+        }
+
+        @GetMapping("/test/retiro-rechazado")
+        public void retiroRechazado() {
+            throw new RetiroRechazadoException("Retiro no permitido");
+        }
+
+        @GetMapping("/test/saldo-pendiente")
+        public void saldoPendiente() {
+            throw new SaldoPendienteException();
+        }
+
+        @GetMapping("/test/saldo-insuficiente")
+        public void saldoInsuficiente() {
+            throw new SaldoInsuficienteException();
+        }
+
+        @GetMapping("/test/cuenta-bloqueada")
+        public void cuentaBloqueada() {
+            throw new CuentaBloqueadaException("00010001");
+        }
+
+        @GetMapping("/test/autenticacion-fallida")
+        public void autenticacionFallida() {
+            throw new AutenticacionFallidaException();
+        }
+
+        @GetMapping("/test/cuenta-no-encontrada")
+        public void cuentaNoEncontrada() {
+            throw new CuentaNoEncontradaException(1L);
+        }
+
+        @GetMapping("/test/cuenta-ya-cerrada")
+        public void cuentaYaCerrada() {
+            throw new CuentaYaCerradaException("00010001");
+        }
+
+        @GetMapping("/test/identificacion-duplicada")
+        public void identificacionDuplicada() {
+            throw new IdentificacionDuplicadaException("12345678");
+        }
+
+        @GetMapping("/test/email-ya-existe")
+        public void emailYaExiste() {
+            throw new EmailYaExisteException("test@test.com");
+        }
+
+        @GetMapping("/test/acceso-no-autorizado")
+        public void accesoNoAutorizado() {
+            throw new AccesoNoAutorizadoException();
+        }
+
+        @GetMapping("/test/campos-obligatorios")
+        public void camposObligatorios() {
+            throw new CamposObligatoriosException();
+        }
+
+        @GetMapping("/test/concurrencia")
+        public void concurrencia() {
+            throw new org.springframework.orm.ObjectOptimisticLockingFailureException("Cuenta", 1L);
         }
     }
 }
