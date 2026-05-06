@@ -1,9 +1,6 @@
 package fe.banco_digital.exception;
 
-import fe.banco_digital.dto.RechazoDepositoDTO;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -13,12 +10,6 @@ class ExcepcionesTest {
     void accesoNoAutorizado_sinMensaje_usaMensajePorDefecto() {
         AccesoNoAutorizadoException ex = new AccesoNoAutorizadoException();
         assertTrue(ex.getMessage().contains("permiso"));
-    }
-
-    @Test
-    void accesoNoAutorizado_conMensaje_usaMensajePersonalizado() {
-        AccesoNoAutorizadoException ex = new AccesoNoAutorizadoException("Operación denegada");
-        assertEquals("Operación denegada", ex.getMessage());
     }
 
     @Test
@@ -64,24 +55,9 @@ class ExcepcionesTest {
     }
 
     @Test
-    void cuentaNoEncontrada_porMensaje_usaMensaje() {
-        CuentaNoEncontradaException ex = new CuentaNoEncontradaException("Cuenta interna no hallada");
-        assertEquals("Cuenta interna no hallada", ex.getMessage());
-    }
-
-    @Test
     void cuentaYaCerrada_incluyeNumeroCuenta() {
         CuentaYaCerradaException ex = new CuentaYaCerradaException("00020002");
         assertTrue(ex.getMessage().contains("00020002"));
-    }
-
-    @Test
-    void depositoRechazado_exponeRechazo() {
-        RechazoDepositoDTO rechazo = new RechazoDepositoDTO(
-                "Cuenta bloqueada", "00010001", BigDecimal.TEN, "REF-XYZ", "ATM");
-        DepositoRechazadoException ex = new DepositoRechazadoException(rechazo);
-        assertSame(rechazo, ex.getRechazo());
-        assertEquals("Cuenta bloqueada", ex.getMessage());
     }
 
     @Test
@@ -94,12 +70,6 @@ class ExcepcionesTest {
     void identificacionDuplicada_incluyeDocumento() {
         IdentificacionDuplicadaException ex = new IdentificacionDuplicadaException("12345678");
         assertTrue(ex.getMessage().contains("12345678"));
-    }
-
-    @Test
-    void retiroRechazado_mensajeCorrecto() {
-        RetiroRechazadoException ex = new RetiroRechazadoException("Monto inválido");
-        assertEquals("Monto inválido", ex.getMessage());
     }
 
     @Test

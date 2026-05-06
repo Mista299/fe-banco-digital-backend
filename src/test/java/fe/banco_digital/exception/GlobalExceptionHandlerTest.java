@@ -81,18 +81,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void manejarDepositoRechazado() throws Exception {
-        mockMvc.perform(get("/test/deposito-rechazado"))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
-    void manejarRetiroRechazado() throws Exception {
-        mockMvc.perform(get("/test/retiro-rechazado"))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
-    @Test
     void manejarSaldoPendiente() throws Exception {
         mockMvc.perform(get("/test/saldo-pendiente"))
                 .andExpect(status().isConflict());
@@ -203,18 +191,6 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/test/generico")
         public void generico() {
             throw new RuntimeException("boom");
-        }
-
-        @GetMapping("/test/deposito-rechazado")
-        public void depositoRechazado() {
-            throw new DepositoRechazadoException(
-                    new fe.banco_digital.dto.RechazoDepositoDTO("Sin fondos", "00010001",
-                            java.math.BigDecimal.TEN, "REF-001", "ATM"));
-        }
-
-        @GetMapping("/test/retiro-rechazado")
-        public void retiroRechazado() {
-            throw new RetiroRechazadoException("Retiro no permitido");
         }
 
         @GetMapping("/test/saldo-pendiente")

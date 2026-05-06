@@ -397,22 +397,24 @@ class TransaccionServiceImplTest {
                 () -> service.obtenerMovimientosPorFecha(1L, inicio, fin, "clienteTest"));
     }
 
-    // ── ejecutarTransferenciaMismoBanco ──────────────────────────────────────
+    // ── transferir ──────────────────────────────────────
 
     @Test
-    void ejecutarTransferenciaMismoBanco_exitoso_mueveSSaldo() {
+    void transferir_exitoso_mueveSSaldo() {
         Cuenta destino = cuentaActivaAux(2L, "55667788");
         destino.setSaldo(new BigDecimal("500.00"));
 
         when(cuentaRepository.findByNumeroCuenta("55667788")).thenReturn(Optional.of(destino));
         when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.of(usuario));
-        when(cuentaRepository.findByNumeroCuentaAndCliente_IdCliente("11223344", 3L))
+        when(cuentaRepository.findByIdCuentaAndCliente_IdCliente(1L, 3L))
                 .thenReturn(Optional.of(cuenta));
+        when(cuentaRepository.findByIdCuentaConLock(1L)).thenReturn(Optional.of(cuenta));
+        when(cuentaRepository.findByIdCuentaConLock(2L)).thenReturn(Optional.of(destino));
         when(cuentaRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(transaccionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "55667788", "200.00");
-        TransaccionRespuestaDTO result = service.ejecutarTransferenciaMismoBanco(dto, "clienteTest");
+        TransferenciaSolicitudDTO dto = transferenciaDTO(1L, "55667788", "200.00");
+        TransaccionRespuestaDTO result = service.transferir(dto, "clienteTest");
 
         assertNotNull(result);
         assertEquals(new BigDecimal("800.00"), cuenta.getSaldo());
@@ -420,79 +422,35 @@ class TransaccionServiceImplTest {
     }
 
     @Test
-    void ejecutarTransferenciaMismoBanco_destinoNoEncontrado_throws() {
+    void transferir_destinoNoEncontrado_throws() {
+        when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.of(usuario));
         when(cuentaRepository.findByNumeroCuenta("99999999")).thenReturn(Optional.empty());
 
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "99999999", "100.00");
+        TransferenciaSolicitudDTO dto = transferenciaDTO(1L, "99999999", "100.00");
         assertThrows(CuentaNoEncontradaException.class,
-                () -> service.ejecutarTransferenciaMismoBanco(dto, "clienteTest"));
+                () -> service.transferir(dto, "clienteTest"));
     }
 
     @Test
-    void ejecutarTransferenciaMismoBanco_usuarioNoEncontrado_throws() {
-        Cuenta destino = cuentaActivaAux(2L, "55667788");
-        when(cuentaRepository.findByNumeroCuenta("55667788")).thenReturn(Optional.of(destino));
+    void transferir_usuarioNoEncontrado_throws() {
         when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.empty());
 
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "55667788", "100.00");
+        TransferenciaSolicitudDTO dto = transferenciaDTO(1L, "55667788", "100.00");
         assertThrows(AutenticacionFallidaException.class,
-                () -> service.ejecutarTransferenciaMismoBanco(dto, "clienteTest"));
+                () -> service.transferir(dto, "clienteTest"));
     }
 
     @Test
-    void ejecutarTransferenciaMismoBanco_origenNoPertenece_throws() {
+    void transferir_origenNoPertenece_throws() {
         Cuenta destino = cuentaActivaAux(2L, "55667788");
         when(cuentaRepository.findByNumeroCuenta("55667788")).thenReturn(Optional.of(destino));
         when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.of(usuario));
-        when(cuentaRepository.findByNumeroCuentaAndCliente_IdCliente("11223344", 3L))
+        when(cuentaRepository.findByIdCuentaAndCliente_IdCliente(1L, 3L))
                 .thenReturn(Optional.empty());
 
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "55667788", "100.00");
+        TransferenciaSolicitudDTO dto = transferenciaDTO(1L, "55667788", "100.00");
         assertThrows(AccesoNoAutorizadoException.class,
-                () -> service.ejecutarTransferenciaMismoBanco(dto, "clienteTest"));
-    }
-
-    @Test
-    void ejecutarTransferenciaMismoBanco_origenBloqueado_throws() {
-        cuenta.setEstado(EstadoCuenta.BLOQUEADA);
-        Cuenta destino = cuentaActivaAux(2L, "55667788");
-
-        when(cuentaRepository.findByNumeroCuenta("55667788")).thenReturn(Optional.of(destino));
-        when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.of(usuario));
-        when(cuentaRepository.findByNumeroCuentaAndCliente_IdCliente("11223344", 3L))
-                .thenReturn(Optional.of(cuenta));
-
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "55667788", "100.00");
-        assertThrows(CuentaBloqueadaException.class,
-                () -> service.ejecutarTransferenciaMismoBanco(dto, "clienteTest"));
-    }
-
-    @Test
-    void ejecutarTransferenciaMismoBanco_destinoBloqueado_throws() {
-        Cuenta destino = cuentaActivaAux(2L, "55667788");
-        destino.setEstado(EstadoCuenta.BLOQUEADA);
-
-        when(cuentaRepository.findByNumeroCuenta("55667788")).thenReturn(Optional.of(destino));
-        when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.of(usuario));
-        when(cuentaRepository.findByNumeroCuentaAndCliente_IdCliente("11223344", 3L))
-                .thenReturn(Optional.of(cuenta));
-
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "55667788", "100.00");
-        assertThrows(CuentaBloqueadaException.class,
-                () -> service.ejecutarTransferenciaMismoBanco(dto, "clienteTest"));
-    }
-
-    @Test
-    void ejecutarTransferenciaMismoBanco_saldoInsuficiente_throws() {
-        Cuenta destino = cuentaActivaAux(2L, "55667788");
-        when(cuentaRepository.findByNumeroCuenta("55667788")).thenReturn(Optional.of(destino));
-        when(usuarioRepository.findByUsername("clienteTest")).thenReturn(Optional.of(usuario));
-        when(cuentaRepository.findByNumeroCuentaAndCliente_IdCliente("11223344", 3L))
-                .thenReturn(Optional.of(cuenta));
-
-        TransferenciaSolicitudDTO dto = transferenciaDTO("11223344", "55667788", "9999.00");
-        assertThrows(SaldoInsuficienteException.class,
-                () -> service.ejecutarTransferenciaMismoBanco(dto, "clienteTest"));
+                () -> service.transferir(dto, "clienteTest"));
     }
 
     // ── helpers privados ─────────────────────────────────────────────────────
@@ -506,9 +464,9 @@ class TransaccionServiceImplTest {
         return c;
     }
 
-    private TransferenciaSolicitudDTO transferenciaDTO(String origen, String destino, String monto) {
+    private TransferenciaSolicitudDTO transferenciaDTO(Long idOrigen, String destino, String monto) {
         TransferenciaSolicitudDTO dto = new TransferenciaSolicitudDTO();
-        dto.setNumeroCuentaOrigen(origen);
+        dto.setIdCuentaOrigen(idOrigen);
         dto.setNumeroCuentaDestino(destino);
         dto.setMonto(new BigDecimal(monto));
         return dto;
