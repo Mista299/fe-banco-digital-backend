@@ -56,3 +56,34 @@ Registra y ejecuta los movimientos financieros del sistema: depósitos, retiros 
 | `TransaccionMapper` | Convertir `Transaccion` → `TransaccionDTO` |
 | `AuditoriaRepository` | Registrar la acción en el log de auditoría |
 | `UsuarioRepository` | Obtener el cliente del usuario autenticado para validar propiedad |
+
+## Iteration 2 - Nuevas capacidades
+
+### Task 59 - Registro de transacción
+
+El endpoint de depósito registra una fila en `transaccion` con fecha, monto, estado y `tipo_operacion = DEPOSITO`.
+
+### Task 60 - Ajuste del modelo
+
+La entidad `Transaccion` ahora mapea el tipo de movimiento en la columna `tipo_operacion`, permitiendo distinguir depósitos, retiros, transferencias internas, transferencias interbancarias y reversos ACH.
+
+### HU-13 - Motor de Validación
+
+Nuevo endpoint:
+
+```http
+POST /api/v1/validaciones/transaccion
+```
+
+Valida saldo y estado de cuenta antes de permitir operaciones de salida.
+
+### HU-12 - Transferencias interbancarias
+
+Nuevos endpoints:
+
+```http
+POST /api/v1/transferencias/interbancarias
+POST /api/v1/transferencias/interbancarias/{idTransaccion}/rechazo-ach
+```
+
+El primer endpoint crea una orden ACH en estado `PENDIENTE_PROCESAMIENTO`; el segundo reversa fondos cuando la red ACH rechaza la operación.

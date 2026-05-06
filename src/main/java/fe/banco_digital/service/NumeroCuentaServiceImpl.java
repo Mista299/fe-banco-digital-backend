@@ -22,7 +22,7 @@ public class NumeroCuentaServiceImpl implements NumeroCuentaService {
     public String generarNumeroCuenta() {
         String numero;
         do {
-            long valor = MINIMO + secureRandom.nextLong(RANGO);
+            long valor = secureRandom.nextLong(MINIMO, MINIMO + RANGO);
             numero = String.valueOf(valor);
         } while (cuentaRepository.existsByNumeroCuenta(numero));
         return numero;

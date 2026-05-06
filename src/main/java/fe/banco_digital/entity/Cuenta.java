@@ -1,4 +1,5 @@
 package fe.banco_digital.entity;
+
 import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
@@ -36,16 +37,6 @@ public class Cuenta {
 
 	@Column(name = "saldo", precision = 19, scale = 4)
 	private BigDecimal saldo = BigDecimal.ZERO;
-
-	// NUEVOS CAMPOS (HU10)
-    @Column(name = "saldo_disponible", precision = 19, scale = 4, nullable = false, columnDefinition = "DECIMAL(19,4) DEFAULT 0")
-    private BigDecimal saldoDisponible = BigDecimal.ZERO;
-
-    @Column(name = "saldo_reservado", precision = 19, scale = 4, nullable = false, columnDefinition = "DECIMAL(19,4) DEFAULT 0")
-    private BigDecimal saldoReservado = BigDecimal.ZERO;
-
-	@Column(name = "cvc", length = 3)
-	private String cvc;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "estado", nullable = false)
@@ -90,21 +81,6 @@ public class Cuenta {
 	public BigDecimal getSaldo() {
 		return saldo;
 	}
-	public BigDecimal getSaldoDisponible() {
-    return saldoDisponible;
-   }
-
-   public void setSaldoDisponible(BigDecimal saldoDisponible) {
-    this.saldoDisponible = saldoDisponible;
-    }
-
-    public BigDecimal getSaldoReservado() {
-    return saldoReservado;
-   }
-
-public void setSaldoReservado(BigDecimal saldoReservado) {
-    this.saldoReservado = saldoReservado;
-   }
 
 	public void setSaldo(BigDecimal saldo) {
 		this.saldo = saldo;
@@ -116,14 +92,6 @@ public void setSaldoReservado(BigDecimal saldoReservado) {
 
 	public void setEstado(EstadoCuenta estado) {
 		this.estado = estado;
-	}
-
-	public String getCvc() {
-		return cvc;
-	}
-
-	public void setCvc(String cvc) {
-		this.cvc = cvc;
 	}
 
 	public Cliente getCliente() {

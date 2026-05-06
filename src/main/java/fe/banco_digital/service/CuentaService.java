@@ -2,8 +2,9 @@ package fe.banco_digital.service;
 
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
-import fe.banco_digital.dto.DashboardResponseDTO;
+import fe.banco_digital.dto.CuentaResumenDTO;
 
+import java.util.List;
 
 public interface CuentaService {
 
@@ -11,5 +12,5 @@ public interface CuentaService {
     CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud, String username);
 
     // Escenario 3
-    DashboardResponseDTO obtenerCuentasDelCliente(String username);
+    List<CuentaResumenDTO> obtenerCuentasDelCliente(String username);
 }

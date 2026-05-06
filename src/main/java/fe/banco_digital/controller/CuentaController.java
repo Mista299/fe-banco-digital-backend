@@ -2,7 +2,7 @@ package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
-import fe.banco_digital.dto.DashboardResponseDTO;
+import fe.banco_digital.dto.CuentaResumenDTO;
 import fe.banco_digital.service.CuentaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/cuentas")
@@ -65,10 +66,10 @@ public class CuentaController {
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     @GetMapping("/dashboard")
-    public ResponseEntity<DashboardResponseDTO> obtenerDashboard(
+    public ResponseEntity<List<CuentaResumenDTO>> obtenerDashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
-        DashboardResponseDTO cuentas =
+        List<CuentaResumenDTO> cuentas =
                 cuentaService.obtenerCuentasDelCliente(usuarioAutenticado.getUsername());
         return ResponseEntity.ok(cuentas);
     }

@@ -2,6 +2,6 @@ package fe.banco_digital.exception;
 
 public class SaldoInsuficienteException extends RuntimeException {
     public SaldoInsuficienteException() {
-        super("Saldo insuficiente para realizar la operación.");
+        super("Saldo insuficiente para completar esta operación.");
     }
 }

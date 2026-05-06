@@ -10,7 +10,6 @@ public class RegistroNuevoUsuarioResponseDTO {
     private String numeroCuenta;
     private BigDecimal saldo;
     private String mensaje;
-    private String estadoCuenta;
 
     public Long getIdCliente() {
         return idCliente;
@@ -51,10 +50,6 @@ public class RegistroNuevoUsuarioResponseDTO {
     public void setSaldo(BigDecimal saldo) {
         this.saldo = saldo;
     }
-
-    public String getEstadoCuenta(){return estadoCuenta; }
-
-    public void setEstadoCuenta(String estadoCuenta){this.estadoCuenta = estadoCuenta; }
 
     public String getMensaje() {
         return mensaje;

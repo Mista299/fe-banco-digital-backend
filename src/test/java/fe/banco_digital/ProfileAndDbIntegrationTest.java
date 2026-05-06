@@ -37,8 +37,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "JWT_SECRET=test-secret-para-integration-tests",
-        "GATEWAY_SECRET=test-gateway-secret"
+        "JWT_SECRET=test-secret-para-integration-tests"
 })
 public class ProfileAndDbIntegrationTest {
 
