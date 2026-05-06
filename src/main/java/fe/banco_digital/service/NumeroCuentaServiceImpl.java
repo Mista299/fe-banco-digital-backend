@@ -4,7 +4,6 @@ import fe.banco_digital.repository.CuentaRepository;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class NumeroCuentaServiceImpl implements NumeroCuentaService {
@@ -23,8 +22,8 @@ public class NumeroCuentaServiceImpl implements NumeroCuentaService {
     public String generarNumeroCuenta() {
         String numero;
         do {
-            long sufijo = ThreadLocalRandom.current().nextLong(1000000L, 9999999L);
-            numero = "500" + sufijo;
+            long valor = MINIMO + secureRandom.nextLong(RANGO);
+            numero = String.valueOf(valor);
         } while (cuentaRepository.existsByNumeroCuenta(numero));
         return numero;
     }
