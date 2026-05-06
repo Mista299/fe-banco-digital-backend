@@ -81,6 +81,8 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/registro/**",
+                                "/api/v1/transferencias/interbancarias/*/confirmacion-ach",
+                                "/api/v1/transferencias/interbancarias/*/rechazo-ach",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",

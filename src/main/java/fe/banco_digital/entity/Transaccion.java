@@ -33,7 +33,7 @@ public class Transaccion {
     private Cuenta cuentaDestino;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_operacion", nullable = false)
+    @Column(name = "tipo", nullable = false)
     private TipoTransaccion tipo;
 
     @Column(name = "monto", nullable = false, precision = 19, scale = 4)

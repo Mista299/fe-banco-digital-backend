@@ -1,5 +1,6 @@
 package fe.banco_digital.service;
 
+import fe.banco_digital.dto.ConfirmacionAchSolicitudDTO;
 import fe.banco_digital.dto.RechazoAchSolicitudDTO;
 import fe.banco_digital.dto.TransferenciaInterbancariaResponseDTO;
 import fe.banco_digital.dto.TransferenciaInterbancariaSolicitudDTO;
@@ -147,6 +148,44 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
 
         return construirRespuesta(transaccion, origen.getSaldo(),
                 "La red ACH rechazó la operación. Se reversó automáticamente el valor al saldo del emisor.");
+    }
+
+    @Override
+    @Transactional
+    public TransferenciaInterbancariaResponseDTO registrarConfirmacionAch(Long idTransaccion,
+                                                                          ConfirmacionAchSolicitudDTO solicitud) {
+        Transaccion transaccion = transaccionRepository.findById(idTransaccion)
+                .orElseThrow(() -> new TransaccionNoEncontradaException(idTransaccion));
+
+        if (transaccion.getTipo() != TipoTransaccion.TRANSFERENCIA_INTERBANCARIA) {
+            throw new OperacionNoPermitidaException("La transacción no corresponde a una transferencia interbancaria.");
+        }
+
+        if (transaccion.getEstado() != EstadoTransaccion.PENDIENTE_PROCESAMIENTO) {
+            throw new OperacionNoPermitidaException("Solo se pueden confirmar transacciones pendientes de procesamiento ACH.");
+        }
+
+        transaccion.setEstado(EstadoTransaccion.EXITOSA);
+        if (solicitud.getReferenciaConfirmacion() != null) {
+            transaccion.setReferenciaExterna(solicitud.getReferenciaConfirmacion());
+        }
+        transaccionRepository.save(transaccion);
+
+        Long idUsuarioAuditoria = usuarioRepository
+                .findByCliente_IdCliente(transaccion.getCuentaOrigen().getCliente().getIdCliente())
+                .map(Usuario::getIdUsuario)
+                .orElse(null);
+        if (idUsuarioAuditoria != null) {
+            eventPublisher.publishEvent(new AuditoriaEvent(this, "CONFIRMACION_ACH", idUsuarioAuditoria,
+                    "Confirmación ACH de transacción " + idTransaccion + ". Referencia: "
+                            + transaccion.getReferenciaExterna()));
+        }
+
+        Cuenta origen = cuentaRepository.findById(transaccion.getCuentaOrigen().getIdCuenta())
+                .orElseThrow(() -> new CuentaNoEncontradaException(transaccion.getCuentaOrigen().getIdCuenta()));
+
+        return construirRespuesta(transaccion, origen.getSaldo(),
+                "La red ACH confirmó la transferencia exitosamente.");
     }
 
     private TransferenciaInterbancariaResponseDTO construirRespuesta(Transaccion transaccion,
