@@ -83,7 +83,7 @@ public class ConfiguracionSeguridad {
     @Bean
     public SecurityFilterChain cadenaFiltros(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) //NOSONAR: API REST stateless con JWT — CSRF no aplica
                 .cors(cors -> cors.configurationSource(fuenteConfiguracionCors()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
