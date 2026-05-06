@@ -43,7 +43,7 @@ public class CuentaResumenDTO {
 
     private static String derivarCvc(String numero) {
         if (numero == null) return "000";
-        return String.format("%03d", Math.abs(numero.hashCode()) % 1000);
+        return String.format("%03d", (numero.hashCode() & Integer.MAX_VALUE) % 1000);
     }
 
     public Long getIdCuenta() { return idCuenta; }

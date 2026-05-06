@@ -17,10 +17,12 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 public class TokenRetiroServiceImpl implements TokenRetiroService {
+
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     private final CuentaRepository cuentaRepository;
     private final TokenRetiroRepository tokenRepository;
@@ -145,8 +147,7 @@ public class TokenRetiroServiceImpl implements TokenRetiroService {
     }
 
     private String generarCodigo6Digitos() {
-        Random random = new Random();
-        int numero = 100000 + random.nextInt(900000);
+        int numero = 100000 + secureRandom.nextInt(900000);
         return String.valueOf(numero);
     }
 }
