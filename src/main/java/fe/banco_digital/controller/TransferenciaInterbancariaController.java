@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -81,5 +82,15 @@ public class TransferenciaInterbancariaController {
         if (!gatewaySecret.equals(secret)) throw new AccesoNoAutorizadoException();
         return ResponseEntity.ok(
                 transferenciaInterbancariaService.registrarConfirmacionAch(idTransaccion, solicitud));
+    }
+
+    @Operation(summary = "Consultar estado de una transferencia interbancaria")
+    @GetMapping("/{idTransaccion}")
+    public ResponseEntity<TransferenciaInterbancariaResponseDTO> consultar(
+            @PathVariable Long idTransaccion,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        return ResponseEntity.ok(
+                transferenciaInterbancariaService.consultarTransferencia(
+                        idTransaccion, usuarioAutenticado.getUsername()));
     }
 }

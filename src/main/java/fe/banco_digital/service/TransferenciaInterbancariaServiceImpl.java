@@ -188,6 +188,28 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
                 "La red ACH confirmó la transferencia exitosamente.");
     }
 
+    @Override
+    public TransferenciaInterbancariaResponseDTO consultarTransferencia(Long idTransaccion, String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(AutenticacionFallidaException::new);
+
+        Transaccion transaccion = transaccionRepository.findById(idTransaccion)
+                .orElseThrow(() -> new TransaccionNoEncontradaException(idTransaccion));
+
+        if (transaccion.getCuentaOrigen() == null ||
+                !transaccion.getCuentaOrigen().getCliente().getIdCliente()
+                        .equals(usuario.getCliente().getIdCliente())) {
+            throw new AccesoNoAutorizadoException();
+        }
+
+        java.math.BigDecimal saldo = cuentaRepository
+                .findById(transaccion.getCuentaOrigen().getIdCuenta())
+                .map(Cuenta::getSaldo)
+                .orElse(java.math.BigDecimal.ZERO);
+
+        return construirRespuesta(transaccion, saldo, "Estado ACH.");
+    }
+
     private TransferenciaInterbancariaResponseDTO construirRespuesta(Transaccion transaccion,
                                                                     java.math.BigDecimal saldoResultante,
                                                                     String mensaje) {
