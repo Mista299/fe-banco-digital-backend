@@ -36,5 +36,9 @@ jobs:
           name: jacoco-report
           path: target/site/jacoco/
 
+      - name: SonarCloud Analysis
+        run: mvn -B sonar:sonar -Dsonar.projectKey=Mista299_fe-banco-digital-backend -Dsonar.organization=mista299
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-          
