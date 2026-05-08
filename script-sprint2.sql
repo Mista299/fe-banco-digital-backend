@@ -7,6 +7,7 @@
 -- Limpieza (orden inverso a FK)
 -- -------------------------------------------------------------
 DROP TABLE IF EXISTS refresh_token   CASCADE;
+DROP TABLE IF EXISTS token_retiro    CASCADE;
 DROP TABLE IF EXISTS auditoria       CASCADE;
 DROP TABLE IF EXISTS transaccion     CASCADE;
 DROP TABLE IF EXISTS usuario_rol     CASCADE;
@@ -110,6 +111,21 @@ CREATE TABLE refresh_token (
 );
 
 -- -------------------------------------------------------------
+-- token_retiro  (códigos de 6 dígitos para retiro sin tarjeta)
+-- -------------------------------------------------------------
+CREATE TABLE token_retiro (
+    id_token         BIGSERIAL      PRIMARY KEY,
+    codigo           VARCHAR(6)     NOT NULL UNIQUE,
+    estado           VARCHAR(20)    NOT NULL DEFAULT 'ACTIVO'
+                                    CONSTRAINT token_retiro_estado_check
+                                    CHECK (estado IN ('ACTIVO', 'USADO', 'EXPIRADO')),
+    fecha_creacion   TIMESTAMP      NOT NULL DEFAULT NOW(),
+    fecha_expiracion TIMESTAMP      NOT NULL,
+    monto            DECIMAL(19,4)  NOT NULL,
+    id_cuenta        BIGINT         NOT NULL REFERENCES cuenta(id_cuenta)
+);
+
+-- -------------------------------------------------------------
 -- Índices
 -- -------------------------------------------------------------
 CREATE INDEX idx_cuenta_cliente       ON cuenta(id_cliente);
@@ -117,6 +133,8 @@ CREATE INDEX idx_transaccion_origen   ON transaccion(id_cuenta_origen);
 CREATE INDEX idx_transaccion_destino  ON transaccion(id_cuenta_destino);
 CREATE INDEX idx_auditoria_usuario    ON auditoria(id_usuario);
 CREATE INDEX idx_refresh_token_usuario ON refresh_token(id_usuario);
+CREATE INDEX idx_token_retiro_cuenta   ON token_retiro(id_cuenta);
+CREATE INDEX idx_token_retiro_estado   ON token_retiro(estado);
 
 -- =============================================================
 -- Datos semilla (equivalente al perfil "seed" de Spring)
