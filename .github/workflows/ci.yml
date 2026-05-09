@@ -2,9 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ '**' ]
+    branches:
+      - '**'
+
   pull_request:
-    branches: [ '**' ]
+    branches:
+      - '**'
 
 jobs:
   tests:
@@ -12,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -23,14 +26,22 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Cache Maven local repository
+      - name: Cache Maven packages
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
 
-      - name: Run Tests
-        run: mvn clean test
+      - name: Run unit tests
+        run: mvn -B clean test
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
 
   sonar:
     name: SonarCloud analysis
@@ -38,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -49,11 +60,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
       - name: Analyze with SonarCloud
-        run: mvn -B clean verify sonar:sonar \
-          -Dsonar.host.url=https://sonarcloud.io \
-          -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
-          -Dsonar.organization=mista299
+        run: |
+          mvn -B clean verify sonar:sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
+            -Dsonar.organization=mista299
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
