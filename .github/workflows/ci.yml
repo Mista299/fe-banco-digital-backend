@@ -110,3 +110,16 @@ jobs:
         with:
           name: banco-digital-artifact
           path: target/banco-digital-0.0.1-SNAPSHOT.jar
+
+  docker:
+    name: Docker Build
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t banco-digital .
