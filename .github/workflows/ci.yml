@@ -16,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -35,8 +36,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Run unit tests
-        run: mvn -B clean test
+      - name: Run unit tests with JaCoCo
+        run: mvn -B clean verify
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4
@@ -50,6 +51,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -71,10 +73,11 @@ jobs:
 
       - name: Analyze with SonarCloud
         run: |
-          mvn -B clean verify sonar:sonar \
+          mvn -B verify sonar:sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
-            -Dsonar.organization=mista299
+            -Dsonar.organization=mista299 \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -85,6 +88,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -117,9 +121,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Build Docker image
         run: |
           docker build -t banco-digital .
+
+      - name: Verify Docker image
+        run: |
+          docker images
