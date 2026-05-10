@@ -1,5 +1,9 @@
 name: CI/CD
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   push:
     branches:
@@ -71,10 +75,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Analyze with SonarCloud
+      - name: SonarCloud Scan
         run: |
-          mvn -B verify sonar:sonar \
-            -Dsonar.host.url=https://sonarcloud.io \
+          mvn -B sonar:sonar \
             -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
             -Dsonar.organization=mista299 \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
