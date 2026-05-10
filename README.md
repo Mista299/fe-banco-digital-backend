@@ -10,6 +10,39 @@ Backend REST de un sistema de banca digital que permite gestionar clientes, cuen
 [![CI](https://github.com/Mista299/fe-banco-digital-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Mista299/fe-banco-digital-backend/actions/workflows/ci.yml)
 [![JaCoCo Coverage](https://img.shields.io/badge/coverage-61.48%25-yellow.svg)](target/site/jacoco/index.html)
 
+## CI/CD Pipeline
+
+This project includes a complete CI/CD pipeline using GitHub Actions.
+
+### Pipeline stages
+
+- Unit testing with JUnit and JaCoCo
+- Static code analysis with SonarCloud
+- Maven build verification
+- Docker image build validation
+
+### Tools used
+
+- Java 17
+- Maven
+- GitHub Actions
+- SonarCloud
+- Docker
+
+### Quality assurance
+
+The pipeline validates:
+
+- Code compilation
+- Unit test execution
+- Code coverage
+- Static analysis rules
+- Docker image generation
+
+### Branch strategy
+
+Development changes are validated in feature branches before merging into the main branch.
+
 **Nota:** se añadieron tests y un workflow CI que ejecuta la suite de pruebas y publica los reportes de JaCoCo y Surefire como artefactos. El workflow no bloquea merges por ahora.
 
 ## Arquitectura
