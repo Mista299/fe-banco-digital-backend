@@ -12,10 +12,10 @@ Backend REST de un sistema de banca digital que permite gestionar clientes, cuen
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
 [![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
-https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=vulnerabilities
-https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=bugs
-https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=duplicated_lines_density
-https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=reliability_rating
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=xiomara-udea_fe-banco-digital-backend&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=xiomara-udea_fe-banco-digital-backend)
 
 
 
