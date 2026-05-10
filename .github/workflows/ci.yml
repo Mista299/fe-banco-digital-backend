@@ -77,7 +77,8 @@ jobs:
 
       - name: SonarCloud Scan
         run: |
-          mvn -B sonar:sonar \
+          mvn -B clean verify sonar:sonar \
+            -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
             -Dsonar.organization=mista299 \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
