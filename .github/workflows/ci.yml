@@ -75,13 +75,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
+      - name: Download JaCoCo report
+        uses: actions/download-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+
       - name: SonarCloud Scan
         run: |
-          mvn -B clean verify sonar:sonar \
+          mvn -B sonar:sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
             -Dsonar.organization=mista299 \
-            -Dsonar.branch.name=xiomara-dev \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
