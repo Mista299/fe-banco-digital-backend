@@ -35,10 +35,10 @@ jobs:
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
+          path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-m2-
+            ${{ runner.os }}-m2
 
       - name: Run unit tests with JaCoCo
         run: mvn -B clean verify
@@ -51,6 +51,7 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco/
+
 
   sonar:
     name: SonarCloud analysis
@@ -70,25 +71,33 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: |
+            ${{ runner.os }}-sonar
+
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
+          path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-m2-
+            ${{ runner.os }}-m2
 
       - name: SonarCloud Scan
-        run: |
-          mvn -B verify sonar:sonar \
-            -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
-            -Dsonar.organization=mista299 \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${SONAR_TOKEN}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+        run: |
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
+            -Dsonar.organization=mista299 \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
 
   build:
@@ -110,10 +119,10 @@ jobs:
       - name: Cache Maven packages
         uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
+          path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-m2-
+            ${{ runner.os }}-m2
 
       - name: Build with Maven
         run: mvn -B package -DskipTests
@@ -123,6 +132,7 @@ jobs:
         with:
           name: banco-digital-artifact
           path: target/banco-digital-0.0.1-SNAPSHOT.jar
+
 
   docker:
     name: Docker Build & Push
@@ -152,5 +162,4 @@ jobs:
           docker push xiomara0327/mista299_banco-digital:${{ github.sha }}
 
       - name: Verify Docker image
-        run: |
-          docker images
+        run: docker images
