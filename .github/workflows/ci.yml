@@ -94,8 +94,8 @@ jobs:
 
         run: |
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
-            -Dsonar.organization=mista299 \
+            -Dsonar.projectKey=xiomara-udea_fe-banco-digital-backend \
+            -Dsonar.organization=xiomara-udea \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
