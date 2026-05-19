@@ -50,8 +50,23 @@ assert_contains() {
   fi
 }
 
+assert_any() {
+  # Acepta cualquiera de los códigos listados (separados por |)
+  local label="$1"
+  local expected_list="$2"   # e.g. "401|403"
+  local actual="$3"
+  local body="$4"
+  if echo "$expected_list" | grep -qF "$actual"; then
+    color_ok "[$actual] $label"
+    ((PASS++))
+  else
+    color_fail "[$actual] $label  (esperado uno de: $expected_list)"
+    [ -n "$body" ] && echo "        body: $(echo "$body" | head -c 200)"
+    ((FAIL++))
+  fi
+}
+
 http() {
-  # http <cookie_jar_r> <cookie_jar_w> <method> <path> [extra_curl_args...]
   local jar_r="$1"; shift
   local jar_w="$1"; shift
   local method="$1"; shift
@@ -90,37 +105,45 @@ if [ "$BRYAN_OK" != "yes" ]; then
   exit 1
 fi
 
-# Obtener idCuenta de bryan dinámicamente desde el dashboard
+# Obtener idCuenta dinámicamente
 http "$COOKIE_BRYAN" "" GET /api/v1/cuentas/dashboard
 BRYAN_CUENTA_ID=$(echo "$RESP_BODY" | grep -o '"idCuenta":[0-9]*' | head -1 | cut -d: -f2)
 BRYAN_CUENTA_NUM=$(echo "$RESP_BODY" | grep -o '"numeroCuenta":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 http "$COOKIE_ANA" "" GET /api/v1/cuentas/dashboard
 ANA_CUENTA_ID=$(echo "$RESP_BODY" | grep -o '"idCuenta":[0-9]*' | head -1 | cut -d: -f2)
+ANA_CUENTA_NUM=$(echo "$RESP_BODY" | grep -o '"numeroCuenta":"[^"]*"' | head -1 | cut -d'"' -f4)
 
 echo "  → Bryan cuenta id=$BRYAN_CUENTA_ID  num=$BRYAN_CUENTA_NUM"
-echo "  → Ana   cuenta id=$ANA_CUENTA_ID"
+echo "  → Ana   cuenta id=$ANA_CUENTA_ID  num=$ANA_CUENTA_NUM"
 
-# ── 1. PÚBLICO — ping y registro ───────────────────────────
+# ── 1. ENDPOINTS PÚBLICOS ────────────────────────────────────
 section "1. ENDPOINTS PÚBLICOS"
 
+# DB ping
 http "" "" GET /api/db/ping
 assert "GET /api/db/ping" "200" "$RESP_CODE" "$RESP_BODY"
 assert_contains "  db ping retorna ok=1" '"ok":1' "$RESP_BODY" "$RESP_CODE"
 
-# registro/validar-identidad — documento nuevo
+# validar-identidad: documento nuevo
 http "" "" POST /api/v1/registro/validar-identidad \
   -H "Content-Type: application/json" \
   -d '{"documento":"999888777","fechaExpedicion":"2000-01-01"}'
-assert "POST /api/v1/registro/validar-identidad (doc nuevo)" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /api/v1/registro/validar-identidad (doc nuevo → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
-# registro/validar-identidad — documento existente (bryan: 123456789)
+# validar-identidad: documento existente
 http "" "" POST /api/v1/registro/validar-identidad \
   -H "Content-Type: application/json" \
   -d '{"documento":"123456789","fechaExpedicion":"2020-01-10"}'
 assert "POST /api/v1/registro/validar-identidad (doc duplicado → 409)" "409" "$RESP_CODE" "$RESP_BODY"
 
-# registro completo con datos únicos (sufijo de timestamp para evitar colisiones entre corridas)
+# validar-identidad: campos faltantes
+http "" "" POST /api/v1/registro/validar-identidad \
+  -H "Content-Type: application/json" \
+  -d '{}'
+assert "POST /api/v1/registro/validar-identidad (campos vacíos → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+# registro completo con datos únicos (timestamp para idempotencia)
 TS=$(date +%s)
 http "" "" POST /api/v1/registro \
   -H "Content-Type: application/json" \
@@ -130,10 +153,10 @@ http "" "" POST /api/v1/registro \
     \"direccion\":\"Calle Test 1\",\"telefono\":\"3001111111\",
     \"username\":\"testusr${TS}\",\"password\":\"Test123!\"
   }"
-assert "POST /api/v1/registro (nuevo usuario)" "201" "$RESP_CODE" "$RESP_BODY"
+assert "POST /api/v1/registro (nuevo usuario → 201)" "201" "$RESP_CODE" "$RESP_BODY"
 assert_contains "  respuesta contiene idCuenta" "idCuenta" "$RESP_BODY" "$RESP_CODE"
 
-# registro con username duplicado
+# registro: username duplicado
 http "" "" POST /api/v1/registro \
   -H "Content-Type: application/json" \
   -d "{
@@ -144,34 +167,45 @@ http "" "" POST /api/v1/registro \
   }"
 assert "POST /api/v1/registro (username duplicado → 409)" "409" "$RESP_CODE" "$RESP_BODY"
 
-# POST /api/v1/auth/registro (endpoint legacy del AutenticacionController)
+# /auth/registro legacy: campos faltantes (sin idCliente)
 http "" "$COOKIE_TEMP" POST /api/v1/auth/registro \
   -H "Content-Type: application/json" \
   -d '{"username":"legacyusr01","password":"legacy123"}'
-LEGACY_CODE=$RESP_CODE
-if [ "$LEGACY_CODE" = "201" ] || [ "$LEGACY_CODE" = "409" ] || [ "$LEGACY_CODE" = "400" ]; then
-  color_ok "[$LEGACY_CODE] POST /api/v1/auth/registro (endpoint legacy)"
-  ((PASS++))
-else
-  color_fail "[$LEGACY_CODE] POST /api/v1/auth/registro (legacy — inesperado)"
-  ((FAIL++))
-fi
+assert "POST /api/v1/auth/registro (sin idCliente → 400)" "400" "$RESP_CODE" "$RESP_BODY"
 
-# ── 2. AUTH ─────────────────────────────────────────────────
+# /auth/registro legacy: idCliente inexistente
+http "" "$COOKIE_TEMP" POST /api/v1/auth/registro \
+  -H "Content-Type: application/json" \
+  -d '{"username":"legacyusr99","password":"legacy123","idCliente":99999}'
+assert "POST /api/v1/auth/registro (idCliente inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+# /auth/registro legacy: username ya existente
+http "" "$COOKIE_TEMP" POST /api/v1/auth/registro \
+  -H "Content-Type: application/json" \
+  -d '{"username":"bryan","password":"Test123!","idCliente":1}'
+assert "POST /api/v1/auth/registro (username duplicado → 409)" "409" "$RESP_CODE" "$RESP_BODY"
+
+# ── 2. AUTENTICACIÓN ─────────────────────────────────────────
 section "2. AUTENTICACIÓN"
 
-# login credenciales incorrectas
+# login contraseña incorrecta
 http "" "$COOKIE_TEMP" POST /api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"bryan","password":"wrongpass"}'
 assert "POST /api/v1/auth/login (contraseña incorrecta → 401)" "401" "$RESP_CODE" "$RESP_BODY"
 
-# refresh — primero hacer login limpio para tener cookie refresh
+# login usuario inexistente
+http "" "$COOKIE_TEMP" POST /api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"noexiste999","password":"cualquiera"}'
+assert "POST /api/v1/auth/login (usuario inexistente → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# refresh con cookie válida
 http "" "$COOKIE_TEMP" POST /api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username":"ana","password":"ana123"}'
 http "$COOKIE_TEMP" "$COOKIE_TEMP" POST /api/v1/auth/refresh
-assert "POST /api/v1/auth/refresh (con cookie válida)" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /api/v1/auth/refresh (con cookie válida → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
 # refresh sin cookie
 http "" "" POST /api/v1/auth/refresh
@@ -179,19 +213,19 @@ assert "POST /api/v1/auth/refresh (sin cookie → 401)" "401" "$RESP_CODE" "$RES
 
 # logout
 http "$COOKIE_TEMP" "$COOKIE_TEMP" POST /api/v1/auth/logout
-assert "POST /api/v1/auth/logout" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /api/v1/auth/logout → 200" "200" "$RESP_CODE" "$RESP_BODY"
 
-# ── 3. PERFIL ───────────────────────────────────────────────
+# ── 3. PERFIL ────────────────────────────────────────────────
 section "3. PERFIL"
 
 http "$COOKIE_BRYAN" "" GET /api/v1/perfil/me
-assert "GET /api/v1/perfil/me (autenticado)" "200" "$RESP_CODE" "$RESP_BODY"
+assert "GET /api/v1/perfil/me (autenticado → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 assert_contains "  respuesta contiene fullName" "fullName" "$RESP_BODY" "$RESP_CODE"
 
 http "" "" GET /api/v1/perfil/me
 assert "GET /api/v1/perfil/me (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
 
-# Legacy profile endpoint
+# legacy profile
 http "" "" GET /api/profile/1
 LEGACY_PROF=$RESP_CODE
 if [ "$LEGACY_PROF" = "200" ] || [ "$LEGACY_PROF" = "401" ] || [ "$LEGACY_PROF" = "404" ]; then
@@ -202,157 +236,311 @@ else
   ((FAIL++))
 fi
 
-# ── 4. CLIENTES ─────────────────────────────────────────────
+# ── 4. CLIENTES ──────────────────────────────────────────────
 section "4. CLIENTES"
 
+# actualizar correcto
 http "$COOKIE_BRYAN" "" PUT /api/v1/clientes/me \
   -H "Content-Type: application/json" \
   -d '{"email":"bryan_updated@example.com","telefono":"3009999999","direccion":"Calle Nueva 99"}'
-assert "PUT /api/v1/clientes/me" "200" "$RESP_CODE" "$RESP_BODY"
+assert "PUT /api/v1/clientes/me (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
-# Restaurar email original para no romper datos semilla
+# restaurar datos originales
 http "$COOKIE_BRYAN" "" PUT /api/v1/clientes/me \
   -H "Content-Type: application/json" \
   -d '{"email":"bryan@example.com","telefono":"3000000001","direccion":"Calle 10 #20-30"}'
 
+# sin auth
 http "" "" PUT /api/v1/clientes/me \
   -H "Content-Type: application/json" \
   -d '{"email":"x@x.com","telefono":"123","direccion":"x"}'
 assert "PUT /api/v1/clientes/me (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
 
-# ── 5. CUENTAS ──────────────────────────────────────────────
+# campos vacíos (viola @NotBlank)
+http "$COOKIE_BRYAN" "" PUT /api/v1/clientes/me \
+  -H "Content-Type: application/json" \
+  -d '{"email":"","telefono":""}'
+assert "PUT /api/v1/clientes/me (campos vacíos → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+# email con formato inválido
+http "$COOKIE_BRYAN" "" PUT /api/v1/clientes/me \
+  -H "Content-Type: application/json" \
+  -d '{"email":"no-es-un-email","telefono":"3001111111"}'
+assert "PUT /api/v1/clientes/me (email inválido → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+# email duplicado (email de ana)
+http "$COOKIE_BRYAN" "" PUT /api/v1/clientes/me \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ana@example.com","telefono":"3000000001"}'
+assert "PUT /api/v1/clientes/me (email duplicado → 409)" "409" "$RESP_CODE" "$RESP_BODY"
+
+# ── 5. CUENTAS ───────────────────────────────────────────────
 section "5. CUENTAS"
 
 http "$COOKIE_BRYAN" "" GET /api/v1/cuentas/dashboard
-assert "GET /api/v1/cuentas/dashboard" "200" "$RESP_CODE" "$RESP_BODY"
+assert "GET /api/v1/cuentas/dashboard (autenticado → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 assert_contains "  respuesta es array" '[' "$RESP_BODY" "$RESP_CODE"
 
 http "" "" GET /api/v1/cuentas/dashboard
 assert "GET /api/v1/cuentas/dashboard (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
 
-# cerrar cuenta — cuenta con saldo (debería ser 409)
+# cerrar: saldo > 0
 http "$COOKIE_BRYAN" "" PATCH /api/v1/cuentas/cerrar \
   -H "Content-Type: application/json" \
   -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"contrasena\":\"bryan123\"}"
 assert "PATCH /api/v1/cuentas/cerrar (saldo > 0 → 409)" "409" "$RESP_CODE" "$RESP_BODY"
 
-# cerrar cuenta — contraseña incorrecta
+# cerrar: contraseña incorrecta
 http "$COOKIE_BRYAN" "" PATCH /api/v1/cuentas/cerrar \
   -H "Content-Type: application/json" \
   -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"contrasena\":\"wrongpass\"}"
-# Puede ser 401 o 409 dependiendo del orden de validaciones
-if [ "$RESP_CODE" = "401" ] || [ "$RESP_CODE" = "409" ]; then
-  color_ok "[$RESP_CODE] PATCH /api/v1/cuentas/cerrar (contraseña incorrecta)"
-  ((PASS++))
-else
-  color_fail "[$RESP_CODE] PATCH /api/v1/cuentas/cerrar (esperado 401 o 409)"
-  ((FAIL++))
-fi
+assert_any "PATCH /api/v1/cuentas/cerrar (contraseña incorrecta → 401)" "401|409" "$RESP_CODE" "$RESP_BODY"
 
-# ── 6. SEGURIDAD DE CUENTA ──────────────────────────────────
+# cerrar: sin auth
+http "" "" PATCH /api/v1/cuentas/cerrar \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"contrasena\":\"bryan123\"}"
+assert "PATCH /api/v1/cuentas/cerrar (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# cerrar: cuenta ajena (bryan intenta cerrar la cuenta de ana)
+http "$COOKIE_BRYAN" "" PATCH /api/v1/cuentas/cerrar \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuenta\":$ANA_CUENTA_ID,\"contrasena\":\"bryan123\"}"
+assert "PATCH /api/v1/cuentas/cerrar (cuenta ajena → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+# cerrar: cuenta inexistente
+http "$COOKIE_BRYAN" "" PATCH /api/v1/cuentas/cerrar \
+  -H "Content-Type: application/json" \
+  -d '{"idCuenta":99999,"contrasena":"bryan123"}'
+assert "PATCH /api/v1/cuentas/cerrar (cuenta inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+# ── 6. SEGURIDAD DE CUENTA ───────────────────────────────────
 section "6. SEGURIDAD DE CUENTA"
 
+# bloquear correcto
 http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/bloquear \
   -H "Content-Type: application/json" \
   -d '{"password":"bryan123"}'
-assert "POST /api/v1/cuentas/seguridad/bloquear" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /api/v1/cuentas/seguridad/bloquear (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
+# bloquear ya bloqueada (no hay cuenta ACTIVA → 404)
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/bloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+assert "POST /api/v1/cuentas/seguridad/bloquear (ya bloqueada → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+# desbloquear correcto (cuenta está BLOQUEADA)
 http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/desbloquear \
   -H "Content-Type: application/json" \
   -d '{"password":"bryan123"}'
-assert "POST /api/v1/cuentas/seguridad/desbloquear" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /api/v1/cuentas/seguridad/desbloquear (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
+# desbloquear contraseña incorrecta (cuenta ahora ACTIVA, nada para desbloquear no la hay bloqueada → 404,
+# pero antes llega la validación de contraseña si es incorrecta → 401)
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/desbloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"wrongpass"}'
+assert "POST /api/v1/cuentas/seguridad/desbloquear (contraseña incorrecta → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# bloquear contraseña incorrecta
 http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/bloquear \
   -H "Content-Type: application/json" \
   -d '{"password":"wrongpass"}'
-# Esperamos 401 o 403
-if [ "$RESP_CODE" = "401" ] || [ "$RESP_CODE" = "403" ] || [ "$RESP_CODE" = "400" ]; then
-  color_ok "[$RESP_CODE] POST /api/v1/cuentas/seguridad/bloquear (contraseña incorrecta)"
-  ((PASS++))
-else
-  color_fail "[$RESP_CODE] POST /api/v1/cuentas/seguridad/bloquear (contraseña incorrecta — inesperado)"
-  echo "        body: $(echo "$RESP_BODY" | head -c 200)"
-  ((FAIL++))
-fi
+assert_any "POST /api/v1/cuentas/seguridad/bloquear (contraseña incorrecta → 401)" "401|403|400" "$RESP_CODE" "$RESP_BODY"
 
-# ── 7. TRANSACCIONES ────────────────────────────────────────
+# bloquear sin auth
+http "" "" POST /api/v1/cuentas/seguridad/bloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+assert "POST /api/v1/cuentas/seguridad/bloquear (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# desbloquear sin auth
+http "" "" POST /api/v1/cuentas/seguridad/desbloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+assert "POST /api/v1/cuentas/seguridad/desbloquear (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# ── 7. TRANSACCIONES ─────────────────────────────────────────
 section "7. TRANSACCIONES"
 
+# historial cuenta propia
 http "$COOKIE_BRYAN" "" GET /api/v1/transacciones/cuenta/$BRYAN_CUENTA_ID
-assert "GET /api/v1/transacciones/cuenta/{id} (propio)" "200" "$RESP_CODE" "$RESP_BODY"
+assert "GET /transacciones/cuenta/{id} (propia → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 assert_contains "  respuesta es array" '[' "$RESP_BODY" "$RESP_CODE"
 
-# acceso a cuenta ajena
+# historial cuenta ajena
 http "$COOKIE_BRYAN" "" GET /api/v1/transacciones/cuenta/$ANA_CUENTA_ID
-assert "GET /api/v1/transacciones/cuenta/{id} (ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+assert "GET /transacciones/cuenta/{id} (ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
 
-# filtro por fecha
+# historial sin auth
+http "" "" GET /api/v1/transacciones/cuenta/$BRYAN_CUENTA_ID
+assert "GET /transacciones/cuenta/{id} (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# filtro por fechas
 FECHA_INI="2026-01-01T00:00:00"
 FECHA_FIN="2026-12-31T23:59:59"
 http "$COOKIE_BRYAN" "" GET "/api/v1/transacciones/cuenta/$BRYAN_CUENTA_ID/filtro?fechaInicio=$FECHA_INI&fechaFin=$FECHA_FIN"
-assert "GET /api/v1/transacciones/cuenta/{id}/filtro" "200" "$RESP_CODE" "$RESP_BODY"
+assert "GET /transacciones/cuenta/{id}/filtro (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
-# depositar
+# filtro cuenta ajena
+http "$COOKIE_BRYAN" "" GET "/api/v1/transacciones/cuenta/$ANA_CUENTA_ID/filtro?fechaInicio=$FECHA_INI&fechaFin=$FECHA_FIN"
+assert "GET /transacciones/cuenta/{id}/filtro (cuenta ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+# filtro sin auth
+http "" "" GET "/api/v1/transacciones/cuenta/$BRYAN_CUENTA_ID/filtro?fechaInicio=$FECHA_INI&fechaFin=$FECHA_FIN"
+assert "GET /transacciones/cuenta/{id}/filtro (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# filtro sin parámetros de fecha (fechaInicio/fechaFin obligatorios)
+http "$COOKIE_BRYAN" "" GET "/api/v1/transacciones/cuenta/$BRYAN_CUENTA_ID/filtro"
+assert "GET /transacciones/cuenta/{id}/filtro (sin params → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+# depositar correcto
 http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/depositar \
   -H "Content-Type: application/json" \
   -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":10000}"
-assert "POST /api/v1/transacciones/depositar" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transacciones/depositar (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 assert_contains "  respuesta tiene idTransaccion" "idTransaccion" "$RESP_BODY" "$RESP_CODE"
 
-# depositar en cuenta ajena
+# depositar cuenta ajena
 http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/depositar \
   -H "Content-Type: application/json" \
   -d "{\"idCuenta\":$ANA_CUENTA_ID,\"monto\":10000}"
-assert "POST /api/v1/transacciones/depositar (cuenta ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transacciones/depositar (cuenta ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
 
-# retirar
+# depositar sin auth
+http "" "" POST /api/v1/transacciones/depositar \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":10000}"
+assert "POST /transacciones/depositar (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# retirar correcto
 http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/retirar \
   -H "Content-Type: application/json" \
   -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":5000}"
-assert "POST /api/v1/transacciones/retirar" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transacciones/retirar (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
-# retirar más de lo disponible
+# retirar saldo insuficiente
 http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/retirar \
   -H "Content-Type: application/json" \
   -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":99999999}"
-assert "POST /api/v1/transacciones/retirar (saldo insuficiente → 409)" "409" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transacciones/retirar (saldo insuficiente → 409)" "409" "$RESP_CODE" "$RESP_BODY"
 
-# transferir
-http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/transferir \
+# retirar cuenta ajena
+http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/retirar \
   -H "Content-Type: application/json" \
-  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"numeroCuentaDestino\":\"$( echo "$RESP_BODY" | head -c 0 )\"}"
-# necesitamos el numeroCuenta de ana, lo buscamos
-http "$COOKIE_ANA" "" GET /api/v1/cuentas/dashboard
-ANA_CUENTA_NUM=$(echo "$RESP_BODY" | grep -o '"numeroCuenta":"[^"]*"' | head -1 | cut -d'"' -f4)
+  -d "{\"idCuenta\":$ANA_CUENTA_ID,\"monto\":5000}"
+assert "POST /transacciones/retirar (cuenta ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
 
+# retirar sin auth
+http "" "" POST /api/v1/transacciones/retirar \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":5000}"
+assert "POST /transacciones/retirar (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# transferir correcto
 http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/transferir \
   -H "Content-Type: application/json" \
   -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"numeroCuentaDestino\":\"$ANA_CUENTA_NUM\",\"monto\":1000}"
-assert "POST /api/v1/transacciones/transferir" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transacciones/transferir (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
-# transferir a cuenta inexistente
+# transferir destino inexistente
 http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/transferir \
   -H "Content-Type: application/json" \
   -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"numeroCuentaDestino\":\"00000000\",\"monto\":1000}"
-assert "POST /api/v1/transacciones/transferir (destino inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transacciones/transferir (destino inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
 
-# ── 8. VALIDACIONES ─────────────────────────────────────────
+# transferir saldo insuficiente
+http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/transferir \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"numeroCuentaDestino\":\"$ANA_CUENTA_NUM\",\"monto\":99999999}"
+assert "POST /transacciones/transferir (saldo insuficiente → 409)" "409" "$RESP_CODE" "$RESP_BODY"
+
+# transferir cuenta origen ajena
+http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/transferir \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$ANA_CUENTA_ID,\"numeroCuentaDestino\":\"$BRYAN_CUENTA_NUM\",\"monto\":1000}"
+assert "POST /transacciones/transferir (cuenta origen ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+# transferir sin auth
+http "" "" POST /api/v1/transacciones/transferir \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"numeroCuentaDestino\":\"$ANA_CUENTA_NUM\",\"monto\":1000}"
+assert "POST /transacciones/transferir (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# ── 7b. CUENTA BLOQUEADA ─────────────────────────────────────
+section "7b. CUENTA BLOQUEADA"
+
+# Bloquear la cuenta de bryan para probar operaciones sobre cuenta bloqueada
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/bloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+assert "  setup: bloquear cuenta bryan → 200" "200" "$RESP_CODE" "$RESP_BODY"
+
+http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/depositar \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":10000}"
+assert "POST /transacciones/depositar (cuenta bloqueada → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+http "$COOKIE_BRYAN" "" POST /api/v1/transacciones/retirar \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuenta\":$BRYAN_CUENTA_ID,\"monto\":5000}"
+assert "POST /transacciones/retirar (cuenta bloqueada → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+# Desbloquear para devolver al estado normal
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/desbloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+assert "  teardown: desbloquear cuenta bryan → 200" "200" "$RESP_CODE" "$RESP_BODY"
+
+# ── 8. MOTOR DE VALIDACIÓN ───────────────────────────────────
 section "8. MOTOR DE VALIDACIÓN"
+
+# validar correcto (saldo suficiente)
+http "$COOKIE_BRYAN" "" POST /api/v1/validaciones/transaccion \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"monto\":100,\"tipoOperacion\":\"RETIRO\"}"
+assert "POST /validaciones/transaccion (autorizada → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+assert_contains "  respuesta tiene autorizada" "autorizada" "$RESP_BODY" "$RESP_CODE"
+
+# validar saldo insuficiente (sigue retornando 200 pero no autorizada)
+http "$COOKIE_BRYAN" "" POST /api/v1/validaciones/transaccion \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"monto\":99999999,\"tipoOperacion\":\"RETIRO\"}"
+assert "POST /validaciones/transaccion (no autorizada — saldo → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+
+# validar cuenta ajena (bryan intenta validar la cuenta de ana)
+http "$COOKIE_BRYAN" "" POST /api/v1/validaciones/transaccion \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$ANA_CUENTA_ID,\"monto\":100,\"tipoOperacion\":\"RETIRO\"}"
+assert "POST /validaciones/transaccion (cuenta ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+# validar sin auth
+http "" "" POST /api/v1/validaciones/transaccion \
+  -H "Content-Type: application/json" \
+  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"monto\":100,\"tipoOperacion\":\"RETIRO\"}"
+assert "POST /validaciones/transaccion (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# validar cuenta bloqueada (retorna 200 con autorizada=false y código CUENTA_BLOQUEADA)
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/bloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+# (no se cuenta como test de validacion, es setup)
 
 http "$COOKIE_BRYAN" "" POST /api/v1/validaciones/transaccion \
   -H "Content-Type: application/json" \
   -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"monto\":100,\"tipoOperacion\":\"RETIRO\"}"
-assert "POST /api/v1/validaciones/transaccion (autorizada)" "200" "$RESP_CODE" "$RESP_BODY"
-assert_contains "  respuesta tiene autorizada" "autorizada" "$RESP_BODY" "$RESP_CODE"
+assert "POST /validaciones/transaccion (cuenta bloqueada → 200 no autorizada)" "200" "$RESP_CODE" "$RESP_BODY"
+assert_contains "  respuesta contiene CUENTA_BLOQUEADA" "CUENTA_BLOQUEADA" "$RESP_BODY" "$RESP_CODE"
 
-http "$COOKIE_BRYAN" "" POST /api/v1/validaciones/transaccion \
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/desbloquear \
   -H "Content-Type: application/json" \
-  -d "{\"idCuentaOrigen\":$BRYAN_CUENTA_ID,\"monto\":99999999,\"tipoOperacion\":\"RETIRO\"}"
-assert "POST /api/v1/validaciones/transaccion (no autorizada — saldo)" "200" "$RESP_CODE" "$RESP_BODY"
+  -d '{"password":"bryan123"}'
+# (no se cuenta, es teardown)
 
-# ── 9. TRANSFERENCIAS INTERBANCARIAS ────────────────────────
+# ── 9. TRANSFERENCIAS INTERBANCARIAS (ACH) ───────────────────
 section "9. TRANSFERENCIAS INTERBANCARIAS (ACH)"
 
+# crear ACH correcto
 http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/interbancarias \
   -H "Content-Type: application/json" \
   -d "{
@@ -365,27 +553,75 @@ http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/interbancarias \
     \"nombreReceptor\":\"Test Receptor\",
     \"monto\":20000
   }"
-assert "POST /api/v1/transferencias/interbancarias" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transferencias/interbancarias (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 TX_ACH_ID=$(echo "$RESP_BODY" | grep -o '"idTransaccion":[0-9]*' | head -1 | cut -d: -f2)
-echo "  → idTransaccion ACH creada: $TX_ACH_ID"
+echo "  → idTransaccion ACH confirmación: $TX_ACH_ID"
 
 if [ -n "$TX_ACH_ID" ]; then
-  # confirmacion-ach (no requiere auth de usuario, solo gateway secret)
+  # confirmacion-ach correcto
   http "" "" POST /api/v1/transferencias/interbancarias/$TX_ACH_ID/confirmacion-ach \
     -H "Content-Type: application/json" \
     -H "X-Gateway-Secret: $GATEWAY_SECRET" \
     -d '{"referenciaConfirmacion":"ACH-TEST-CONFIRM-001"}'
-  assert "POST /confirmacion-ach" "200" "$RESP_CODE" "$RESP_BODY"
+  assert "POST /confirmacion-ach (correcto → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 
-  # rechazo sobre transacción ya confirmada (debe fallar)
+  # rechazo sobre ya confirmada
   http "" "" POST /api/v1/transferencias/interbancarias/$TX_ACH_ID/rechazo-ach \
     -H "Content-Type: application/json" \
     -H "X-Gateway-Secret: $GATEWAY_SECRET" \
     -d '{"motivo":"prueba doble operacion"}'
   assert "POST /rechazo-ach sobre ya confirmada → 400" "400" "$RESP_CODE" "$RESP_BODY"
-else
-  color_warn "  No se pudo crear la ACH → se omiten pruebas de confirmacion/rechazo"
-  ((WARN++))
+
+  # confirmacion secret incorrecto
+  http "" "" POST /api/v1/transferencias/interbancarias/$TX_ACH_ID/confirmacion-ach \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: wrong_secret" \
+    -d '{"referenciaConfirmacion":"ACH-BAD"}'
+  assert "POST /confirmacion-ach (secret incorrecto → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+  # confirmacion sin header
+  TX_NO_SEC_SETUP=$(echo "$RESP_BODY" | head -c 0)  # dummy
+  http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/interbancarias \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+      \"bancoDestino\":\"Banco\",\"numeroCuentaDestino\":\"111\",
+      \"tipoCuentaDestino\":\"AHORROS\",\"tipoDocumentoReceptor\":\"CC\",
+      \"numeroDocumentoReceptor\":\"111\",\"nombreReceptor\":\"R\",\"monto\":5000
+    }"
+  TX_NO_SECRET=$(echo "$RESP_BODY" | grep -o '"idTransaccion":[0-9]*' | head -1 | cut -d: -f2)
+  if [ -n "$TX_NO_SECRET" ]; then
+    http "" "" POST /api/v1/transferencias/interbancarias/$TX_NO_SECRET/confirmacion-ach \
+      -H "Content-Type: application/json" \
+      -d '{"referenciaConfirmacion":"ACH-NO-SECRET"}'
+    assert "POST /confirmacion-ach (sin header X-Gateway-Secret → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+  fi
+
+  # consultar propia
+  http "$COOKIE_BRYAN" "" GET /api/v1/transferencias/interbancarias/$TX_ACH_ID
+  assert "GET /transferencias/interbancarias/{id} (propia → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+
+  # consultar ajena
+  http "$COOKIE_ANA" "" GET /api/v1/transferencias/interbancarias/$TX_ACH_ID
+  assert "GET /transferencias/interbancarias/{id} (ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+  # consultar sin auth
+  http "" "" GET /api/v1/transferencias/interbancarias/$TX_ACH_ID
+  assert "GET /transferencias/interbancarias/{id} (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+  # confirmacion id inexistente
+  http "" "" POST /api/v1/transferencias/interbancarias/99999/confirmacion-ach \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: $GATEWAY_SECRET" \
+    -d '{"referenciaConfirmacion":"ACH-NOT-FOUND"}'
+  assert "POST /confirmacion-ach (id inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+  # rechazo id inexistente
+  http "" "" POST /api/v1/transferencias/interbancarias/99999/rechazo-ach \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: $GATEWAY_SECRET" \
+    -d '{"motivo":"no existe"}'
+  assert "POST /rechazo-ach (id inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
 fi
 
 # flujo rechazo completo
@@ -401,7 +637,7 @@ http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/interbancarias \
     \"nombreReceptor\":\"Receptor Rechazo\",
     \"monto\":15000
   }"
-assert "POST /api/v1/transferencias/interbancarias (para rechazo)" "200" "$RESP_CODE" "$RESP_BODY"
+assert "POST /transferencias/interbancarias (para flujo rechazo → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 TX_ACH_REJ_ID=$(echo "$RESP_BODY" | grep -o '"idTransaccion":[0-9]*' | head -1 | cut -d: -f2)
 
 if [ -n "$TX_ACH_REJ_ID" ]; then
@@ -409,50 +645,55 @@ if [ -n "$TX_ACH_REJ_ID" ]; then
     -H "Content-Type: application/json" \
     -H "X-Gateway-Secret: $GATEWAY_SECRET" \
     -d '{"motivo":"Cuenta destino invalida ACH_01"}'
-  assert "POST /rechazo-ach (reversión automática)" "200" "$RESP_CODE" "$RESP_BODY"
+  assert "POST /rechazo-ach (reversión automática → 200)" "200" "$RESP_CODE" "$RESP_BODY"
 fi
 
-# gateway secret incorrecto
-if [ -n "$TX_ACH_ID" ]; then
-  http "" "" POST /api/v1/transferencias/interbancarias/$TX_ACH_ID/confirmacion-ach \
-    -H "Content-Type: application/json" \
-    -H "X-Gateway-Secret: wrong_secret" \
-    -d '{"referenciaConfirmacion":"ACH-BAD"}'
-  assert "POST /confirmacion-ach (secret incorrecto → 403)" "403" "$RESP_CODE" "$RESP_BODY"
-fi
+# crear ACH sin auth
+http "" "" POST /api/v1/transferencias/interbancarias \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"Bancolombia\",\"numeroCuentaDestino\":\"123456789\",
+    \"tipoCuentaDestino\":\"AHORROS\",\"tipoDocumentoReceptor\":\"CC\",
+    \"numeroDocumentoReceptor\":\"1122334455\",\"nombreReceptor\":\"Test\",\"monto\":1000
+  }"
+assert "POST /transferencias/interbancarias (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
 
-# consultar transferencia propia
-if [ -n "$TX_ACH_ID" ]; then
-  http "$COOKIE_BRYAN" "" GET /api/v1/transferencias/interbancarias/$TX_ACH_ID
-  assert "GET /api/v1/transferencias/interbancarias/{id} (propia)" "200" "$RESP_CODE" "$RESP_BODY"
-
-  # consultar transferencia ajena
-  http "$COOKIE_ANA" "" GET /api/v1/transferencias/interbancarias/$TX_ACH_ID
-  assert "GET /api/v1/transferencias/interbancarias/{id} (ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
-fi
-
-# sin gateway secret
+# crear ACH saldo insuficiente
 http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/interbancarias \
   -H "Content-Type: application/json" \
   -d "{
     \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
-    \"bancoDestino\":\"Banco\",
-    \"numeroCuentaDestino\":\"111\",
-    \"tipoCuentaDestino\":\"AHORROS\",
-    \"tipoDocumentoReceptor\":\"CC\",
-    \"numeroDocumentoReceptor\":\"111\",
-    \"nombreReceptor\":\"R\",
-    \"monto\":5000
+    \"bancoDestino\":\"Bancolombia\",\"numeroCuentaDestino\":\"123456789\",
+    \"tipoCuentaDestino\":\"AHORROS\",\"tipoDocumentoReceptor\":\"CC\",
+    \"numeroDocumentoReceptor\":\"1122334455\",\"nombreReceptor\":\"Test\",\"monto\":99999999
   }"
-TX_NO_SECRET=$(echo "$RESP_BODY" | grep -o '"idTransaccion":[0-9]*' | head -1 | cut -d: -f2)
-if [ -n "$TX_NO_SECRET" ]; then
-  http "" "" POST /api/v1/transferencias/interbancarias/$TX_NO_SECRET/confirmacion-ach \
-    -H "Content-Type: application/json" \
-    -d '{"referenciaConfirmacion":"ACH-NO-SECRET"}'
-  assert "POST /confirmacion-ach (sin header X-Gateway-Secret → 403)" "403" "$RESP_CODE" "$RESP_BODY"
-fi
+assert "POST /transferencias/interbancarias (saldo insuficiente → 409)" "409" "$RESP_CODE" "$RESP_BODY"
 
-# ── RESUMEN ─────────────────────────────────────────────────
+# crear ACH cuenta bloqueada
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/bloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+
+http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/interbancarias \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"Bancolombia\",\"numeroCuentaDestino\":\"123456789\",
+    \"tipoCuentaDestino\":\"AHORROS\",\"tipoDocumentoReceptor\":\"CC\",
+    \"numeroDocumentoReceptor\":\"1122334455\",\"nombreReceptor\":\"Test\",\"monto\":1000
+  }"
+assert "POST /transferencias/interbancarias (cuenta bloqueada → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/desbloquear \
+  -H "Content-Type: application/json" \
+  -d '{"password":"bryan123"}'
+
+# consultar id inexistente autenticado
+http "$COOKIE_BRYAN" "" GET /api/v1/transferencias/interbancarias/99999
+assert "GET /transferencias/interbancarias/{id} (id inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+# ── RESUMEN ──────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════"
 echo " RESULTADO: $PASS pasaron | $FAIL fallaron | $WARN advertencias"

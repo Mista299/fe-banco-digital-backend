@@ -2,11 +2,13 @@ package fe.banco_digital.exception;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -105,6 +107,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<Map<String, Object>> manejarHeaderFaltante(MissingRequestHeaderException ex) {
         return construirRespuesta(HttpStatus.FORBIDDEN, "Acceso no autorizado: header requerido ausente.");
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> manejarParametroFaltante(MissingServletRequestParameterException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                "El parámetro '" + ex.getParameterName() + "' es obligatorio.");
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> manejarViolacionIntegridad(DataIntegrityViolationException ex) {
+        return construirRespuesta(HttpStatus.CONFLICT, "Ya existe un registro con los datos proporcionados.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
