@@ -1,6 +1,7 @@
 -- =============================================================
 -- Banco Digital — Script SQL Sprint 2
 -- Base de datos: banco2026 (PostgreSQL)
+-- Última actualización: sincronizado con entidades JPA actuales
 -- =============================================================
 
 -- -------------------------------------------------------------
@@ -20,12 +21,14 @@ DROP TABLE IF EXISTS cliente         CASCADE;
 -- cliente
 -- -------------------------------------------------------------
 CREATE TABLE cliente (
-    id_cliente     BIGSERIAL       PRIMARY KEY,
-    nombre         VARCHAR(150)    NOT NULL,
-    documento      VARCHAR(20)     NOT NULL UNIQUE,
-    email          VARCHAR(100)    NOT NULL UNIQUE,
-    telefono       VARCHAR(20),
-    fecha_registro TIMESTAMP       NOT NULL DEFAULT NOW()
+    id_cliente       BIGSERIAL      PRIMARY KEY,
+    nombre           VARCHAR(150)   NOT NULL,
+    documento        VARCHAR(20)    NOT NULL UNIQUE,
+    fecha_expedicion DATE           NOT NULL,
+    email            VARCHAR(100)   NOT NULL UNIQUE,
+    direccion        VARCHAR(255)   NOT NULL,
+    telefono         VARCHAR(20),
+    fecha_registro   TIMESTAMP      NOT NULL DEFAULT NOW()
 );
 
 -- -------------------------------------------------------------
@@ -36,7 +39,7 @@ CREATE TABLE usuario (
     username      VARCHAR(50)  NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     estado        VARCHAR(20)  NOT NULL DEFAULT 'ACTIVO'
-                               CHECK (estado IN ('ACTIVO', 'BLOQUEADO')),
+                               CHECK (estado IN ('ACTIVO', 'INACTIVO', 'BLOQUEADO')),
     id_cliente    BIGINT       NOT NULL UNIQUE
                                REFERENCES cliente(id_cliente)
 );
@@ -45,8 +48,8 @@ CREATE TABLE usuario (
 -- rol
 -- -------------------------------------------------------------
 CREATE TABLE rol (
-    id_rol BIGSERIAL    PRIMARY KEY,
-    nombre VARCHAR(50)  NOT NULL UNIQUE
+    id_rol BIGSERIAL   PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE
 );
 
 -- -------------------------------------------------------------
@@ -60,15 +63,18 @@ CREATE TABLE usuario_rol (
 
 -- -------------------------------------------------------------
 -- cuenta
+-- Nota: columna `version` requerida por @Version de Hibernate
+--       para control de concurrencia optimista.
 -- -------------------------------------------------------------
 CREATE TABLE cuenta (
-    id_cuenta    BIGSERIAL       PRIMARY KEY,
+    id_cuenta     BIGSERIAL      PRIMARY KEY,
+    version       BIGINT         NOT NULL DEFAULT 0,
     numero_cuenta VARCHAR(20)    NOT NULL UNIQUE,
     tipo          VARCHAR(20)    NOT NULL
                                  CHECK (tipo IN ('AHORROS', 'CORRIENTE')),
     saldo         DECIMAL(19,4)  NOT NULL DEFAULT 0,
     estado        VARCHAR(20)    NOT NULL
-                                 CHECK (estado IN ('ACTIVA', 'INACTIVA')),
+                                 CHECK (estado IN ('ACTIVA', 'INACTIVA', 'BLOQUEADA')),
     id_cliente    BIGINT         NOT NULL REFERENCES cliente(id_cliente)
 );
 
@@ -76,15 +82,35 @@ CREATE TABLE cuenta (
 -- transaccion
 -- -------------------------------------------------------------
 CREATE TABLE transaccion (
-    id_transaccion   BIGSERIAL      PRIMARY KEY,
-    id_cuenta_origen BIGINT         REFERENCES cuenta(id_cuenta),
-    id_cuenta_destino BIGINT        REFERENCES cuenta(id_cuenta),
-    tipo             VARCHAR(20)    NOT NULL
-                                    CHECK (tipo IN ('DEPOSITO', 'RETIRO', 'TRANSFERENCIA')),
-    monto            DECIMAL(19,4)  NOT NULL,
-    fecha            TIMESTAMP      NOT NULL DEFAULT NOW(),
-    estado           VARCHAR(20)    NOT NULL
-                                    CHECK (estado IN ('EXITOSA', 'FALLIDA'))
+    id_transaccion                BIGSERIAL      PRIMARY KEY,
+    id_cuenta_origen              BIGINT         REFERENCES cuenta(id_cuenta),
+    id_cuenta_destino             BIGINT         REFERENCES cuenta(id_cuenta),
+    tipo                          VARCHAR(40)    NOT NULL
+                                                 CHECK (tipo IN (
+                                                     'DEPOSITO',
+                                                     'RETIRO',
+                                                     'TRANSFERENCIA',
+                                                     'TRANSFERENCIA_INTERBANCARIA',
+                                                     'REVERSO_ACH'
+                                                 )),
+    monto                         DECIMAL(19,4)  NOT NULL,
+    fecha                         TIMESTAMP      NOT NULL DEFAULT NOW(),
+    estado                        VARCHAR(30)    NOT NULL
+                                                 CHECK (estado IN (
+                                                     'EXITOSA',
+                                                     'FALLIDA',
+                                                     'PENDIENTE_PROCESAMIENTO',
+                                                     'RECHAZADA',
+                                                     'REVERSADA'
+                                                 )),
+    banco_destino                 VARCHAR(120),
+    tipo_cuenta_destino_externa   VARCHAR(30),
+    numero_cuenta_destino_externa VARCHAR(40),
+    tipo_documento_receptor       VARCHAR(30),
+    numero_documento_receptor     VARCHAR(40),
+    nombre_receptor_externo       VARCHAR(150),
+    referencia_externa            VARCHAR(80),
+    motivo_rechazo                VARCHAR(255)
 );
 
 -- -------------------------------------------------------------
@@ -128,10 +154,10 @@ CREATE TABLE token_retiro (
 -- -------------------------------------------------------------
 -- Índices
 -- -------------------------------------------------------------
-CREATE INDEX idx_cuenta_cliente       ON cuenta(id_cliente);
-CREATE INDEX idx_transaccion_origen   ON transaccion(id_cuenta_origen);
-CREATE INDEX idx_transaccion_destino  ON transaccion(id_cuenta_destino);
-CREATE INDEX idx_auditoria_usuario    ON auditoria(id_usuario);
+CREATE INDEX idx_cuenta_cliente        ON cuenta(id_cliente);
+CREATE INDEX idx_transaccion_origen    ON transaccion(id_cuenta_origen);
+CREATE INDEX idx_transaccion_destino   ON transaccion(id_cuenta_destino);
+CREATE INDEX idx_auditoria_usuario     ON auditoria(id_usuario);
 CREATE INDEX idx_refresh_token_usuario ON refresh_token(id_usuario);
 CREATE INDEX idx_token_retiro_cuenta   ON token_retiro(id_cuenta);
 CREATE INDEX idx_token_retiro_estado   ON token_retiro(estado);
@@ -147,11 +173,11 @@ CREATE INDEX idx_token_retiro_estado   ON token_retiro(estado);
 INSERT INTO rol (nombre) VALUES ('ADMIN'), ('CLIENTE');
 
 -- Clientes
-INSERT INTO cliente (nombre, documento, email, telefono) VALUES
-    ('Bryan García',  '1000000001', 'bryan@mail.com', '3001000001'),
-    ('Ana Martínez',  '1000000002', 'ana@mail.com',   '3001000002');
+INSERT INTO cliente (nombre, documento, fecha_expedicion, email, direccion, telefono) VALUES
+    ('Bryan García', '1000000001', '2000-01-15', 'bryan@mail.com', 'Calle 10 #20-30',  '3001000001'),
+    ('Ana Martínez', '1000000002', '2001-06-20', 'ana@mail.com',   'Carrera 5 #15-40', '3001000002');
 
--- Usuarios  (BCrypt de "password123")
+-- Usuarios (BCrypt de "password123")
 INSERT INTO usuario (username, password_hash, estado, id_cliente) VALUES
     ('bryan', '$2a$10$7EqJtq98hPqEX7fNZaFWoOe3d8j1Fh5B5X2YmH3K9pQ0sL6vR4mGi', 'ACTIVO', 1),
     ('ana',   '$2a$10$7EqJtq98hPqEX7fNZaFWoOe3d8j1Fh5B5X2YmH3K9pQ0sL6vR4mGi', 'ACTIVO', 2);
@@ -176,5 +202,5 @@ INSERT INTO transaccion (id_cuenta_origen, id_cuenta_destino, tipo, monto, estad
 
 -- Auditoría
 INSERT INTO auditoria (accion, id_usuario, detalle) VALUES
-    ('LOGIN',        1, 'Inicio de sesión exitoso desde 127.0.0.1'),
-    ('TRANSFERENCIA',1, 'Transferencia de $300.000 desde cuenta 001-0000001 a 001-0000003');
+    ('LOGIN',         1, 'Inicio de sesión exitoso desde 127.0.0.1'),
+    ('TRANSFERENCIA', 1, 'Transferencia de $300.000 desde cuenta 001-0000001 a 001-0000003');

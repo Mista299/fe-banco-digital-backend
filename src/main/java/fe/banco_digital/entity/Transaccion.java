@@ -24,9 +24,15 @@ public class Transaccion {
     @Column(name = "id_transaccion")
     private Long idTransaccion;
 
+    @Column(name = "id_cuenta_origen", insertable = false, updatable = false)
+    private Long idCuentaOrigen;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cuenta_origen")
     private Cuenta cuentaOrigen;
+
+    @Column(name = "id_cuenta_destino", insertable = false, updatable = false)
+    private Long idCuentaDestino;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cuenta_destino")
@@ -72,6 +78,9 @@ public class Transaccion {
 
     public Long getIdTransaccion() { return idTransaccion; }
     public void setIdTransaccion(Long idTransaccion) { this.idTransaccion = idTransaccion; }
+
+    public Long getIdCuentaOrigen() { return idCuentaOrigen; }
+    public Long getIdCuentaDestino() { return idCuentaDestino; }
 
     public Cuenta getCuentaOrigen() { return cuentaOrigen; }
     public void setCuentaOrigen(Cuenta cuentaOrigen) { this.cuentaOrigen = cuentaOrigen; }

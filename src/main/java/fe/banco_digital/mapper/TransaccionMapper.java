@@ -2,7 +2,6 @@ package fe.banco_digital.mapper;
 
 import fe.banco_digital.dto.MovimientoDTO;
 import fe.banco_digital.entity.Transaccion;
-import fe.banco_digital.entity.TipoTransaccion;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -15,21 +14,26 @@ public class TransaccionMapper {
     public MovimientoDTO aMovimientoDTO(Transaccion transaccion, Long idCuenta) {
         MovimientoDTO dto = new MovimientoDTO();
 
+        dto.setIdTransaccion(transaccion.getIdTransaccion());
         dto.setFechaHora(transaccion.getFecha());
         dto.setConcepto(transaccion.getTipo().name());
+        dto.setEstado(transaccion.getEstado() != null ? transaccion.getEstado().name() : null);
+        dto.setBancoDestino(transaccion.getBancoDestino());
+        dto.setNombreReceptorExterno(transaccion.getNombreReceptorExterno());
 
         BigDecimal monto = transaccion.getMonto();
 
-        boolean esOrigen = transaccion.getCuentaOrigen() != null
-                && transaccion.getCuentaOrigen().getIdCuenta().equals(idCuenta);
+        // idCuentaOrigen solo lo puebla JPA al cargar desde BD; cuando la entidad
+        // se construye manualmente (tests) hay que leerlo desde la relación.
+        Long idOrigen = transaccion.getIdCuentaOrigen() != null
+                ? transaccion.getIdCuentaOrigen()
+                : (transaccion.getCuentaOrigen() != null ? transaccion.getCuentaOrigen().getIdCuenta() : null);
 
-        if (esOrigen) {
-            monto = monto.negate(); // egreso
+        if (idCuenta.equals(idOrigen)) {
+            monto = monto.negate();
         }
-        // si es destino (depósito recibido o transferencia recibida) → positivo
 
         dto.setMonto(monto);
-        dto.setSaldoResultante(null);
 
         return dto;
     }

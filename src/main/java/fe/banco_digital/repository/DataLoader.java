@@ -106,7 +106,7 @@ public class DataLoader {
                 c.setTelefono("3000000006");
                 return clienteRepo.save(c);
             });
-            // ── 5 Usuarios (1 por cliente) ────────────────────────────────────
+            // ── 6 Usuarios (1 por cliente) ────────────────────────────────────
             Usuario u1 = usuarioRepo.findByUsername("bryan").orElseGet(() -> {
                 Usuario u = new Usuario();
                 u.setUsername("bryan");
@@ -153,6 +153,16 @@ public class DataLoader {
                 u.setPasswordHash(passwordEncoder.encode("jorge123"));
                 u.setEstado(EstadoUsuario.BLOQUEADO);
                 u.setCliente(c5);
+                u.setRoles(Set.of(rolCliente));
+                return usuarioRepo.save(u);
+            });
+
+            Usuario u6 = usuarioRepo.findByUsername("sofia").orElseGet(() -> {
+                Usuario u = new Usuario();
+                u.setUsername("sofia");
+                u.setPasswordHash(passwordEncoder.encode("sofia123"));
+                u.setEstado(EstadoUsuario.ACTIVO);
+                u.setCliente(c6);
                 u.setRoles(Set.of(rolCliente));
                 return usuarioRepo.save(u);
             });
@@ -207,6 +217,16 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
+            Cuenta cta6 = cuentaRepo.findByNumeroCuenta("00060001").orElseGet(() -> {
+                Cuenta cta = new Cuenta();
+                cta.setNumeroCuenta("00060001");
+                cta.setTipo(TipoCuenta.AHORROS);
+                cta.setEstado(EstadoCuenta.ACTIVA);
+                cta.setSaldo(new BigDecimal("300000.00"));
+                cta.setCliente(c6);
+                return cuentaRepo.save(cta);
+            });
+
             if (transaccionRepo.count() == 0) {
                 Transaccion t1 = new Transaccion();
                 t1.setTipo(TipoTransaccion.DEPOSITO);
@@ -247,6 +267,39 @@ public class DataLoader {
                 t5.setCuentaOrigen(null);
                 t5.setCuentaDestino(cta4);
                 transaccionRepo.save(t5);
+
+                // Transferencia interbancaria (ACH) exitosa
+                Transaccion t6 = new Transaccion();
+                t6.setTipo(TipoTransaccion.TRANSFERENCIA_INTERBANCARIA);
+                t6.setEstado(EstadoTransaccion.EXITOSA);
+                t6.setMonto(new BigDecimal("75000.00"));
+                t6.setCuentaOrigen(cta2);
+                t6.setCuentaDestino(null);
+                t6.setBancoDestino("Bancolombia");
+                t6.setTipoCuentaDestinoExterna("AHORROS");
+                t6.setNumeroCuentaDestinoExterna("45678901234");
+                t6.setTipoDocumentoReceptor("CC");
+                t6.setNumeroDocumentoReceptor("987654321");
+                t6.setNombreReceptorExterno("Pedro Suárez");
+                t6.setReferenciaExterna("REF-2026-001");
+                transaccionRepo.save(t6);
+
+                // Transferencia interbancaria (ACH) rechazada
+                Transaccion t7 = new Transaccion();
+                t7.setTipo(TipoTransaccion.TRANSFERENCIA_INTERBANCARIA);
+                t7.setEstado(EstadoTransaccion.RECHAZADA);
+                t7.setMonto(new BigDecimal("500000.00"));
+                t7.setCuentaOrigen(cta6);
+                t7.setCuentaDestino(null);
+                t7.setBancoDestino("Davivienda");
+                t7.setTipoCuentaDestinoExterna("CORRIENTE");
+                t7.setNumeroCuentaDestinoExterna("11223344556");
+                t7.setTipoDocumentoReceptor("CC");
+                t7.setNumeroDocumentoReceptor("111111111");
+                t7.setNombreReceptorExterno("Carlos Pérez");
+                t7.setReferenciaExterna("REF-2026-002");
+                t7.setMotivoRechazo("Cuenta destino no existe en el banco receptor");
+                transaccionRepo.save(t7);
             }
 
             if (auditoriaRepo.count() == 0) {
@@ -255,6 +308,7 @@ public class DataLoader {
                 auditoriaRepo.save(crearAuditoria("CIERRE_CUENTA", u3, "Cierre exitoso de la cuenta 00030001"));
                 auditoriaRepo.save(crearAuditoria("INTENTO_CIERRE", u4, "Intento de cierre rechazado por saldo pendiente"));
                 auditoriaRepo.save(crearAuditoria("BLOQUEO_USUARIO", u5, "Usuario bloqueado para pruebas de seguridad"));
+                auditoriaRepo.save(crearAuditoria("TRANSFERENCIA_ACH", u6, "Transferencia interbancaria rechazada por cuenta destino inexistente"));
             }
         };
     }
