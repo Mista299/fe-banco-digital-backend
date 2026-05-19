@@ -15,6 +15,7 @@ import fe.banco_digital.exception.AccesoNoAutorizadoException;
 import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
 import fe.banco_digital.exception.OperacionNoPermitidaException;
+import fe.banco_digital.exception.SaldoInsuficienteException;
 import fe.banco_digital.exception.TransaccionNoEncontradaException;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.TransaccionRepository;
@@ -70,6 +71,9 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
         if (!validacion.isAutorizada()) {
             registroFalloService.registrarFallo(origen, null,
                     TipoTransaccion.TRANSFERENCIA_INTERBANCARIA, solicitud.getMonto());
+            if ("SALDO_INSUFICIENTE".equals(validacion.getCodigo())) {
+                throw new SaldoInsuficienteException();
+            }
             throw new OperacionNoPermitidaException(validacion.getMensaje());
         }
 
