@@ -189,6 +189,7 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TransferenciaInterbancariaResponseDTO consultarTransferencia(Long idTransaccion, String username) {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);

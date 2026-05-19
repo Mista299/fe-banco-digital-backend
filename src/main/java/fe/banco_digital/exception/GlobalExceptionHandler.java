@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -99,6 +100,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransaccionNoEncontradaException.class)
     public ResponseEntity<Map<String, Object>> manejarTransaccionNoEncontrada(TransaccionNoEncontradaException ex) {
         return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<Map<String, Object>> manejarHeaderFaltante(MissingRequestHeaderException ex) {
+        return construirRespuesta(HttpStatus.FORBIDDEN, "Acceso no autorizado: header requerido ausente.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
