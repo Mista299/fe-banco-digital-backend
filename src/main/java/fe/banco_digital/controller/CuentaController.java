@@ -1,5 +1,6 @@
 package fe.banco_digital.controller;
 
+import fe.banco_digital.dto.AbrirCuentaSolicitudDTO;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,6 +28,19 @@ public class CuentaController {
     // Inyección por constructor — patrón del equipo
     public CuentaController(CuentaService cuentaService) {
         this.cuentaService = cuentaService;
+    }
+
+    @Operation(summary = "Abrir nueva cuenta", description = "Abre una cuenta adicional (AHORROS o CORRIENTE) para el cliente autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Cuenta abierta exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Tipo de cuenta inválido")
+    })
+    @PostMapping("/abrir")
+    public ResponseEntity<CuentaResumenDTO> abrirCuenta(
+            @Valid @RequestBody AbrirCuentaSolicitudDTO solicitud,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(cuentaService.abrirCuenta(solicitud, usuarioAutenticado.getUsername()));
     }
 
     /**

@@ -1,10 +1,12 @@
 package fe.banco_digital.service;
 
+import fe.banco_digital.dto.AbrirCuentaSolicitudDTO;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
+import fe.banco_digital.entity.TipoCuenta;
 import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.*;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,17 +31,41 @@ public class CuentaServiceImpl implements CuentaService {
     private final PasswordEncoder passwordEncoder;
     private final CuentaMapper cuentaMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final NumeroCuentaService numeroCuentaService;
 
     public CuentaServiceImpl(CuentaRepository cuentaRepository,
                              UsuarioRepository usuarioRepository,
                              PasswordEncoder passwordEncoder,
                              CuentaMapper cuentaMapper,
-                             ApplicationEventPublisher eventPublisher) {
+                             ApplicationEventPublisher eventPublisher,
+                             NumeroCuentaService numeroCuentaService) {
         this.cuentaRepository = cuentaRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.cuentaMapper = cuentaMapper;
         this.eventPublisher = eventPublisher;
+        this.numeroCuentaService = numeroCuentaService;
+    }
+
+    @Override
+    @Transactional
+    public CuentaResumenDTO abrirCuenta(AbrirCuentaSolicitudDTO solicitud, String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(AutenticacionFallidaException::new);
+
+        Cuenta cuenta = new Cuenta();
+        cuenta.setCliente(usuario.getCliente());
+        cuenta.setNumeroCuenta(numeroCuentaService.generarNumeroCuenta());
+        cuenta.setTipo(solicitud.getTipoCuenta());
+        cuenta.setEstado(EstadoCuenta.ACTIVA);
+        cuenta.setSaldo(BigDecimal.ZERO);
+        Cuenta guardada = cuentaRepository.save(cuenta);
+
+        eventPublisher.publishEvent(new AuditoriaEvent(this, "APERTURA_CUENTA",
+                usuario.getIdUsuario(),
+                "Nueva cuenta " + guardada.getTipo().name() + " " + guardada.getNumeroCuenta() + " abierta"));
+
+        return new CuentaResumenDTO(guardada);
     }
 
     /**

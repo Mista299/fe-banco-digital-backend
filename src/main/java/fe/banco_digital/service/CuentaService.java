@@ -1,5 +1,6 @@
 package fe.banco_digital.service;
 
+import fe.banco_digital.dto.AbrirCuentaSolicitudDTO;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
@@ -7,6 +8,8 @@ import fe.banco_digital.dto.CuentaResumenDTO;
 import java.util.List;
 
 public interface CuentaService {
+
+    CuentaResumenDTO abrirCuenta(AbrirCuentaSolicitudDTO solicitud, String username);
 
     // Escenarios 1, 2 y 4
     CierreCuentaRespuestaDTO cerrarCuenta(CierreCuentaSolicitudDTO solicitud, String username);
