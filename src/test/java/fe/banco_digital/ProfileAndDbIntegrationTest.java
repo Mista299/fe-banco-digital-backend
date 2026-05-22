@@ -37,8 +37,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "JWT_SECRET=test-secret-para-integration-tests",
-        "GATEWAY_SECRET=test-gateway-secret"
+        "JWT_SECRET=test-secret-para-integration-tests"
 })
 public class ProfileAndDbIntegrationTest {
 
@@ -84,7 +83,6 @@ public class ProfileAndDbIntegrationTest {
         c.setEmail("test@example.com");
         c.setFechaExpedicion(LocalDate.of(2000, 1, 1));
         c.setDireccion("Calle 1");
-        c.setGenero(fe.banco_digital.entity.Genero.MASCULINO);
         clienteRepository.save(c);
 
         Cuenta cuenta = new Cuenta();

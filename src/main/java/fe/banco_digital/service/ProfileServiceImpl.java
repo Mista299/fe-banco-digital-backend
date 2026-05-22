@@ -14,7 +14,6 @@ import fe.banco_digital.repository.ClienteRepository;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.UsuarioRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProfileServiceImpl implements ProfileService {
@@ -51,7 +50,6 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public ProfileDTO getProfileByUsername(String username) {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);

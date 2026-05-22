@@ -57,7 +57,6 @@ public class AutenticacionServiceImpl implements AutenticacionService {
     }
 
     @Override
-    @Transactional
     public LoginResponseDTO login(LoginRequestDTO dto) {
         try {
             Authentication autenticacion = gestorAutenticacion.authenticate(
@@ -70,10 +69,7 @@ public class AutenticacionServiceImpl implements AutenticacionService {
             String accessToken = jwtUtil.generarToken(username);
             RefreshToken refreshToken = refreshTokenService.crearRefreshToken(usuario.getIdUsuario());
 
-            String genero = usuario.getCliente() != null && usuario.getCliente().getGenero() != null
-                    ? usuario.getCliente().getGenero().name()
-                    : null;
-            return autenticacionMapper.aLoginResponseDTO(accessToken, refreshToken, genero);
+            return autenticacionMapper.aLoginResponseDTO(accessToken, refreshToken);
 
         } catch (LockedException ex) {
             throw new CredencialesInvalidasException();

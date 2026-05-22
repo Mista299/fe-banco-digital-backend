@@ -41,17 +41,7 @@ Sistema de banca digital (backend REST) construido con Java 17 + Spring Boot 3 +
 | [auth-flow.svg](./diagrams/auth-flow.svg) | Flujo de autenticación JWT |
 | [database.svg](./diagrams/database.svg) | Modelo entidad-relación |
 
-## Historias de usuario
+## Sprint 3 - Arquitectura
 
-| Documento | Descripción |
-|-----------|-------------|
-| [HU-01 Registro de usuarios](./hu/ft-01-hu-01-registro-nuevos-usuarios.md) | Registro de perfil, cliente y cuenta inicial |
-| [HU-12 Transferencia a otros bancos](./hu/hu-12-transferencia-fondos-otros-bancos.md) | Transferencias interbancarias mediante proceso ACH |
-| [HU-13 Motor de Validación](./hu/hu-13-motor-validacion.md) | Validación automática de saldo y estado de cuenta |
-| [Task 59 y Task 60](./hu/task-59-60-transacciones.md) | Registro de transacciones y campo tipo_operacion |
-
-## Casos de prueba
-
-| Documento | Descripción |
-|-----------|-------------|
-| [Casos HU-12 / HU-13](./tests/iteration-2-hu-12-hu-13-test-cases.md) | Matriz de pruebas para Iteration 2 |
+- [Docker, Kubernetes y Observabilidad](arquitectura/sprint3-docker-kubernetes-observabilidad.md)
+- [Comandos rápidos Sprint 3](arquitectura/comandos-sprint3.md)

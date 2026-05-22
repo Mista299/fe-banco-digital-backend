@@ -22,7 +22,7 @@ class AutenticacionMapperTest {
         RefreshToken rt = new RefreshToken();
         rt.setToken("refresh-123");
 
-        LoginResponseDTO dto = mapper.aLoginResponseDTO("access-xyz", rt, null);
+        LoginResponseDTO dto = mapper.aLoginResponseDTO("access-xyz", rt);
 
         assertEquals("access-xyz", dto.getAccessToken());
         assertEquals("refresh-123", dto.getRefreshToken());

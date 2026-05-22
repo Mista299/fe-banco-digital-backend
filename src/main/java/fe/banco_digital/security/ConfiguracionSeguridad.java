@@ -75,22 +75,22 @@ public class ConfiguracionSeguridad {
     @Bean
     public SecurityFilterChain cadenaFiltros(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable) //NOSONAR: API REST stateless con JWT — CSRF no aplica
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(fuenteConfiguracionCors()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/registro/**",
-                                "/api/v1/transferencias/interbancarias/*/confirmacion-ach",
-                                "/api/v1/transferencias/interbancarias/*/rechazo-ach",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",
                                 "/v3/api-docs/**",
                                 "/api/db/ping",
+                                "/actuator/health",
+                                "/actuator/info",
+                                "/actuator/prometheus",
                                 "/favicon.ico"
                         ).permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
@@ -101,11 +101,6 @@ public class ConfiguracionSeguridad {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write("{\"mensaje\":\"No autenticado. Incluye un token Bearer válido.\"}");
-                        })
-                        .accessDeniedHandler((request, response, e) -> {
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json;charset=UTF-8");
-                            response.getWriter().write("{\"mensaje\":\"No tienes permisos para realizar esta acción.\"}");
                         })
                 )
                 .authenticationProvider(proveedorAutenticacion())

@@ -68,10 +68,9 @@ public class TransaccionServiceImpl implements TransaccionService {
         Transaccion t = registrarTransaccion(null, cuenta,
                 TipoTransaccion.DEPOSITO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
 
-        String montoDeposito = solicitud.getMonto().toPlainString();
         eventPublisher.publishEvent(new AuditoriaEvent(this, "DEPOSITO",
                 usuario.getIdUsuario(),
-                "Depósito de " + montoDeposito + " en cuenta " + cuenta.getNumeroCuenta()));
+                "Depósito de " + solicitud.getMonto() + " en cuenta " + cuenta.getNumeroCuenta()));
 
         return construirRespuesta(t, cuenta.getSaldo(), "Depósito realizado exitosamente.");
     }
@@ -96,10 +95,9 @@ public class TransaccionServiceImpl implements TransaccionService {
         Transaccion t = registrarTransaccion(cuenta, null,
                 TipoTransaccion.RETIRO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
 
-        String montoRetiro = solicitud.getMonto().toPlainString();
         eventPublisher.publishEvent(new AuditoriaEvent(this, "RETIRO",
                 usuario.getIdUsuario(),
-                "Retiro de " + montoRetiro + " de cuenta " + cuenta.getNumeroCuenta()));
+                "Retiro de " + solicitud.getMonto() + " de cuenta " + cuenta.getNumeroCuenta()));
 
         return construirRespuesta(t, cuenta.getSaldo(), "Retiro realizado exitosamente.");
     }
@@ -150,10 +148,9 @@ public class TransaccionServiceImpl implements TransaccionService {
         Transaccion t = registrarTransaccion(origen, destino,
                 TipoTransaccion.TRANSFERENCIA, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
 
-        String montoTransferencia = solicitud.getMonto().toPlainString();
         eventPublisher.publishEvent(new AuditoriaEvent(this, "TRANSFERENCIA",
                 usuario.getIdUsuario(),
-                "Transferencia de " + montoTransferencia
+                "Transferencia de " + solicitud.getMonto()
                         + " desde " + origen.getNumeroCuenta()
                         + " hacia " + destino.getNumeroCuenta()));
 

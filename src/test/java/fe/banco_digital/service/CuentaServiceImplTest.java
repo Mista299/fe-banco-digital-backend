@@ -25,7 +25,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings({"java:S100", "java:S1192"})
 @ExtendWith(MockitoExtension.class)
 class CuentaServiceImplTest {
 
@@ -152,5 +150,4 @@ class CuentaServiceImplTest {
 
         assertThrows(AutenticacionFallidaException.class, () -> service.obtenerCuentasDelCliente("user1"));
     }
-
 }

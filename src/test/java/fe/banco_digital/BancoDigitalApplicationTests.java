@@ -11,8 +11,7 @@ import org.springframework.test.context.TestPropertySource;
 		"spring.datasource.username=sa",
 		"spring.datasource.password=",
 		"spring.jpa.hibernate.ddl-auto=create-drop",
-		"jwt.secreto=clave-secreta-para-tests-unitarios-minimo-32-caracteres",
-		"GATEWAY_SECRET=test-gateway-secret"
+		"jwt.secreto=clave-secreta-para-tests-unitarios-minimo-32-caracteres"
 })
 class BancoDigitalApplicationTests {
 

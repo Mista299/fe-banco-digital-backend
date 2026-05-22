@@ -33,7 +33,6 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -94,7 +93,7 @@ class AutenticacionServiceImplTest {
 
         LoginResponseDTO out = new LoginResponseDTO();
         out.setAccessToken("token-abc");
-        when(autenticacionMapper.aLoginResponseDTO(eq("token-abc"), eq(rt), any())).thenReturn(out);
+        when(autenticacionMapper.aLoginResponseDTO("token-abc", rt)).thenReturn(out);
 
         LoginResponseDTO res = service.login(req);
 

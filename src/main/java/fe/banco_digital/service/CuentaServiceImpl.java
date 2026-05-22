@@ -1,12 +1,10 @@
 package fe.banco_digital.service;
 
-import fe.banco_digital.dto.AbrirCuentaSolicitudDTO;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
-import fe.banco_digital.entity.TipoCuenta;
 import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.*;
@@ -19,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,67 +28,17 @@ public class CuentaServiceImpl implements CuentaService {
     private final PasswordEncoder passwordEncoder;
     private final CuentaMapper cuentaMapper;
     private final ApplicationEventPublisher eventPublisher;
-    private final NumeroCuentaService numeroCuentaService;
 
     public CuentaServiceImpl(CuentaRepository cuentaRepository,
                              UsuarioRepository usuarioRepository,
                              PasswordEncoder passwordEncoder,
                              CuentaMapper cuentaMapper,
-                             ApplicationEventPublisher eventPublisher,
-                             NumeroCuentaService numeroCuentaService) {
+                             ApplicationEventPublisher eventPublisher) {
         this.cuentaRepository = cuentaRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.cuentaMapper = cuentaMapper;
         this.eventPublisher = eventPublisher;
-        this.numeroCuentaService = numeroCuentaService;
-    }
-
-    @Override
-    @Transactional
-    public CuentaResumenDTO abrirCuenta(AbrirCuentaSolicitudDTO solicitud, String username) {
-        Usuario usuario = usuarioRepository.findByUsername(username)
-                .orElseThrow(AutenticacionFallidaException::new);
-
-        Long idCliente = usuario.getCliente().getIdCliente();
-        List<EstadoCuenta> estadosOcupados = List.of(
-                EstadoCuenta.ACTIVA, EstadoCuenta.BLOQUEADA, EstadoCuenta.PENDIENTE_APROBACION);
-
-        if (cuentaRepository.countByClienteIdClienteAndEstadoIn(idCliente, estadosOcupados) >= 3) {
-            throw new OperacionNoPermitidaException("No puedes tener más de 3 cuentas activas.");
-        }
-
-        if (solicitud.getTipoCuenta() == TipoCuenta.AHORROS) {
-            if (cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
-                    idCliente, TipoCuenta.AHORROS, estadosOcupados) >= 2) {
-                throw new OperacionNoPermitidaException("Ya tienes el máximo de 2 cuentas de ahorro activas.");
-            }
-        } else {
-            if (cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
-                    idCliente, TipoCuenta.CORRIENTE, estadosOcupados) >= 1) {
-                throw new OperacionNoPermitidaException("Ya tienes una cuenta corriente activa.");
-            }
-            if (cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
-                    idCliente, TipoCuenta.AHORROS, List.of(EstadoCuenta.ACTIVA)) == 0) {
-                throw new OperacionNoPermitidaException(
-                        "Debes tener al menos una cuenta de ahorros activa para abrir una cuenta corriente.");
-            }
-        }
-
-        Cuenta cuenta = new Cuenta();
-        cuenta.setCliente(usuario.getCliente());
-        cuenta.setNumeroCuenta(numeroCuentaService.generarNumeroCuenta());
-        cuenta.setTipo(solicitud.getTipoCuenta());
-        cuenta.setEstado(EstadoCuenta.PENDIENTE_APROBACION);
-        cuenta.setSaldo(BigDecimal.ZERO);
-        Cuenta guardada = cuentaRepository.save(cuenta);
-
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "SOLICITUD_APERTURA_CUENTA",
-                usuario.getIdUsuario(),
-                "Solicitud de apertura cuenta " + guardada.getTipo().name()
-                        + " " + guardada.getNumeroCuenta() + " pendiente de aprobación"));
-
-        return new CuentaResumenDTO(guardada);
     }
 
     /**
@@ -163,7 +110,6 @@ public class CuentaServiceImpl implements CuentaService {
                 .findByCliente_IdCliente(usuario.getCliente().getIdCliente());
 
         return cuentas.stream()
-                .filter(c -> c.getEstado() != EstadoCuenta.INACTIVA)
                 .map(cuentaMapper::aCuentaResumenDTO)
                 .collect(Collectors.toList());
     }

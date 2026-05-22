@@ -6,7 +6,6 @@ public class LoginResponseDTO {
     private String refreshToken;
     private String tipo = "Bearer";
     private long expiraEn;
-    private String genero;
 
     public String getAccessToken() { return accessToken; }
     public void setAccessToken(String accessToken) { this.accessToken = accessToken; }
@@ -19,7 +18,4 @@ public class LoginResponseDTO {
 
     public long getExpiraEn() { return expiraEn; }
     public void setExpiraEn(long expiraEn) { this.expiraEn = expiraEn; }
-
-    public String getGenero() { return genero; }
-    public void setGenero(String genero) { this.genero = genero; }
 }

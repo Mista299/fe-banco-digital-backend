@@ -5,39 +5,43 @@ import java.time.LocalDateTime;
 
 public class MovimientoDTO {
 
-    private Long idTransaccion;
     private LocalDateTime fechaHora;
     private String concepto;
     private BigDecimal monto;
     private BigDecimal saldoResultante;
-    private String bancoDestino;
-    private String nombreReceptorExterno;
-    private String estado;
 
     public MovimientoDTO() {
     }
 
-    public Long getIdTransaccion() { return idTransaccion; }
-    public void setIdTransaccion(Long idTransaccion) { this.idTransaccion = idTransaccion; }
+    public LocalDateTime getFechaHora() {
+        return fechaHora;
+    }
 
-    public LocalDateTime getFechaHora() { return fechaHora; }
-    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
+    public void setFechaHora(LocalDateTime fechaHora) {
+        this.fechaHora = fechaHora;
+    }
 
-    public String getConcepto() { return concepto; }
-    public void setConcepto(String concepto) { this.concepto = concepto; }
+    public String getConcepto() {
+        return concepto;
+    }
 
-    public BigDecimal getMonto() { return monto; }
-    public void setMonto(BigDecimal monto) { this.monto = monto; }
+    public void setConcepto(String concepto) {
+        this.concepto = concepto;
+    }
 
-    public BigDecimal getSaldoResultante() { return saldoResultante; }
-    public void setSaldoResultante(BigDecimal saldoResultante) { this.saldoResultante = saldoResultante; }
+    public BigDecimal getMonto() {
+        return monto;
+    }
 
-    public String getBancoDestino() { return bancoDestino; }
-    public void setBancoDestino(String bancoDestino) { this.bancoDestino = bancoDestino; }
+    public void setMonto(BigDecimal monto) {
+        this.monto = monto;
+    }
 
-    public String getNombreReceptorExterno() { return nombreReceptorExterno; }
-    public void setNombreReceptorExterno(String nombreReceptorExterno) { this.nombreReceptorExterno = nombreReceptorExterno; }
+    public BigDecimal getSaldoResultante() {
+        return saldoResultante;
+    }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public void setSaldoResultante(BigDecimal saldoResultante) {
+        this.saldoResultante = saldoResultante;
+    }
 }
