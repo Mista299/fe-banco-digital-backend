@@ -75,7 +75,7 @@ class RefreshTokenServiceImplTest {
         when(refreshTokenRepository.save(any())).thenReturn(nuevo);
 
         LoginResponseDTO out = new LoginResponseDTO(); out.setAccessToken("acc"); out.setRefreshToken("t2");
-        when(autenticacionMapper.aLoginResponseDTO("acc", nuevo)).thenReturn(out);
+        when(autenticacionMapper.aLoginResponseDTO(eq("acc"), eq(nuevo), any())).thenReturn(out);
 
         LoginResponseDTO res = service.renovarToken("t1");
         assertNotNull(res);

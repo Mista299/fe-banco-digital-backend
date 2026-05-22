@@ -163,6 +163,7 @@ public class CuentaServiceImpl implements CuentaService {
                 .findByCliente_IdCliente(usuario.getCliente().getIdCliente());
 
         return cuentas.stream()
+                .filter(c -> c.getEstado() != EstadoCuenta.INACTIVA)
                 .map(cuentaMapper::aCuentaResumenDTO)
                 .collect(Collectors.toList());
     }

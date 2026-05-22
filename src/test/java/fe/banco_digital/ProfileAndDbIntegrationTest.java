@@ -84,6 +84,7 @@ public class ProfileAndDbIntegrationTest {
         c.setEmail("test@example.com");
         c.setFechaExpedicion(LocalDate.of(2000, 1, 1));
         c.setDireccion("Calle 1");
+        c.setGenero(fe.banco_digital.entity.Genero.MASCULINO);
         clienteRepository.save(c);
 
         Cuenta cuenta = new Cuenta();

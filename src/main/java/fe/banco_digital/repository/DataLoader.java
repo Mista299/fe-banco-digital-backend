@@ -49,8 +49,10 @@ public class DataLoader {
                 c.setEmail("bryan@example.com");
                 c.setDireccion("Calle 10 #20-30");
                 c.setTelefono("3000000001");
-                return clienteRepo.save(c);
+                return c;
             });
+            c1.setGenero(Genero.MASCULINO);
+            clienteRepo.save(c1);
 
             Cliente c2 = clienteRepo.findByDocumento("987654321").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -60,8 +62,10 @@ public class DataLoader {
                 c.setEmail("ana@example.com");
                 c.setDireccion("Carrera 15 #8-45");
                 c.setTelefono("3000000002");
-                return clienteRepo.save(c);
+                return c;
             });
+            c2.setGenero(Genero.FEMENINO);
+            clienteRepo.save(c2);
 
             Cliente c3 = clienteRepo.findByDocumento("111111111").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -71,8 +75,10 @@ public class DataLoader {
                 c.setEmail("carlos@example.com");
                 c.setDireccion("Diagonal 50 #14-90");
                 c.setTelefono("3000000003");
-                return clienteRepo.save(c);
+                return c;
             });
+            c3.setGenero(Genero.MASCULINO);
+            clienteRepo.save(c3);
 
             Cliente c4 = clienteRepo.findByDocumento("222222222").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -82,8 +88,10 @@ public class DataLoader {
                 c.setEmail("laura@example.com");
                 c.setDireccion("Transversal 12 #45-67");
                 c.setTelefono("3000000004");
-                return clienteRepo.save(c);
+                return c;
             });
+            c4.setGenero(Genero.FEMENINO);
+            clienteRepo.save(c4);
 
             Cliente c5 = clienteRepo.findByDocumento("333333333").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -93,8 +101,10 @@ public class DataLoader {
                 c.setEmail("jorge@example.com");
                 c.setDireccion("Avenida 80 #30-12");
                 c.setTelefono("3000000005");
-                return clienteRepo.save(c);
+                return c;
             });
+            c5.setGenero(Genero.MASCULINO);
+            clienteRepo.save(c5);
 
             Cliente c6 = clienteRepo.findByDocumento("444444444").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -104,8 +114,10 @@ public class DataLoader {
                 c.setEmail("sofia@example.com");
                 c.setDireccion("Calle 5 #10-20");
                 c.setTelefono("3000000006");
-                return clienteRepo.save(c);
+                return c;
             });
+            c6.setGenero(Genero.FEMENINO);
+            clienteRepo.save(c6);
             // ── 6 Usuarios (1 por cliente) ────────────────────────────────────
             Usuario u1 = usuarioRepo.findByUsername("bryan").orElseGet(() -> {
                 Usuario u = new Usuario();
