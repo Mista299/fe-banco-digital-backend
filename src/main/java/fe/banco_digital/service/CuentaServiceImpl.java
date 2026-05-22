@@ -53,17 +53,43 @@ public class CuentaServiceImpl implements CuentaService {
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(AutenticacionFallidaException::new);
 
+        Long idCliente = usuario.getCliente().getIdCliente();
+        List<EstadoCuenta> estadosOcupados = List.of(
+                EstadoCuenta.ACTIVA, EstadoCuenta.BLOQUEADA, EstadoCuenta.PENDIENTE_APROBACION);
+
+        if (cuentaRepository.countByClienteIdClienteAndEstadoIn(idCliente, estadosOcupados) >= 3) {
+            throw new OperacionNoPermitidaException("No puedes tener más de 3 cuentas activas.");
+        }
+
+        if (solicitud.getTipoCuenta() == TipoCuenta.AHORROS) {
+            if (cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
+                    idCliente, TipoCuenta.AHORROS, estadosOcupados) >= 2) {
+                throw new OperacionNoPermitidaException("Ya tienes el máximo de 2 cuentas de ahorro activas.");
+            }
+        } else {
+            if (cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
+                    idCliente, TipoCuenta.CORRIENTE, estadosOcupados) >= 1) {
+                throw new OperacionNoPermitidaException("Ya tienes una cuenta corriente activa.");
+            }
+            if (cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
+                    idCliente, TipoCuenta.AHORROS, List.of(EstadoCuenta.ACTIVA)) == 0) {
+                throw new OperacionNoPermitidaException(
+                        "Debes tener al menos una cuenta de ahorros activa para abrir una cuenta corriente.");
+            }
+        }
+
         Cuenta cuenta = new Cuenta();
         cuenta.setCliente(usuario.getCliente());
         cuenta.setNumeroCuenta(numeroCuentaService.generarNumeroCuenta());
         cuenta.setTipo(solicitud.getTipoCuenta());
-        cuenta.setEstado(EstadoCuenta.ACTIVA);
+        cuenta.setEstado(EstadoCuenta.PENDIENTE_APROBACION);
         cuenta.setSaldo(BigDecimal.ZERO);
         Cuenta guardada = cuentaRepository.save(cuenta);
 
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "APERTURA_CUENTA",
+        eventPublisher.publishEvent(new AuditoriaEvent(this, "SOLICITUD_APERTURA_CUENTA",
                 usuario.getIdUsuario(),
-                "Nueva cuenta " + guardada.getTipo().name() + " " + guardada.getNumeroCuenta() + " abierta"));
+                "Solicitud de apertura cuenta " + guardada.getTipo().name()
+                        + " " + guardada.getNumeroCuenta() + " pendiente de aprobación"));
 
         return new CuentaResumenDTO(guardada);
     }

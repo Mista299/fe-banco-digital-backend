@@ -1,0 +1,4 @@
+-- EstadoCuenta: se agrega el valor PENDIENTE_APROBACION
+-- El campo estado en la tabla cuenta es VARCHAR sin CHECK constraint,
+-- por lo que no se requieren cambios DDL adicionales.
+-- Este archivo documenta el cambio semántico para trazabilidad.

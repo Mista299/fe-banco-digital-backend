@@ -90,6 +90,7 @@ public class ConfiguracionSeguridad {
                                 "/api/db/ping",
                                 "/favicon.ico"
                         ).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
@@ -100,6 +101,11 @@ public class ConfiguracionSeguridad {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write("{\"mensaje\":\"No autenticado. Incluye un token Bearer válido.\"}");
+                        })
+                        .accessDeniedHandler((request, response, e) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"mensaje\":\"No tienes permisos para realizar esta acción.\"}");
                         })
                 )
                 .authenticationProvider(proveedorAutenticacion())

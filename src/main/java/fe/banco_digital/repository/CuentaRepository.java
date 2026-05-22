@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
+import fe.banco_digital.entity.TipoCuenta;
 
 public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
 
@@ -27,4 +28,18 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
     Optional<Cuenta> findByIdCuentaAndCliente_IdCliente(Long idCuenta, Long idCliente);
 
     boolean existsByNumeroCuenta(String numeroCuenta);
+
+    @Query("SELECT COUNT(c) FROM Cuenta c WHERE c.cliente.idCliente = :idCliente AND c.estado IN :estados")
+    long countByClienteIdClienteAndEstadoIn(
+            @Param("idCliente") Long idCliente,
+            @Param("estados") List<EstadoCuenta> estados);
+
+    @Query("SELECT COUNT(c) FROM Cuenta c WHERE c.cliente.idCliente = :idCliente AND c.tipo = :tipo AND c.estado IN :estados")
+    long countByClienteIdClienteAndTipoAndEstadoIn(
+            @Param("idCliente") Long idCliente,
+            @Param("tipo") TipoCuenta tipo,
+            @Param("estados") List<EstadoCuenta> estados);
+
+    @Query("SELECT c FROM Cuenta c JOIN FETCH c.cliente WHERE c.estado = :estado")
+    List<Cuenta> findByEstadoConCliente(@Param("estado") EstadoCuenta estado);
 }
