@@ -132,6 +132,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(cuerpo);
     }
 
+    @ExceptionHandler(PeriodoNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> manejarPeriodoNoDisponible(PeriodoNoDisponibleException ex) {
+        return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+    @ExceptionHandler(PeriodoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarPeriodoInvalido(PeriodoInvalidoException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarExcepcionGeneral(Exception ex) {
         log.error("Error interno no controlado: {}", ex.getMessage(), ex);
