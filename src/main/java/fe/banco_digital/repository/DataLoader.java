@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Configuration
@@ -21,7 +22,10 @@ public class DataLoader {
             UsuarioRepository usuarioRepo,
             RolRepository rolRepo,
             CuentaRepository cuentaRepo,
-            TransaccionRepository transaccionRepo,
+            MovimientoRepository movimientoRepo,
+            TransferenciaRepository transferenciaRepo,
+            TransferenciaExternaRepository transferenciaExternaRepo,
+            TransferenciaInternacionalRepository transferenciaInternacionalRepo,
             AuditoriaRepository auditoriaRepo,
             PasswordEncoder passwordEncoder
     ) {
@@ -49,10 +53,9 @@ public class DataLoader {
                 c.setEmail("bryan@example.com");
                 c.setDireccion("Calle 10 #20-30");
                 c.setTelefono("3000000001");
-                return c;
+                c.setGenero(Genero.MASCULINO);
+                return clienteRepo.save(c);
             });
-            c1.setGenero(Genero.MASCULINO);
-            clienteRepo.save(c1);
 
             Cliente c2 = clienteRepo.findByDocumento("987654321").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -62,10 +65,9 @@ public class DataLoader {
                 c.setEmail("ana@example.com");
                 c.setDireccion("Carrera 15 #8-45");
                 c.setTelefono("3000000002");
-                return c;
+                c.setGenero(Genero.FEMENINO);
+                return clienteRepo.save(c);
             });
-            c2.setGenero(Genero.FEMENINO);
-            clienteRepo.save(c2);
 
             Cliente c3 = clienteRepo.findByDocumento("111111111").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -75,10 +77,9 @@ public class DataLoader {
                 c.setEmail("carlos@example.com");
                 c.setDireccion("Diagonal 50 #14-90");
                 c.setTelefono("3000000003");
-                return c;
+                c.setGenero(Genero.MASCULINO);
+                return clienteRepo.save(c);
             });
-            c3.setGenero(Genero.MASCULINO);
-            clienteRepo.save(c3);
 
             Cliente c4 = clienteRepo.findByDocumento("222222222").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -88,10 +89,9 @@ public class DataLoader {
                 c.setEmail("laura@example.com");
                 c.setDireccion("Transversal 12 #45-67");
                 c.setTelefono("3000000004");
-                return c;
+                c.setGenero(Genero.FEMENINO);
+                return clienteRepo.save(c);
             });
-            c4.setGenero(Genero.FEMENINO);
-            clienteRepo.save(c4);
 
             Cliente c5 = clienteRepo.findByDocumento("333333333").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -101,10 +101,9 @@ public class DataLoader {
                 c.setEmail("jorge@example.com");
                 c.setDireccion("Avenida 80 #30-12");
                 c.setTelefono("3000000005");
-                return c;
+                c.setGenero(Genero.MASCULINO);
+                return clienteRepo.save(c);
             });
-            c5.setGenero(Genero.MASCULINO);
-            clienteRepo.save(c5);
 
             Cliente c6 = clienteRepo.findByDocumento("444444444").orElseGet(() -> {
                 Cliente c = new Cliente();
@@ -114,11 +113,10 @@ public class DataLoader {
                 c.setEmail("sofia@example.com");
                 c.setDireccion("Calle 5 #10-20");
                 c.setTelefono("3000000006");
-                return c;
+                c.setGenero(Genero.FEMENINO);
+                return clienteRepo.save(c);
             });
-            c6.setGenero(Genero.FEMENINO);
-            clienteRepo.save(c6);
-            // ── 6 Usuarios (1 por cliente) ────────────────────────────────────
+
             Usuario u1 = usuarioRepo.findByUsername("bryan").orElseGet(() -> {
                 Usuario u = new Usuario();
                 u.setUsername("bryan");
@@ -179,8 +177,8 @@ public class DataLoader {
                 return usuarioRepo.save(u);
             });
 
-            // Saldos calculados según el historial de transacciones semilla:
-            // cta1: depósito 1.000.000 − transferencia 50.000 = 950.000
+            // Saldos calculados según el historial semilla:
+            // cta1: depósito 1.000.000 − transferencia 50.000 − swift 420.000 = 530.000
             // cta2: depósito 1.500.000 − retiro 200.000 − ACH 75.000 = 1.225.000
             // cta3: sin transacciones = 0
             // cta4: transferencia 50.000 + depósito 100.000 = 150.000
@@ -191,7 +189,7 @@ public class DataLoader {
                 cta.setNumeroCuenta("00010001");
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.ACTIVA);
-                cta.setSaldo(new BigDecimal("950000.00"));
+                cta.setSaldo(new BigDecimal("530000.00"));
                 cta.setCliente(c1);
                 return cuentaRepo.save(cta);
             });
@@ -246,125 +244,132 @@ public class DataLoader {
                 return cuentaRepo.save(cta);
             });
 
-            if (transaccionRepo.count() == 0) {
-                // Fechas escalonadas para que el historial se vea realista
-                java.time.LocalDateTime hace7d = java.time.LocalDateTime.now().minusDays(7);
-                java.time.LocalDateTime hace6d = java.time.LocalDateTime.now().minusDays(6);
-                java.time.LocalDateTime hace5d = java.time.LocalDateTime.now().minusDays(5);
-                java.time.LocalDateTime hace4d = java.time.LocalDateTime.now().minusDays(4);
-                java.time.LocalDateTime hace3d = java.time.LocalDateTime.now().minusDays(3);
-                java.time.LocalDateTime hace2d = java.time.LocalDateTime.now().minusDays(2);
-                java.time.LocalDateTime hace1d = java.time.LocalDateTime.now().minusDays(1);
+            if (movimientoRepo.count() == 0 && transferenciaRepo.count() == 0) {
+                LocalDateTime hace7d = LocalDateTime.now().minusDays(7);
+                LocalDateTime hace6d = LocalDateTime.now().minusDays(6);
+                LocalDateTime hace5d = LocalDateTime.now().minusDays(5);
+                LocalDateTime hace4d = LocalDateTime.now().minusDays(4);
+                LocalDateTime hace3d = LocalDateTime.now().minusDays(3);
+                LocalDateTime hace2d = LocalDateTime.now().minusDays(2);
+                LocalDateTime hace1d = LocalDateTime.now().minusDays(1);
 
-                // cta1 (Bryan): depósito 1.000.000 → saldo 1.000.000
-                Transaccion t1 = new Transaccion();
-                t1.setTipo(TipoTransaccion.DEPOSITO);
-                t1.setEstado(EstadoTransaccion.EXITOSA);
-                t1.setMonto(new BigDecimal("1000000.00"));
-                t1.setCuentaOrigen(null);
-                t1.setCuentaDestino(cta1);
-                t1.setFecha(hace7d);
-                transaccionRepo.save(t1);
+                // cta1 (Bryan): depósito 1.000.000
+                Movimiento m1 = new Movimiento();
+                m1.setCuenta(cta1);
+                m1.setTipo(TipoMovimiento.DEPOSITO);
+                m1.setEstado(EstadoMovimiento.EXITOSO);
+                m1.setMonto(new BigDecimal("1000000.00"));
+                m1.setFecha(hace7d);
+                movimientoRepo.save(m1);
 
-                // cta2 (Ana): depósito 1.500.000 → saldo 1.500.000
-                Transaccion t2 = new Transaccion();
-                t2.setTipo(TipoTransaccion.DEPOSITO);
-                t2.setEstado(EstadoTransaccion.EXITOSA);
-                t2.setMonto(new BigDecimal("1500000.00"));
-                t2.setCuentaOrigen(null);
-                t2.setCuentaDestino(cta2);
-                t2.setFecha(hace7d.plusHours(2));
-                transaccionRepo.save(t2);
+                // cta2 (Ana): depósito 1.500.000
+                Movimiento m2 = new Movimiento();
+                m2.setCuenta(cta2);
+                m2.setTipo(TipoMovimiento.DEPOSITO);
+                m2.setEstado(EstadoMovimiento.EXITOSO);
+                m2.setMonto(new BigDecimal("1500000.00"));
+                m2.setFecha(hace7d.plusHours(2));
+                movimientoRepo.save(m2);
 
-                // cta6 (Sofía): depósito inicial 500.000 → saldo 500.000
-                Transaccion t3 = new Transaccion();
-                t3.setTipo(TipoTransaccion.DEPOSITO);
-                t3.setEstado(EstadoTransaccion.EXITOSA);
-                t3.setMonto(new BigDecimal("500000.00"));
-                t3.setCuentaOrigen(null);
-                t3.setCuentaDestino(cta6);
-                t3.setFecha(hace6d);
-                transaccionRepo.save(t3);
+                // cta6 (Sofía): depósito inicial 500.000
+                Movimiento m3 = new Movimiento();
+                m3.setCuenta(cta6);
+                m3.setTipo(TipoMovimiento.DEPOSITO);
+                m3.setEstado(EstadoMovimiento.EXITOSO);
+                m3.setMonto(new BigDecimal("500000.00"));
+                m3.setFecha(hace6d);
+                movimientoRepo.save(m3);
 
-                // cta1 → cta4: transferencia 50.000 — cta1 queda 950.000, cta4 queda 50.000
-                Transaccion t4 = new Transaccion();
-                t4.setTipo(TipoTransaccion.TRANSFERENCIA);
-                t4.setEstado(EstadoTransaccion.EXITOSA);
-                t4.setMonto(new BigDecimal("50000.00"));
+                // cta1 → cta4: transferencia 50.000
+                Transferencia t4 = new Transferencia();
                 t4.setCuentaOrigen(cta1);
                 t4.setCuentaDestino(cta4);
+                t4.setEstado(EstadoTransferencia.EXITOSA);
+                t4.setMonto(new BigDecimal("50000.00"));
                 t4.setFecha(hace5d);
-                transaccionRepo.save(t4);
+                transferenciaRepo.save(t4);
 
-                // cta2: retiro 200.000 → saldo 1.300.000
-                Transaccion t5 = new Transaccion();
-                t5.setTipo(TipoTransaccion.RETIRO);
-                t5.setEstado(EstadoTransaccion.EXITOSA);
-                t5.setMonto(new BigDecimal("200000.00"));
-                t5.setCuentaOrigen(cta2);
-                t5.setCuentaDestino(null);
-                t5.setFecha(hace4d);
-                transaccionRepo.save(t5);
+                // cta2: retiro 200.000
+                Movimiento m5 = new Movimiento();
+                m5.setCuenta(cta2);
+                m5.setTipo(TipoMovimiento.RETIRO);
+                m5.setEstado(EstadoMovimiento.EXITOSO);
+                m5.setMonto(new BigDecimal("200000.00"));
+                m5.setFecha(hace4d);
+                movimientoRepo.save(m5);
 
-                // cta4: depósito 100.000 → saldo 150.000
-                Transaccion t6 = new Transaccion();
-                t6.setTipo(TipoTransaccion.DEPOSITO);
-                t6.setEstado(EstadoTransaccion.EXITOSA);
-                t6.setMonto(new BigDecimal("100000.00"));
-                t6.setCuentaOrigen(null);
-                t6.setCuentaDestino(cta4);
-                t6.setFecha(hace3d);
-                transaccionRepo.save(t6);
+                // cta4: depósito 100.000
+                Movimiento m6 = new Movimiento();
+                m6.setCuenta(cta4);
+                m6.setTipo(TipoMovimiento.DEPOSITO);
+                m6.setEstado(EstadoMovimiento.EXITOSO);
+                m6.setMonto(new BigDecimal("100000.00"));
+                m6.setFecha(hace3d);
+                movimientoRepo.save(m6);
 
-                // cta2 → Bancolombia: ACH exitosa 75.000 → saldo 1.225.000
-                Transaccion t7 = new Transaccion();
-                t7.setTipo(TipoTransaccion.TRANSFERENCIA_INTERBANCARIA);
-                t7.setEstado(EstadoTransaccion.EXITOSA);
-                t7.setMonto(new BigDecimal("75000.00"));
-                t7.setCuentaOrigen(cta2);
-                t7.setCuentaDestino(null);
-                t7.setBancoDestino("Bancolombia");
-                t7.setTipoCuentaDestinoExterna("AHORROS");
-                t7.setNumeroCuentaDestinoExterna("45678901234");
-                t7.setTipoDocumentoReceptor("CC");
-                t7.setNumeroDocumentoReceptor("9876543210");
-                t7.setNombreReceptorExterno("Pedro Suárez");
-                t7.setReferenciaExterna("REF-2026-001");
-                t7.setFecha(hace2d);
-                transaccionRepo.save(t7);
+                // cta2 → Bancolombia: ACH exitosa 75.000
+                TransferenciaExterna te7 = new TransferenciaExterna();
+                te7.setCuentaOrigen(cta2);
+                te7.setBancoDestino("Bancolombia");
+                te7.setTipoCuentaDestino("AHORROS");
+                te7.setNumeroCuentaDestino("45678901234");
+                te7.setTipoDocumentoReceptor("CC");
+                te7.setNumeroDocumentoReceptor("9876543210");
+                te7.setNombreReceptor("Pedro Suárez");
+                te7.setMonto(new BigDecimal("75000.00"));
+                te7.setEstado(EstadoTransferenciaExterna.EXITOSA);
+                te7.setReferenciaExterna("REF-2026-001");
+                te7.setFecha(hace2d);
+                transferenciaExternaRepo.save(te7);
 
-                // cta6 → Davivienda: ACH reversada 200.000 (dinero debita y regresa)
+                // cta6 → Davivienda: ACH reversada 200.000
                 String refAchReversada = "REF-2026-002";
                 String motivoRechazoAch = "Cuenta destino no existe en el banco receptor";
 
-                Transaccion t8 = new Transaccion();
-                t8.setTipo(TipoTransaccion.TRANSFERENCIA_INTERBANCARIA);
-                t8.setEstado(EstadoTransaccion.REVERSADA);
-                t8.setMonto(new BigDecimal("200000.00"));
-                t8.setCuentaOrigen(cta6);
-                t8.setCuentaDestino(null);
-                t8.setBancoDestino("Davivienda");
-                t8.setTipoCuentaDestinoExterna("CORRIENTE");
-                t8.setNumeroCuentaDestinoExterna("11223344556");
-                t8.setTipoDocumentoReceptor("CC");
-                t8.setNumeroDocumentoReceptor("1122334455");
-                t8.setNombreReceptorExterno("María López");
-                t8.setReferenciaExterna(refAchReversada);
-                t8.setMotivoRechazo(motivoRechazoAch);
-                t8.setFecha(hace1d);
-                transaccionRepo.save(t8);
+                TransferenciaExterna te8 = new TransferenciaExterna();
+                te8.setCuentaOrigen(cta6);
+                te8.setBancoDestino("Davivienda");
+                te8.setTipoCuentaDestino("CORRIENTE");
+                te8.setNumeroCuentaDestino("11223344556");
+                te8.setTipoDocumentoReceptor("CC");
+                te8.setNumeroDocumentoReceptor("1122334455");
+                te8.setNombreReceptor("María López");
+                te8.setMonto(new BigDecimal("200000.00"));
+                te8.setEstado(EstadoTransferenciaExterna.REVERSADA);
+                te8.setReferenciaExterna(refAchReversada);
+                te8.setMotivoRechazo(motivoRechazoAch);
+                te8.setFecha(hace1d);
+                transferenciaExternaRepo.save(te8);
 
-                // REVERSO_ACH: regresa los 200.000 a cta6 → saldo 500.000
-                Transaccion t9 = new Transaccion();
-                t9.setTipo(TipoTransaccion.REVERSO_ACH);
-                t9.setEstado(EstadoTransaccion.EXITOSA);
-                t9.setMonto(new BigDecimal("200000.00"));
-                t9.setCuentaOrigen(null);
-                t9.setCuentaDestino(cta6);
-                t9.setReferenciaExterna(refAchReversada);
-                t9.setMotivoRechazo(motivoRechazoAch);
-                t9.setFecha(hace1d.plusMinutes(5));
-                transaccionRepo.save(t9);
+                // Devolución ACH a cta6
+                Movimiento m9 = new Movimiento();
+                m9.setCuenta(cta6);
+                m9.setTipo(TipoMovimiento.DEPOSITO);
+                m9.setEstado(EstadoMovimiento.EXITOSO);
+                m9.setMonto(new BigDecimal("200000.00"));
+                m9.setDescripcion("Reversión ACH: " + refAchReversada);
+                m9.setFecha(hace1d.plusMinutes(5));
+                movimientoRepo.save(m9);
+
+                // cta1 (Bryan) → Citibank USA: SWIFT exitosa 100 USD a tasa 4200
+                TransferenciaInternacional ti10 = new TransferenciaInternacional();
+                ti10.setCuentaOrigen(cta1);
+                ti10.setBancoDestino("Citibank");
+                ti10.setCodigoSwift("CITIUS33");
+                ti10.setPaisDestino("Estados Unidos");
+                ti10.setTipoCuentaDestino("CHECKING");
+                ti10.setIbanCuentaDestino("US64SVBKUS6S3300958879");
+                ti10.setTipoDocumentoReceptor("PASSPORT");
+                ti10.setNumeroDocumentoReceptor("A12345678");
+                ti10.setNombreReceptor("John Smith");
+                ti10.setMontoUsd(new BigDecimal("100.00"));
+                ti10.setTasaCambio(new BigDecimal("4200.000000"));
+                ti10.setMontoCop(new BigDecimal("420000.0000"));
+                ti10.setMoneda("USD");
+                ti10.setEstado(EstadoTransferenciaInternacional.EXITOSA);
+                ti10.setReferenciaSwift("SWIFT-2026-001");
+                ti10.setFecha(hace1d.plusHours(2));
+                transferenciaInternacionalRepo.save(ti10);
             }
 
             if (auditoriaRepo.count() == 0) {

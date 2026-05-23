@@ -1,6 +1,7 @@
 package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.ActualizarClienteDTO;
+import fe.banco_digital.dto.DashboardClienteDTO;
 import fe.banco_digital.service.ClienteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -10,10 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -28,11 +26,21 @@ public class ClienteController {
         this.clienteService = clienteService;
     }
 
+    @GetMapping("/dashboard")
+    @Operation(summary = "Dashboard del cliente", description = "Retorna nombre, email y cuentas activas del cliente autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Dashboard obtenido exitosamente"),
+            @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
+    })
+    public ResponseEntity<DashboardClienteDTO> dashboard(
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        return ResponseEntity.ok(clienteService.obtenerDashboard(usuarioAutenticado.getUsername()));
+    }
+
     @PutMapping("/me")
     @Operation(
             summary = "Actualizar datos del cliente autenticado",
-            description = "Permite actualizar teléfono y correo electrónico. "
-                    + "El documento y el número de cuenta son de solo lectura y no se pueden modificar."
+            description = "Permite actualizar teléfono y correo electrónico."
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Datos actualizados correctamente"),

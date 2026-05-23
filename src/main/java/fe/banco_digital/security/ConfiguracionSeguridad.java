@@ -83,6 +83,8 @@ public class ConfiguracionSeguridad {
                                 "/api/v1/registro/**",
                                 "/api/v1/transferencias/interbancarias/*/confirmacion-ach",
                                 "/api/v1/transferencias/interbancarias/*/rechazo-ach",
+                                "/api/v1/transferencias/internacionales/*/confirmacion-swift",
+                                "/api/v1/transferencias/internacionales/*/rechazo-swift",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",

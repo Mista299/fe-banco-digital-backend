@@ -6,6 +6,7 @@ import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
+import fe.banco_digital.exception.OperacionNoPermitidaException;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.UsuarioRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +43,11 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
         }
 
         Long clienteId = usuario.getCliente().getIdCliente();
+
+        if (cuentaRepo.findFirstByClienteIdClienteAndEstado(clienteId, EstadoCuenta.BLOQUEADA).isPresent()) {
+            throw new OperacionNoPermitidaException("La cuenta ya se encuentra bloqueada.");
+        }
+
         Cuenta cuenta = cuentaRepo
                 .findFirstByClienteIdClienteAndEstado(clienteId, EstadoCuenta.ACTIVA)
                 .orElseThrow(() -> new CuentaNoEncontradaException(clienteId));

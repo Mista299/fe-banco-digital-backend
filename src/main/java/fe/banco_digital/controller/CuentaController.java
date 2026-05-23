@@ -80,7 +80,7 @@ public class CuentaController {
             @ApiResponse(responseCode = "200", description = "Lista de cuentas obtenida exitosamente"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    @GetMapping("/dashboard")
+    @GetMapping({"/mis-cuentas", "/dashboard"})
     public ResponseEntity<List<CuentaResumenDTO>> obtenerDashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 

@@ -23,7 +23,7 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
 
     Optional<Cuenta> findFirstByClienteIdClienteAndEstado(Long idCliente, EstadoCuenta estado);
 
-    List<Cuenta> findByCliente_IdCliente(Long idCliente);
+    List<Cuenta> findByCliente_IdClienteOrderByIdCuentaAsc(Long idCliente);
 
     Optional<Cuenta> findByIdCuentaAndCliente_IdCliente(Long idCuenta, Long idCliente);
 

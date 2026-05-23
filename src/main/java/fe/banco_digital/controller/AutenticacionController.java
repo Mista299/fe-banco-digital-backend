@@ -66,7 +66,7 @@ public class AutenticacionController {
             @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     })
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequestDTO dto,
+    public ResponseEntity<Map<String, String>> login(@Validated @RequestBody LoginRequestDTO dto,
                                                      HttpServletResponse response) {
         LoginResponseDTO tokens = autenticacionService.login(dto);
         setearCookies(response, tokens.getAccessToken(), tokens.getRefreshToken());
@@ -116,7 +116,7 @@ public class AutenticacionController {
 
         ResponseCookie cookieRefresh = ResponseCookie.from(COOKIE_REFRESH, refreshToken)
                 .httpOnly(true)
-                .path("/api/v1/auth/refresh")
+                .path("/api/v1/auth")
                 .maxAge(7L * 24 * 60 * 60)
                 .secure(httpsSeguro)
                 .sameSite(httpsSeguro ? "None" : "Lax")
@@ -131,7 +131,7 @@ public class AutenticacionController {
                 .httpOnly(true).path("/").maxAge(0).sameSite("Lax").build();
 
         ResponseCookie cookieRefresh = ResponseCookie.from(COOKIE_REFRESH, "")
-                .httpOnly(true).path("/api/v1/auth/refresh").maxAge(0).sameSite("Lax").build();
+                .httpOnly(true).path("/api/v1/auth").maxAge(0).sameSite("Lax").build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, cookieAccess.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, cookieRefresh.toString());

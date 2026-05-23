@@ -2,6 +2,7 @@ package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.DecisionAperturaRespuestaDTO;
 import fe.banco_digital.dto.SolicitudPendienteDTO;
+import fe.banco_digital.exception.OperacionNoPermitidaException;
 import fe.banco_digital.service.AdminCuentaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -13,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/cuentas")
@@ -59,5 +61,25 @@ public class AdminCuentaController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails admin) {
         return ResponseEntity.ok(adminCuentaService.rechazarApertura(id, admin.getUsername()));
+    }
+
+    @Operation(summary = "Procesar decisión sobre solicitud de apertura",
+            description = "Acepta {\"decision\":\"APROBAR\"} o {\"decision\":\"RECHAZAR\"}")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Decisión aplicada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Decisión inválida o cuenta no pendiente"),
+            @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
+    })
+    @PostMapping("/{id}/decision")
+    public ResponseEntity<DecisionAperturaRespuestaDTO> procesarDecision(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            @AuthenticationPrincipal UserDetails admin) {
+        String decision = body.getOrDefault("decision", "");
+        return switch (decision) {
+            case "APROBAR" -> ResponseEntity.ok(adminCuentaService.aprobarApertura(id, admin.getUsername()));
+            case "RECHAZAR" -> ResponseEntity.ok(adminCuentaService.rechazarApertura(id, admin.getUsername()));
+            default -> throw new OperacionNoPermitidaException("Decisión inválida. Use APROBAR o RECHAZAR.");
+        };
     }
 }
