@@ -38,3 +38,4 @@ scripts/
 src/test/
 *.patch
 
+.mcp.json
