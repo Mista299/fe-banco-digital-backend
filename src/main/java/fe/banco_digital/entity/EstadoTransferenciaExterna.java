@@ -1,9 +1,8 @@
 package fe.banco_digital.entity;
 
-public enum EstadoTransaccion {
-    EXITOSA,
-    FALLIDA,
+public enum EstadoTransferenciaExterna {
     PENDIENTE_PROCESAMIENTO,
+    EXITOSA,
     RECHAZADA,
     REVERSADA
 }

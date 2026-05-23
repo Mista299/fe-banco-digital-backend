@@ -693,6 +693,139 @@ http "$COOKIE_BRYAN" "" POST /api/v1/cuentas/seguridad/desbloquear \
 http "$COOKIE_BRYAN" "" GET /api/v1/transferencias/interbancarias/99999
 assert "GET /transferencias/interbancarias/{id} (id inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
 
+# ── 10. TRANSFERENCIAS INTERNACIONALES (SWIFT) ───────────────
+section "10. TRANSFERENCIAS INTERNACIONALES (SWIFT)"
+
+# flujo exitoso completo
+http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/internacionales \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"Citibank\",
+    \"codigoSwift\":\"CITIUS33\",
+    \"paisDestino\":\"Estados Unidos\",
+    \"tipoCuentaDestino\":\"CHECKING\",
+    \"ibanCuentaDestino\":\"US64SVBK0000000000000000\",
+    \"tipoDocumentoReceptor\":\"PASSPORT\",
+    \"numeroDocumentoReceptor\":\"A123456\",
+    \"nombreReceptor\":\"John Smith\",
+    \"montoUsd\":50,
+    \"tasaCambio\":4200,
+    \"moneda\":\"USD\"
+  }"
+assert "POST /transferencias/internacionales (flujo SWIFT → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+TX_SWIFT_ID=$(echo "$RESP_BODY" | grep -o '"idTransaccion":[0-9]*' | head -1 | cut -d: -f2)
+
+if [ -n "$TX_SWIFT_ID" ]; then
+  # consultar propia
+  http "$COOKIE_BRYAN" "" GET /api/v1/transferencias/internacionales/$TX_SWIFT_ID
+  assert "GET /transferencias/internacionales/{id} (propia → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+
+  # consultar ajena (ana)
+  http "$COOKIE_ANA" "" GET /api/v1/transferencias/internacionales/$TX_SWIFT_ID
+  assert "GET /transferencias/internacionales/{id} (ajena → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+  # confirmacion con secret incorrecto
+  http "" "" POST /api/v1/transferencias/internacionales/$TX_SWIFT_ID/confirmacion-swift \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: secret_incorrecto" \
+    -d '{"referenciaConfirmacion":"SWIFT-CONF-001"}'
+  assert "POST /confirmacion-swift (secret incorrecto → 403)" "403" "$RESP_CODE" "$RESP_BODY"
+
+  # confirmacion exitosa
+  http "" "" POST /api/v1/transferencias/internacionales/$TX_SWIFT_ID/confirmacion-swift \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: $GATEWAY_SECRET" \
+    -d '{"referenciaConfirmacion":"SWIFT-CONF-001"}'
+  assert "POST /confirmacion-swift (exitosa → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+
+  # rechazo sobre ya confirmada → 400
+  http "" "" POST /api/v1/transferencias/internacionales/$TX_SWIFT_ID/rechazo-swift \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: $GATEWAY_SECRET" \
+    -d '{"motivo":"intento sobre confirmada"}'
+  assert "POST /rechazo-swift (sobre confirmada → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+fi
+
+# id inexistente → 404
+http "" "" POST /api/v1/transferencias/internacionales/99999/confirmacion-swift \
+  -H "Content-Type: application/json" \
+  -H "X-Gateway-Secret: $GATEWAY_SECRET" \
+  -d '{"referenciaConfirmacion":"X"}'
+assert "POST /confirmacion-swift (id inexistente → 404)" "404" "$RESP_CODE" "$RESP_BODY"
+
+# flujo rechazo + reverso
+http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/internacionales \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"HSBC\",
+    \"codigoSwift\":\"HBEUgb2L\",
+    \"paisDestino\":\"Reino Unido\",
+    \"tipoCuentaDestino\":\"CHECKING\",
+    \"ibanCuentaDestino\":\"GB29NWBK60161331926819\",
+    \"tipoDocumentoReceptor\":\"PASSPORT\",
+    \"numeroDocumentoReceptor\":\"B789012\",
+    \"nombreReceptor\":\"Jane Doe\",
+    \"montoUsd\":30,
+    \"tasaCambio\":5100,
+    \"moneda\":\"USD\"
+  }"
+assert "POST /transferencias/internacionales (para flujo rechazo → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+TX_SWIFT_REJ_ID=$(echo "$RESP_BODY" | grep -o '"idTransaccion":[0-9]*' | head -1 | cut -d: -f2)
+
+if [ -n "$TX_SWIFT_REJ_ID" ]; then
+  http "" "" POST /api/v1/transferencias/internacionales/$TX_SWIFT_REJ_ID/rechazo-swift \
+    -H "Content-Type: application/json" \
+    -H "X-Gateway-Secret: $GATEWAY_SECRET" \
+    -d '{"motivo":"Banco destino no operativo"}'
+  assert "POST /rechazo-swift (reversión automática → 200)" "200" "$RESP_CODE" "$RESP_BODY"
+fi
+
+# sin auth → 401
+http "" "" POST /api/v1/transferencias/internacionales \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"Citibank\",\"codigoSwift\":\"CITIUS33\",
+    \"paisDestino\":\"USA\",\"tipoCuentaDestino\":\"CHECKING\",
+    \"ibanCuentaDestino\":\"US64SVBK\",\"tipoDocumentoReceptor\":\"PASSPORT\",
+    \"numeroDocumentoReceptor\":\"X1\",\"nombreReceptor\":\"Test\",
+    \"montoUsd\":10,\"tasaCambio\":4000,\"moneda\":\"USD\"
+  }"
+assert "POST /transferencias/internacionales (sin auth → 401)" "401" "$RESP_CODE" "$RESP_BODY"
+
+# saldo insuficiente → 409
+http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/internacionales \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"Citibank\",\"codigoSwift\":\"CITIUS33\",
+    \"paisDestino\":\"USA\",\"tipoCuentaDestino\":\"CHECKING\",
+    \"ibanCuentaDestino\":\"US64SVBK\",\"tipoDocumentoReceptor\":\"PASSPORT\",
+    \"numeroDocumentoReceptor\":\"X1\",\"nombreReceptor\":\"Test\",
+    \"montoUsd\":999999,\"tasaCambio\":4200,\"moneda\":\"USD\"
+  }"
+assert "POST /transferencias/internacionales (saldo insuficiente → 409)" "409" "$RESP_CODE" "$RESP_BODY"
+
+# campos faltantes (sin codigoSwift) → 400
+http "$COOKIE_BRYAN" "" POST /api/v1/transferencias/internacionales \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"idCuentaOrigen\":$BRYAN_CUENTA_ID,
+    \"bancoDestino\":\"Citibank\",
+    \"paisDestino\":\"USA\",\"tipoCuentaDestino\":\"CHECKING\",
+    \"ibanCuentaDestino\":\"US64SVBK\",\"tipoDocumentoReceptor\":\"PASSPORT\",
+    \"numeroDocumentoReceptor\":\"X1\",\"nombreReceptor\":\"Test\",
+    \"montoUsd\":10,\"tasaCambio\":4000,\"moneda\":\"USD\"
+  }"
+assert "POST /transferencias/internacionales (sin codigoSwift → 400)" "400" "$RESP_CODE" "$RESP_BODY"
+
+# historial incluye TRANSFERENCIA_INTERNACIONAL
+http "$COOKIE_BRYAN" "" GET /api/v1/transacciones/cuenta/$BRYAN_CUENTA_ID
+assert_contains "GET /transacciones/cuenta (incluye TRANSFERENCIA_INTERNACIONAL)" \
+  "TRANSFERENCIA_INTERNACIONAL" "$RESP_BODY" "$RESP_CODE"
+
 # ── RESUMEN ──────────────────────────────────────────────────
 echo ""
 echo "══════════════════════════════════════════"
