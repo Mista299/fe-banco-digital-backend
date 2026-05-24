@@ -36,4 +36,5 @@ src/main/resources/application.properties
 .env
 *.patch
 
-.mcp.json
+.mcp.json*.txt
+scripts/**/*.txt
