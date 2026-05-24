@@ -38,16 +38,13 @@ extracto() {
     "${URL_BASE}/extractos/$1/$2/$3"
 }
 
+# Archivo temporal compartido para capturar body en extracto_con_body
+_BODY_FILE=$(mktemp)
+
 # Descarga capturando body y HTTP code en una sola petición.
-# Exporta: BODY_EXTRACTO con el cuerpo; devuelve HTTP code por stdout.
+# El body queda en $_BODY_FILE; devuelve HTTP code por stdout.
 extracto_con_body() {
-  local tmp
-  tmp=$(mktemp)
-  local code
-  code=$(curl -s -o "$tmp" -w "%{http_code}" -b "$COOKIES" "${URL_BASE}/extractos/$1/$2/$3")
-  BODY_EXTRACTO=$(cat "$tmp")
-  rm -f "$tmp"
-  echo "$code"
+  curl -s -o "$_BODY_FILE" -w "%{http_code}" -b "$COOKIES" "${URL_BASE}/extractos/$1/$2/$3"
 }
 
 ok()   { echo "  [PASS] $1"; PASS=$((PASS + 1)); }

@@ -10,7 +10,7 @@ ANIO=$(date +%Y)
 MES=$(date +%m | sed 's/^0//')
 
 http_code=$(extracto_con_body "$ID" "$ANIO" "$MES")
-mensaje=$(echo "$BODY_EXTRACTO" | jq -r '.mensaje // empty')
+mensaje=$(jq -r '.mensaje // empty' "$_BODY_FILE")
 
 if [ "$http_code" = "422" ]; then
   expected="El extracto oficial estará disponible al finalizar el periodo actual"
