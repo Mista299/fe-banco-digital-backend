@@ -166,6 +166,18 @@
 							<goal>check</goal>
 						</goals>
 						<configuration>
+							<excludes>
+								<!-- DTOs, entidades y clases sin lógica de negocio -->
+								<exclude>fe/banco_digital/dto/**</exclude>
+								<exclude>fe/banco_digital/entity/**</exclude>
+								<exclude>fe/banco_digital/exception/**</exclude>
+								<exclude>fe/banco_digital/repository/**</exclude>
+								<exclude>fe/banco_digital/BancoDigitalApplication.class</exclude>
+								<exclude>fe/banco_digital/repository/DataLoader.class</exclude>
+								<exclude>fe/banco_digital/config/**</exclude>
+								<exclude>fe/banco_digital/listener/**</exclude>
+								<exclude>fe/banco_digital/event/**</exclude>
+							</excludes>
 							<rules>
 								<rule>
 									<element>BUNDLE</element>

@@ -64,6 +64,7 @@ class AccountSecurityServiceImplTest {
     void bloquearCuenta_success_savesCuentaAndAuditoria() {
         when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(Optional.empty());
         when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.ACTIVA)).thenReturn(Optional.of(cuenta));
 
         service.bloquearCuenta("testuser", "1234");
