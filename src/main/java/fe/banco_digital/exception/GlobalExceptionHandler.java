@@ -11,6 +11,7 @@ import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -140,6 +141,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PeriodoInvalidoException.class)
     public ResponseEntity<Map<String, Object>> manejarPeriodoInvalido(PeriodoInvalidoException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> manejarTipoArgumentoInvalido(MethodArgumentTypeMismatchException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                "Parámetro inválido: '" + ex.getName() + "' debe ser " + ex.getRequiredType().getSimpleName());
     }
 
     @ExceptionHandler(Exception.class)

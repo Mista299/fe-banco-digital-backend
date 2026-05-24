@@ -1,7 +1,6 @@
 package fe.banco_digital.controller;
 
 import fe.banco_digital.exception.AccesoNoAutorizadoException;
-import fe.banco_digital.exception.CuentaNoEncontradaException;
 import fe.banco_digital.exception.GlobalExceptionHandler;
 import fe.banco_digital.exception.PeriodoInvalidoException;
 import fe.banco_digital.exception.PeriodoNoDisponibleException;
@@ -102,12 +101,9 @@ class ExtractoControllerTest {
     }
 
     @Test
-    void extracto_cuentaNoEncontrada_retorna404() throws Exception {
-        when(extractoService.generarExtracto(anyLong(), anyInt(), anyInt(), anyString()))
-                .thenThrow(new CuentaNoEncontradaException(99L));
-
-        mockMvc.perform(get("/api/v1/extractos/99/2026/4"))
-                .andExpect(status().isNotFound());
+    void extracto_idCuentaNoNumerico_retorna400() throws Exception {
+        mockMvc.perform(get("/api/v1/extractos/abc/2026/4"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

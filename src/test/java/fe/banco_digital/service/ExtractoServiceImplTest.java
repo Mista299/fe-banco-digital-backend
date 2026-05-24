@@ -30,12 +30,17 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import fe.banco_digital.dto.ExtractoDatosDTO;
+import fe.banco_digital.exception.AutenticacionFallidaException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class ExtractoServiceImplTest {
@@ -95,9 +100,14 @@ class ExtractoServiceImplTest {
     void generarExtracto_mesFuturoEnMismoAnio_lanzaPeriodoInvalidoException() {
         LocalDate hoy = LocalDate.now();
         int mesFuturo = hoy.getMonthValue() + 1;
-        if (mesFuturo > 12) return;
-        assertThatThrownBy(() -> service.generarExtracto(10L, hoy.getYear(), mesFuturo, "ana"))
-                .isInstanceOf(PeriodoInvalidoException.class);
+        if (mesFuturo > 12) {
+            // Diciembre: el siguiente mes es enero del año siguiente — ya cubierto por el test de año futuro
+            assertThatThrownBy(() -> service.generarExtracto(10L, hoy.getYear() + 1, 1, "ana"))
+                    .isInstanceOf(PeriodoInvalidoException.class);
+        } else {
+            assertThatThrownBy(() -> service.generarExtracto(10L, hoy.getYear(), mesFuturo, "ana"))
+                    .isInstanceOf(PeriodoInvalidoException.class);
+        }
     }
 
     @Test
@@ -119,7 +129,7 @@ class ExtractoServiceImplTest {
     }
 
     @Test
-    void generarExtracto_sinMovimientos_retornaPdfConSaldoIgual() {
+    void generarExtracto_sinMovimientos_saldoInicialIgualASaldoFinal() {
         LocalDate mesPasado = LocalDate.now().minusMonths(1);
 
         when(usuarioRepository.findByUsername("ana")).thenReturn(Optional.of(usuarioMock));
@@ -129,13 +139,25 @@ class ExtractoServiceImplTest {
                 .thenReturn(List.of());
         when(pdfGenerador.generar(any())).thenReturn("%PDF-test".getBytes());
 
-        byte[] resultado = service.generarExtracto(10L, mesPasado.getYear(), mesPasado.getMonthValue(), "ana");
+        service.generarExtracto(10L, mesPasado.getYear(), mesPasado.getMonthValue(), "ana");
 
-        assertThat(resultado).isNotNull().isNotEmpty();
+        ArgumentCaptor<ExtractoDatosDTO> captor = ArgumentCaptor.forClass(ExtractoDatosDTO.class);
+        verify(pdfGenerador).generar(captor.capture());
+        ExtractoDatosDTO datos = captor.getValue();
+
+        // Sin movimientos: saldo inicial == saldo final == saldo actual de la cuenta
+        assertThat(datos.getSaldoFinal()).isEqualByComparingTo(new BigDecimal("1500000.00"));
+        assertThat(datos.getSaldoInicial()).isEqualByComparingTo(datos.getSaldoFinal());
+        assertThat(datos.getTotalCreditos()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(datos.getTotalDebitos()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void generarExtracto_conMovimientos_calculaSaldosCorrectamente() {
+        // Cuenta: saldo actual = 1.500.000
+        // Posterior al periodo: +50.000 → saldo_final_periodo = 1.500.000 − 50.000 = 1.450.000
+        // En el periodo: +200.000 (depósito) − 100.000 (retiro) = net +100.000
+        //   saldo_inicial_periodo = 1.450.000 − 100.000 = 1.350.000
         LocalDate mesPasado = LocalDate.now().minusMonths(1);
 
         MovimientoDTO deposito = new MovimientoDTO();
@@ -161,8 +183,25 @@ class ExtractoServiceImplTest {
                 .thenReturn(List.of(posterior));
         when(pdfGenerador.generar(any())).thenReturn("%PDF-test".getBytes());
 
-        byte[] resultado = service.generarExtracto(10L, mesPasado.getYear(), mesPasado.getMonthValue(), "ana");
+        service.generarExtracto(10L, mesPasado.getYear(), mesPasado.getMonthValue(), "ana");
 
-        assertThat(resultado).isNotNull();
+        ArgumentCaptor<ExtractoDatosDTO> captor = ArgumentCaptor.forClass(ExtractoDatosDTO.class);
+        verify(pdfGenerador).generar(captor.capture());
+        ExtractoDatosDTO datos = captor.getValue();
+
+        assertThat(datos.getSaldoFinal()).isEqualByComparingTo(new BigDecimal("1450000.00"));
+        assertThat(datos.getSaldoInicial()).isEqualByComparingTo(new BigDecimal("1350000.00"));
+        assertThat(datos.getTotalCreditos()).isEqualByComparingTo(new BigDecimal("200000.00"));
+        assertThat(datos.getTotalDebitos()).isEqualByComparingTo(new BigDecimal("-100000.00"));
+        assertThat(datos.getMovimientos()).hasSize(2);
+    }
+
+    @Test
+    void generarExtracto_usuarioNoEncontrado_lanzaAutenticacionFallidaException() {
+        LocalDate mesPasado = LocalDate.now().minusMonths(1);
+        when(usuarioRepository.findByUsername("noexiste")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.generarExtracto(10L, mesPasado.getYear(), mesPasado.getMonthValue(), "noexiste"))
+                .isInstanceOf(AutenticacionFallidaException.class);
     }
 }
