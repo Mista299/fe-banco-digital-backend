@@ -6,7 +6,8 @@ echo "=== Escenario 2: mes cerrado sin movimientos ==="
 login "bryan" "bryan123"
 ID=$(get_id_cuenta)
 
-http_code=$(extracto "$ID" 2025 1)
+# Enero 2020 garantizadamente no tiene movimientos seed
+http_code=$(extracto "$ID" 2020 1)
 
 if [ "$http_code" = "200" ]; then
   header=$(head -c 4 /tmp/extracto_hu15.pdf)

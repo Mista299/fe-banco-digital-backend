@@ -7,11 +7,10 @@ login "bryan" "bryan123"
 ID=$(get_id_cuenta)
 
 ANIO=$(date +%Y)
-MES=$(date +%-m)
+MES=$(date +%m | sed 's/^0//')
 
-resp=$(extracto_json "$ID" "$ANIO" "$MES")
-http_code=$(curl -s -o /dev/null -w "%{http_code}" -b "$COOKIES" "${URL_BASE}/extractos/$ID/$ANIO/$MES")
-mensaje=$(echo "$resp" | jq -r '.mensaje // empty')
+http_code=$(extracto_con_body "$ID" "$ANIO" "$MES")
+mensaje=$(echo "$BODY_EXTRACTO" | jq -r '.mensaje // empty')
 
 if [ "$http_code" = "422" ]; then
   expected="El extracto oficial estará disponible al finalizar el periodo actual"
