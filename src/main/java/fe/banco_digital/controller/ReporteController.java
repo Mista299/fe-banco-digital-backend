@@ -1,6 +1,6 @@
 package fe.banco_digital.controller;
 
-import fe.banco_digital.dto.ReporteMovimientoDTO;
+import fe.banco_digital.dto.ReporteResumenDTO;
 import fe.banco_digital.service.ReporteService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reportes")
@@ -21,11 +20,10 @@ public class ReporteController {
     }
 
     @GetMapping
-    public List<ReporteMovimientoDTO> generarReporte(
+    public ReporteResumenDTO generarReporte(
             @RequestParam LocalDateTime inicio,
             @RequestParam LocalDateTime fin
     ) {
-
         return reporteService.generarReporte(inicio, fin);
     }
 

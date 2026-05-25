@@ -14,4 +14,7 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
 
     List<Movimiento> findByCuenta_IdCuentaAndFechaBetweenOrderByFechaDesc(
             Long idCuenta, LocalDateTime fechaInicio, LocalDateTime fechaFin);
+
+    List<Movimiento> findByFechaBetweenOrderByFechaDesc(
+            LocalDateTime fechaInicio, LocalDateTime fechaFin);
 }
