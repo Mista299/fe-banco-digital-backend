@@ -181,10 +181,10 @@ public class DataLoader {
             });
 
             // ── Cuentas ────────────────────────────────────────────────────────────
-            // Saldos calculados a partir del historial semilla completo:
+            // Saldos calculados a partir del historial semilla completo (abril + mayo):
             //
-            // cta1  Bryan  AHORROS   00010001 : +1.000.000 dep  −50.000 transf(Laura)  +100.000 (de Carlos)  −80.000 ACH  −420.000 SWIFT  = 550.000
-            // cta2  Ana    AHORROS   00020001 : +1.500.000 dep  −200.000 ret  −300.000 transf(Carlos)  −75.000 ACH  +20.000 (de Laura)  −200.000 SWIFT  = 745.000
+            // cta1  Bryan  AHORROS   00010001 : ABR[+200k de Ana, −150k a Ana] MAY[+1M dep, +100k Carlos, −50k Laura, −80k ACH, −420k SWIFT] = 600.000
+            // cta2  Ana    AHORROS   00020001 : ABR[+1.5M dep, −350k ret, −200k Ana→Bryan, +150k Bryan→Ana, −90k ret, −120k ACH, +80k dep] MAY[+1.5M dep, −200k ret, −300k Carlos, −75k ACH, +20k Laura, −200k SWIFT] = 1.715.000
             // cta3  Carlos AHORROS   00030001 : +800.000 dep  −150.000 ret  −100.000 transf(Bryan)  +300.000 (de Ana)  −50.000 ret  = 800.000
             // cta4  Laura  CORRIENTE 00040001 : +50.000 (de Bryan)  +100.000 dep  −30.000 ret  −20.000 transf(Ana)  = 100.000
             // cta5  Jorge  AHORROS   00050001 : sin movimientos, INACTIVA = 0
@@ -197,7 +197,7 @@ public class DataLoader {
                 cta.setNumeroCuenta("00010001");
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.ACTIVA);
-                cta.setSaldo(new BigDecimal("550000.00"));
+                cta.setSaldo(new BigDecimal("600000.00"));
                 cta.setCliente(c1);
                 return cuentaRepo.save(cta);
             });
@@ -207,7 +207,7 @@ public class DataLoader {
                 cta.setNumeroCuenta("00020001");
                 cta.setTipo(TipoCuenta.AHORROS);
                 cta.setEstado(EstadoCuenta.ACTIVA);
-                cta.setSaldo(new BigDecimal("745000.00"));
+                cta.setSaldo(new BigDecimal("1715000.00"));
                 cta.setCliente(c2);
                 return cuentaRepo.save(cta);
             });
@@ -605,6 +605,87 @@ public class DataLoader {
                 m9.setDescripcion("Reversión ACH: " + refAchReversada);
                 m9.setFecha(hace1d.plusMinutes(5));
                 movimientoRepo.save(m9);
+
+                // ── Ana cta2 — ABRIL 2026 (historial para extractos) ──────────────
+                // Net abril cta2: +1.500k dep, −350k ret, −200k transf(Bryan), +150k (de Bryan), −90k ret, −120k ACH, +80k dep = +970k
+                // Net abril cta1: +200k (de Ana), −150k (a Ana) = +50k
+
+                LocalDateTime abr03 = LocalDateTime.of(2026, 4,  3,  9,  0);
+                LocalDateTime abr09 = LocalDateTime.of(2026, 4,  9, 14, 30);
+                LocalDateTime abr14 = LocalDateTime.of(2026, 4, 14, 11, 15);
+                LocalDateTime abr18 = LocalDateTime.of(2026, 4, 18, 16,  0);
+                LocalDateTime abr22 = LocalDateTime.of(2026, 4, 22, 10, 45);
+                LocalDateTime abr25 = LocalDateTime.of(2026, 4, 25,  8, 20);
+                LocalDateTime abr28 = LocalDateTime.of(2026, 4, 28, 17, 30);
+
+                Movimiento a_dep1 = new Movimiento();
+                a_dep1.setCuenta(cta2);
+                a_dep1.setTipo(TipoMovimiento.DEPOSITO);
+                a_dep1.setEstado(EstadoMovimiento.EXITOSO);
+                a_dep1.setMonto(new BigDecimal("1500000.00"));
+                a_dep1.setDescripcion("Consignación nómina abril");
+                a_dep1.setFecha(abr03);
+                movimientoRepo.save(a_dep1);
+
+                Movimiento a_ret1 = new Movimiento();
+                a_ret1.setCuenta(cta2);
+                a_ret1.setTipo(TipoMovimiento.RETIRO);
+                a_ret1.setEstado(EstadoMovimiento.EXITOSO);
+                a_ret1.setMonto(new BigDecimal("350000.00"));
+                a_ret1.setDescripcion("Retiro cajero");
+                a_ret1.setFecha(abr09);
+                movimientoRepo.save(a_ret1);
+
+                // cta2 → cta1: Ana transfiere a Bryan 200.000
+                Transferencia t_abr_a2_b1 = new Transferencia();
+                t_abr_a2_b1.setCuentaOrigen(cta2);
+                t_abr_a2_b1.setCuentaDestino(cta1);
+                t_abr_a2_b1.setEstado(EstadoTransferencia.EXITOSA);
+                t_abr_a2_b1.setMonto(new BigDecimal("200000.00"));
+                t_abr_a2_b1.setFecha(abr14);
+                transferenciaRepo.save(t_abr_a2_b1);
+
+                // cta1 → cta2: Bryan transfiere a Ana 150.000
+                Transferencia t_abr_b1_a2 = new Transferencia();
+                t_abr_b1_a2.setCuentaOrigen(cta1);
+                t_abr_b1_a2.setCuentaDestino(cta2);
+                t_abr_b1_a2.setEstado(EstadoTransferencia.EXITOSA);
+                t_abr_b1_a2.setMonto(new BigDecimal("150000.00"));
+                t_abr_b1_a2.setFecha(abr18);
+                transferenciaRepo.save(t_abr_b1_a2);
+
+                Movimiento a_ret2 = new Movimiento();
+                a_ret2.setCuenta(cta2);
+                a_ret2.setTipo(TipoMovimiento.RETIRO);
+                a_ret2.setEstado(EstadoMovimiento.EXITOSO);
+                a_ret2.setMonto(new BigDecimal("90000.00"));
+                a_ret2.setDescripcion("Retiro cajero");
+                a_ret2.setFecha(abr22);
+                movimientoRepo.save(a_ret2);
+
+                // ACH cta2 → Nequi abril 120.000
+                TransferenciaExterna te_abr_a2_nequi = new TransferenciaExterna();
+                te_abr_a2_nequi.setCuentaOrigen(cta2);
+                te_abr_a2_nequi.setBancoDestino("Nequi");
+                te_abr_a2_nequi.setTipoCuentaDestino("AHORROS");
+                te_abr_a2_nequi.setNumeroCuentaDestino("3200000099");
+                te_abr_a2_nequi.setTipoDocumentoReceptor("CC");
+                te_abr_a2_nequi.setNumeroDocumentoReceptor("1019283746");
+                te_abr_a2_nequi.setNombreReceptor("Mario Ruiz");
+                te_abr_a2_nequi.setMonto(new BigDecimal("120000.00"));
+                te_abr_a2_nequi.setEstado(EstadoTransferenciaExterna.EXITOSA);
+                te_abr_a2_nequi.setReferenciaExterna("REF-2026-ABR-001");
+                te_abr_a2_nequi.setFecha(abr25);
+                transferenciaExternaRepo.save(te_abr_a2_nequi);
+
+                Movimiento a_dep2 = new Movimiento();
+                a_dep2.setCuenta(cta2);
+                a_dep2.setTipo(TipoMovimiento.DEPOSITO);
+                a_dep2.setEstado(EstadoMovimiento.EXITOSO);
+                a_dep2.setMonto(new BigDecimal("80000.00"));
+                a_dep2.setDescripcion("Reembolso gastos");
+                a_dep2.setFecha(abr28);
+                movimientoRepo.save(a_dep2);
             }
 
             // ── Auditoría ──────────────────────────────────────────────────────────
