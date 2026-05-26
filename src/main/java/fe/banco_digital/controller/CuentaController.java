@@ -40,11 +40,14 @@ public class CuentaController {
             @ApiResponse(responseCode = "400", description = "Tipo de cuenta inválido")
     })
     @PostMapping("/abrir")
-    public ResponseEntity<CuentaResumenDTO> abrirCuenta(
+    public ResponseEntity<EntityModel<CuentaResumenDTO>> abrirCuenta(
             @Valid @RequestBody AbrirCuentaSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(cuentaService.abrirCuenta(solicitud, usuarioAutenticado.getUsername()));
+        CuentaResumenDTO dto = cuentaService.abrirCuenta(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(EntityModel.of(dto,
+                linkTo(methodOn(CuentaController.class).abrirCuenta(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     /**
@@ -63,12 +66,15 @@ public class CuentaController {
             @ApiResponse(responseCode = "409", description = "No se puede cerrar — saldo pendiente")
     })
     @PatchMapping("/cerrar")
-    public ResponseEntity<CierreCuentaRespuestaDTO> cerrarCuenta(
+    public ResponseEntity<EntityModel<CierreCuentaRespuestaDTO>> cerrarCuenta(
             @Valid @RequestBody CierreCuentaSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         CierreCuentaRespuestaDTO respuesta = cuentaService.cerrarCuenta(solicitud, usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(respuesta);
+        return ResponseEntity.ok(EntityModel.of(respuesta,
+                linkTo(methodOn(CuentaController.class).cerrarCuenta(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     /**

@@ -22,7 +22,7 @@ echo ""
 echo "--- GET /reportes/saldos/estado?estado=ACTIVA ---"
 RESP=$(get_reporte "estado" "estado=ACTIVA" "$COOKIES_ADMIN")
 HTTP=$(echo "$RESP" | tail -1)
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(unwrap_list "$(echo "$RESP" | head -n -1)")
 
 [ "$HTTP" = "200" ] \
   && ok "HTTP 200 OK (estado=ACTIVA)" \
@@ -56,7 +56,7 @@ echo ""
 echo "--- GET /reportes/saldos/estado?estado=INACTIVA ---"
 RESP=$(get_reporte "estado" "estado=INACTIVA" "$COOKIES_ADMIN")
 HTTP=$(echo "$RESP" | tail -1)
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(unwrap_list "$(echo "$RESP" | head -n -1)")
 
 [ "$HTTP" = "200" ] \
   && ok "HTTP 200 OK (estado=INACTIVA)" \

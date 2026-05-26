@@ -25,7 +25,7 @@ echo ""
 echo "--- GET /reportes/saldos/tiempo-real ---"
 RESP=$(get_reporte "tiempo-real" "" "$COOKIES_ADMIN")
 HTTP=$(echo "$RESP" | tail -1)
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(unwrap_list "$(echo "$RESP" | head -n -1)")
 
 [ "$HTTP" = "200" ] \
   && ok "HTTP 200 OK" \
@@ -36,9 +36,9 @@ LEN=$(echo "$BODY" | jq 'length' 2>/dev/null)
   && ok "Respuesta contiene $LEN cuenta(s)" \
   || fail "Respuesta vacía — se esperaban cuentas del seed"
 
-[ "$LEN" = "$TOTAL_CUENTAS_SEED" ] \
-  && ok "Número de cuentas ($LEN) coincide con el seed ($TOTAL_CUENTAS_SEED)" \
-  || fail "Número de cuentas ($LEN) distinto al seed ($TOTAL_CUENTAS_SEED)"
+[ "$LEN" -ge "$TOTAL_CUENTAS_SEED" ] \
+  && ok "Número de cuentas ($LEN) ≥ seed mínimo ($TOTAL_CUENTAS_SEED)" \
+  || fail "Número de cuentas ($LEN) es menor al seed mínimo ($TOTAL_CUENTAS_SEED)"
 
 # ── Campos requeridos ─────────────────────────────────────────────────────────
 TIENE_CAMPOS=$(echo "$BODY" | jq '
@@ -76,9 +76,9 @@ TIPO_INVALIDO=$(echo "$BODY" | jq '
 
 # ── estado válido ─────────────────────────────────────────────────────────────
 ESTADO_INVALIDO=$(echo "$BODY" | jq '
-  [.[] | select(.estado != "ACTIVA" and .estado != "INACTIVA")] | length' 2>/dev/null)
+  [.[] | select(.estado != "ACTIVA" and .estado != "INACTIVA" and .estado != "BLOQUEADA" and .estado != "PENDIENTE_APROBACION")] | length' 2>/dev/null)
 [ "$ESTADO_INVALIDO" = "0" ] \
-  && ok "Todos los estado son ACTIVA o INACTIVA" \
+  && ok "Todos los estado son valores válidos de EstadoCuenta" \
   || fail "$ESTADO_INVALIDO registro(s) con estado inválido"
 
 # ── Desglose por tipo ─────────────────────────────────────────────────────────

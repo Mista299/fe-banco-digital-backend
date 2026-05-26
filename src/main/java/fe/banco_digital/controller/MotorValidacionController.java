@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +16,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/validaciones")
@@ -33,10 +36,13 @@ public class MotorValidacionController {
             @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
     })
     @PostMapping("/transaccion")
-    public ResponseEntity<ValidacionTransaccionResponseDTO> validarTransaccion(
+    public ResponseEntity<EntityModel<ValidacionTransaccionResponseDTO>> validarTransaccion(
             @Valid @RequestBody ValidacionTransaccionSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                motorValidacionService.validar(solicitud, usuarioAutenticado.getUsername()));
+        ValidacionTransaccionResponseDTO dto = motorValidacionService.validar(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(MotorValidacionController.class).validarTransaccion(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 }

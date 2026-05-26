@@ -22,7 +22,7 @@ echo ""
 echo "--- GET /reportes/saldos/rango?min=500000 ---"
 RESP=$(get_reporte "rango" "min=500000" "$COOKIES_ADMIN")
 HTTP=$(echo "$RESP" | tail -1)
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(unwrap_list "$(echo "$RESP" | head -n -1)")
 
 [ "$HTTP" = "200" ] \
   && ok "HTTP 200 OK (solo min=500000)" \
@@ -57,7 +57,7 @@ echo ""
 echo "--- GET /reportes/saldos/rango?min=500000&max=800000 ---"
 RESP=$(get_reporte "rango" "min=500000&max=800000" "$COOKIES_ADMIN")
 HTTP=$(echo "$RESP" | tail -1)
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(unwrap_list "$(echo "$RESP" | head -n -1)")
 
 [ "$HTTP" = "200" ] \
   && ok "HTTP 200 OK (min=500000 max=800000)" \
@@ -86,7 +86,7 @@ echo ""
 echo "--- GET /reportes/saldos/rango?min=99999999 (sin resultados) ---"
 RESP=$(get_reporte "rango" "min=99999999" "$COOKIES_ADMIN")
 HTTP=$(echo "$RESP" | tail -1)
-BODY=$(echo "$RESP" | head -n -1)
+BODY=$(unwrap_list "$(echo "$RESP" | head -n -1)")
 
 [ "$HTTP" = "200" ] \
   && ok "HTTP 200 OK (min muy alto)" \

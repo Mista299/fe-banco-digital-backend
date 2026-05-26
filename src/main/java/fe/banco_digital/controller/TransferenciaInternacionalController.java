@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/transferencias/internacionales")
@@ -45,12 +48,15 @@ public class TransferenciaInternacionalController {
             @ApiResponse(responseCode = "409", description = "Saldo insuficiente")
     })
     @PostMapping
-    public ResponseEntity<TransferenciaInternacionalResponseDTO> crear(
+    public ResponseEntity<EntityModel<TransferenciaInternacionalResponseDTO>> crear(
             @Valid @RequestBody TransferenciaInternacionalSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transferenciaInternacionalService.iniciarTransferencia(
-                        solicitud, usuarioAutenticado.getUsername()));
+        TransferenciaInternacionalResponseDTO dto =
+                transferenciaInternacionalService.iniciarTransferencia(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInternacionalController.class).crear(null, null)).withSelfRel(),
+                linkTo(methodOn(TransferenciaInternacionalController.class).consultar(dto.getIdTransaccion(), null)).withRel("consultar")
+        ));
     }
 
     @Operation(summary = "Registrar confirmación SWIFT")
@@ -60,13 +66,17 @@ public class TransferenciaInternacionalController {
             @ApiResponse(responseCode = "400", description = "La transferencia no está pendiente")
     })
     @PostMapping("/{idTransfInt}/confirmacion-swift")
-    public ResponseEntity<TransferenciaInternacionalResponseDTO> registrarConfirmacionSwift(
+    public ResponseEntity<EntityModel<TransferenciaInternacionalResponseDTO>> registrarConfirmacionSwift(
             @PathVariable Long idTransfInt,
             @RequestHeader("X-Gateway-Secret") String secret,
             @RequestBody ConfirmacionSwiftSolicitudDTO solicitud) {
         if (!gatewaySecret.equals(secret)) throw new AccesoNoAutorizadoException();
-        return ResponseEntity.ok(
-                transferenciaInternacionalService.registrarConfirmacionSwift(idTransfInt, solicitud));
+        TransferenciaInternacionalResponseDTO dto =
+                transferenciaInternacionalService.registrarConfirmacionSwift(idTransfInt, solicitud);
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInternacionalController.class).registrarConfirmacionSwift(idTransfInt, null, null)).withSelfRel(),
+                linkTo(methodOn(TransferenciaInternacionalController.class).consultar(idTransfInt, null)).withRel("consultar")
+        ));
     }
 
     @Operation(summary = "Registrar rechazo SWIFT y reversar fondos")
@@ -76,22 +86,30 @@ public class TransferenciaInternacionalController {
             @ApiResponse(responseCode = "400", description = "La transferencia no está pendiente")
     })
     @PostMapping("/{idTransfInt}/rechazo-swift")
-    public ResponseEntity<TransferenciaInternacionalResponseDTO> registrarRechazoSwift(
+    public ResponseEntity<EntityModel<TransferenciaInternacionalResponseDTO>> registrarRechazoSwift(
             @PathVariable Long idTransfInt,
             @RequestHeader("X-Gateway-Secret") String secret,
             @Valid @RequestBody RechazoSwiftSolicitudDTO solicitud) {
         if (!gatewaySecret.equals(secret)) throw new AccesoNoAutorizadoException();
-        return ResponseEntity.ok(
-                transferenciaInternacionalService.registrarRechazoSwift(idTransfInt, solicitud));
+        TransferenciaInternacionalResponseDTO dto =
+                transferenciaInternacionalService.registrarRechazoSwift(idTransfInt, solicitud);
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInternacionalController.class).registrarRechazoSwift(idTransfInt, null, null)).withSelfRel(),
+                linkTo(methodOn(TransferenciaInternacionalController.class).consultar(idTransfInt, null)).withRel("consultar")
+        ));
     }
 
     @Operation(summary = "Consultar estado de una transferencia internacional")
     @GetMapping("/{idTransfInt}")
-    public ResponseEntity<TransferenciaInternacionalResponseDTO> consultar(
+    public ResponseEntity<EntityModel<TransferenciaInternacionalResponseDTO>> consultar(
             @PathVariable Long idTransfInt,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
+        TransferenciaInternacionalResponseDTO dto =
                 transferenciaInternacionalService.consultarTransferencia(
-                        idTransfInt, usuarioAutenticado.getUsername()));
+                        idTransfInt, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInternacionalController.class).consultar(idTransfInt, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 }

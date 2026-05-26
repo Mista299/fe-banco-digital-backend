@@ -4,6 +4,7 @@ import fe.banco_digital.dto.ActividadClienteResponseDTO;
 import fe.banco_digital.service.AdminActividadService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/admin/clientes")
@@ -26,24 +29,32 @@ public class AdminActividadController {
     }
 
     @GetMapping("/buscar/documento")
-    public ResponseEntity<ActividadClienteResponseDTO> porDocumento(
+    public ResponseEntity<EntityModel<ActividadClienteResponseDTO>> porDocumento(
             @RequestParam String documento,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin,
-            @RequestParam(required = false) String tipo,      // DEPOSITO, RETIRO, TRANSFERENCIA, etc.
+            @RequestParam(required = false) String tipo,
             @AuthenticationPrincipal UserDetails admin) {
-        return ResponseEntity.ok(adminActividadService.consultarActividadPorDocumento(
-                documento, fechaInicio, fechaFin, tipo, admin.getUsername()));
+        ActividadClienteResponseDTO dto = adminActividadService.consultarActividadPorDocumento(
+                documento, fechaInicio, fechaFin, tipo, admin.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(AdminActividadController.class).porDocumento(documento, fechaInicio, fechaFin, tipo, null)).withSelfRel(),
+                linkTo(methodOn(AdminActividadController.class).porCuenta(null, null, null, null, null)).withRel("buscar-por-cuenta")
+        ));
     }
 
     @GetMapping("/buscar/cuenta")
-    public ResponseEntity<ActividadClienteResponseDTO> porCuenta(
+    public ResponseEntity<EntityModel<ActividadClienteResponseDTO>> porCuenta(
             @RequestParam String numeroCuenta,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin,
             @RequestParam(required = false) String tipo,
             @AuthenticationPrincipal UserDetails admin) {
-        return ResponseEntity.ok(adminActividadService.consultarActividadPorNumeroCuenta(
-                numeroCuenta, fechaInicio, fechaFin, tipo, admin.getUsername()));
+        ActividadClienteResponseDTO dto = adminActividadService.consultarActividadPorNumeroCuenta(
+                numeroCuenta, fechaInicio, fechaFin, tipo, admin.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(AdminActividadController.class).porCuenta(numeroCuenta, fechaInicio, fechaFin, tipo, null)).withSelfRel(),
+                linkTo(methodOn(AdminActividadController.class).porDocumento(null, null, null, null, null)).withRel("buscar-por-documento")
+        ));
     }
 }

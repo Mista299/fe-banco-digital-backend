@@ -2,12 +2,15 @@ package fe.banco_digital.controller;
 
 import fe.banco_digital.dto.ReporteResumenDTO;
 import fe.banco_digital.service.ReporteService;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/reportes")
@@ -20,11 +23,15 @@ public class ReporteController {
     }
 
     @GetMapping
-    public ReporteResumenDTO generarReporte(
+    public ResponseEntity<EntityModel<ReporteResumenDTO>> generarReporte(
             @RequestParam LocalDateTime inicio,
             @RequestParam LocalDateTime fin
     ) {
-        return reporteService.generarReporte(inicio, fin);
+        ReporteResumenDTO dto = reporteService.generarReporte(inicio, fin);
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(ReporteController.class).generarReporte(inicio, fin)).withSelfRel(),
+                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel("consolidado-saldos")
+        ));
     }
 
     @GetMapping("/csv")
