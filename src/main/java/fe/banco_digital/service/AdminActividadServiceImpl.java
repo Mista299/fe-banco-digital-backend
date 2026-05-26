@@ -14,10 +14,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,7 +55,7 @@ public class AdminActividadServiceImpl implements AdminActividadService {
             String tipoMovimiento, String usernameAdmin) {
 
         Cliente cliente = clienteRepository.findByDocumento(documento)
-                .orElseThrow(ClienteNoEncontradoException::new);
+                .orElseThrow(() -> new ClienteNoEncontradoException(-1L));
 
         return construirActividad(cliente, fechaInicio, fechaFin, tipoMovimiento, usernameAdmin);
     }
@@ -68,7 +71,7 @@ public class AdminActividadServiceImpl implements AdminActividadService {
 
         // Cargar el cliente desde la cuenta — LAZY, usar getId
         Cliente cliente = clienteRepository.findById(cuenta.getCliente().getIdCliente())
-                .orElseThrow(ClienteNoEncontradoException::new);
+                .orElseThrow(() -> new ClienteNoEncontradoException(-1L));
 
         return construirActividad(cliente, fechaInicio, fechaFin, tipoMovimiento, usernameAdmin);
     }
@@ -85,10 +88,11 @@ public class AdminActividadServiceImpl implements AdminActividadService {
 
         // Obtener todas las cuentas del cliente
         List<Cuenta> cuentas = cuentaRepository.findByCliente_IdClienteOrderByIdCuentaAsc(cliente.getIdCliente());
-        List<Long> idsCuentas = cuentas.stream()
-                .map(Cuenta::getIdCuenta).collect(Collectors.toList());
 
         // Escenario 1: datos básicos — tomar la primera cuenta activa o la primera disponible
+        if (cuentas.isEmpty()) {
+            throw new CuentaNoEncontradaException(cliente.getIdCliente());
+        }
         Cuenta cuentaPrincipal = cuentas.stream()
                 .filter(c -> c.getEstado() == EstadoCuenta.ACTIVA)
                 .findFirst()
@@ -98,10 +102,14 @@ public class AdminActividadServiceImpl implements AdminActividadService {
                 ? cuentaPrincipal.getNumeroCuenta()
                 : enmascararCuenta(cuentaPrincipal.getNumeroCuenta());
 
+        String documentoMostrado = esGerente
+                ? cliente.getDocumento()
+                : enmascararDocumento(cliente.getDocumento());
+
         BusquedaClienteResponseDTO datosCliente = new BusquedaClienteResponseDTO(
                 cliente.getIdCliente(),
                 cliente.getNombre(),
-                enmascararDocumento(cliente.getDocumento()),
+                documentoMostrado,
                 cuentaPrincipal.getEstado().name(),
                 cliente.getFechaRegistro(),
                 numeroCuentaMostrado
@@ -111,6 +119,7 @@ public class AdminActividadServiceImpl implements AdminActividadService {
         // usando los 4 repositorios + el mapper que ya existe en el proyecto
 
         List<MovimientoDTO> todos = new ArrayList<>();
+        Set<Long> transferenciasVistas = new HashSet<>();
 
         for (Cuenta cuenta : cuentas) {
             Long id = cuenta.getIdCuenta();
@@ -119,9 +128,13 @@ public class AdminActividadServiceImpl implements AdminActividadService {
                     ? movimientoRepository.findByCuenta_IdCuentaAndFechaBetweenOrderByFechaDesc(id, fechaInicio, fechaFin)
                     : movimientoRepository.findByCuenta_IdCuentaOrderByFechaDesc(id);
 
+            // Bug 3: deduplicar transferencias internas entre cuentas del mismo cliente
             List<Transferencia> transfs = (fechaInicio != null && fechaFin != null)
                     ? transferenciaRepository.findByCuentaIdAndFechaBetweenOrderByFechaDesc(id, fechaInicio, fechaFin)
                     : transferenciaRepository.findByCuentaIdOrderByFechaDesc(id);
+            List<Transferencia> transfsNuevas = transfs.stream()
+                    .filter(t -> transferenciasVistas.add(t.getIdTransferencia()))
+                    .collect(Collectors.toList());
 
             List<TransferenciaExterna> externas = (fechaInicio != null && fechaFin != null)
                     ? transferenciaExternaRepository.findByCuentaOrigen_IdCuentaAndFechaBetweenOrderByFechaDesc(id, fechaInicio, fechaFin)
@@ -131,8 +144,17 @@ public class AdminActividadServiceImpl implements AdminActividadService {
                     ? transferenciaInternacionalRepository.findByCuentaOrigen_IdCuentaAndFechaBetweenOrderByFechaDesc(id, fechaInicio, fechaFin)
                     : transferenciaInternacionalRepository.findByCuentaOrigen_IdCuentaOrderByFechaDesc(id);
 
-            // Reutilizar el mapper existente — ya consolida y ordena cronológicamente
-            todos.addAll(transaccionMapper.aListaDTOUnificada(movs, transfs, id, externas, internacionales));
+            List<MovimientoDTO> dtosParaCuenta = transaccionMapper.aListaDTOUnificada(
+                    movs, transfsNuevas, id, externas, internacionales);
+
+            // Bug 5: calcular saldo acumulado por cuenta (iterando de más reciente a más antiguo)
+            BigDecimal saldoAcumulado = cuenta.getSaldo();
+            for (MovimientoDTO dto : dtosParaCuenta) {
+                dto.setSaldoResultante(saldoAcumulado);
+                saldoAcumulado = saldoAcumulado.subtract(dto.getMonto());
+            }
+
+            todos.addAll(dtosParaCuenta);
         }
 
         // Reordenar el consolidado total cronológicamente
