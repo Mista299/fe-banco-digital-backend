@@ -92,7 +92,8 @@ public class ConfiguracionSeguridad {
                                 "/api/db/ping",
                                 "/favicon.ico"
                         ).permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "GERENTE")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/reportes/**").hasAnyRole("ADMIN", "GERENTE")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
