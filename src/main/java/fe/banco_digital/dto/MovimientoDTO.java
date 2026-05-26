@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 public class MovimientoDTO {
 
-    private Long idTransaccion;
+    private String idTransaccion;
     private LocalDateTime fechaHora;
     private String concepto;
     private BigDecimal monto;
@@ -17,8 +17,8 @@ public class MovimientoDTO {
     public MovimientoDTO() {
     }
 
-    public Long getIdTransaccion() { return idTransaccion; }
-    public void setIdTransaccion(Long idTransaccion) { this.idTransaccion = idTransaccion; }
+    public String getIdTransaccion() { return idTransaccion; }
+    public void setIdTransaccion(String idTransaccion) { this.idTransaccion = idTransaccion; }
 
     public LocalDateTime getFechaHora() { return fechaHora; }
     public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }

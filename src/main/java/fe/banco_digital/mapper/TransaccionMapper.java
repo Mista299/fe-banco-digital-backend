@@ -19,7 +19,7 @@ public class TransaccionMapper {
 
     public MovimientoDTO aMovimientoDTO(Movimiento m) {
         MovimientoDTO dto = new MovimientoDTO();
-        dto.setIdTransaccion(m.getIdMovimiento());
+        dto.setIdTransaccion("M-" + m.getIdMovimiento());
         dto.setFechaHora(m.getFecha());
         dto.setConcepto(m.getTipo().name());
         dto.setEstado(m.getEstado() != null ? m.getEstado().name() : null);
@@ -32,7 +32,7 @@ public class TransaccionMapper {
 
     public MovimientoDTO aMovimientoDTO(Transferencia t, Long idCuenta) {
         MovimientoDTO dto = new MovimientoDTO();
-        dto.setIdTransaccion(t.getIdTransferencia());
+        dto.setIdTransaccion("T-" + t.getIdTransferencia());
         dto.setFechaHora(t.getFecha());
         dto.setConcepto(t.getEstado() != null ? "TRANSFERENCIA" : "TRANSFERENCIA");
         dto.setEstado(t.getEstado() != null ? t.getEstado().name() : null);
@@ -44,7 +44,7 @@ public class TransaccionMapper {
 
     public MovimientoDTO aMovimientoDTO(TransferenciaExterna te) {
         MovimientoDTO dto = new MovimientoDTO();
-        dto.setIdTransaccion(te.getIdTransfExt());
+        dto.setIdTransaccion("TE-" + te.getIdTransfExt());
         dto.setFechaHora(te.getFecha());
         dto.setConcepto("TRANSFERENCIA_INTERBANCARIA");
         dto.setEstado(te.getEstado() != null ? te.getEstado().name() : null);
@@ -56,7 +56,7 @@ public class TransaccionMapper {
 
     public MovimientoDTO aMovimientoDTO(TransferenciaInternacional ti) {
         MovimientoDTO dto = new MovimientoDTO();
-        dto.setIdTransaccion(ti.getIdTransfInt());
+        dto.setIdTransaccion("TI-" + ti.getIdTransfInt());
         dto.setFechaHora(ti.getFecha());
         dto.setConcepto("TRANSFERENCIA_INTERNACIONAL");
         dto.setEstado(ti.getEstado() != null ? ti.getEstado().name() : null);
