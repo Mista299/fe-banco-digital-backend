@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -147,6 +148,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> manejarTipoArgumentoInvalido(MethodArgumentTypeMismatchException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST,
                 "Parámetro inválido: '" + ex.getName() + "' debe ser " + ex.getRequiredType().getSimpleName());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> manejarJsonMalformado(HttpMessageNotReadableException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no es JSON válido o está vacío.");
     }
 
     @ExceptionHandler(Exception.class)

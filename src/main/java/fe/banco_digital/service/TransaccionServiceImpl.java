@@ -19,6 +19,7 @@ import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.CuentaBloqueadaException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
 import fe.banco_digital.exception.CuentaYaCerradaException;
+import fe.banco_digital.exception.OperacionNoPermitidaException;
 import fe.banco_digital.exception.SaldoInsuficienteException;
 import fe.banco_digital.mapper.TransaccionMapper;
 import fe.banco_digital.repository.CuentaRepository;
@@ -146,6 +147,10 @@ public class TransaccionServiceImpl implements TransaccionService {
 
         cuentaRepository.findByIdCuentaAndCliente_IdCliente(idOrigen,
                 usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
+
+        if (idOrigen.equals(idDestino)) {
+            throw new OperacionNoPermitidaException("No se puede transferir dinero a la misma cuenta.");
+        }
 
         Cuenta primerLock = cuentaRepository
                 .findByIdCuentaConLock(Math.min(idOrigen, idDestino))
