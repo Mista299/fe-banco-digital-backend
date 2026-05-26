@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,6 +18,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/cuentas")
@@ -81,11 +85,17 @@ public class CuentaController {
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
     @GetMapping({"/mis-cuentas", "/dashboard"})
-    public ResponseEntity<List<CuentaResumenDTO>> obtenerDashboard(
+    public ResponseEntity<List<EntityModel<CuentaResumenDTO>>> obtenerDashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         List<CuentaResumenDTO> cuentas =
                 cuentaService.obtenerCuentasDelCliente(usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(cuentas);
+        List<EntityModel<CuentaResumenDTO>> modelos = cuentas.stream()
+                .map(c -> EntityModel.of(c,
+                        linkTo(methodOn(TransaccionController.class).obtenerMovimientos(c.getIdCuenta(), null)).withRel("movimientos"),
+                        linkTo(methodOn(CuentaController.class).cerrarCuenta(null, null)).withRel("cerrar")
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(modelos);
     }
 }

@@ -12,7 +12,8 @@ import org.springframework.test.context.TestPropertySource;
 		"spring.datasource.password=",
 		"spring.jpa.hibernate.ddl-auto=create-drop",
 		"jwt.secreto=clave-secreta-para-tests-unitarios-minimo-32-caracteres",
-		"GATEWAY_SECRET=test-gateway-secret"
+		"GATEWAY_SECRET=test-gateway-secret",
+		"spring.autoconfigure.exclude=org.springdoc.core.configuration.SpringDocHateoasConfiguration"
 })
 class BancoDigitalApplicationTests {
 

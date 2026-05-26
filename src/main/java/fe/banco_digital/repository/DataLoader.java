@@ -125,6 +125,19 @@ public class DataLoader {
                 return clienteRepo.save(c);
             });
 
+            // Gerente sin cuentas bancarias
+            Cliente cGerente = clienteRepo.findByDocumento("000000001").orElseGet(() -> {
+                Cliente c = new Cliente();
+                c.setNombre("Patricia López");
+                c.setDocumento("000000001");
+                c.setFechaExpedicion(LocalDate.of(2015, 3, 20));
+                c.setEmail("patricia@nexusbank.co");
+                c.setDireccion("Sede principal Nexus Bank");
+                c.setTelefono("6012345678");
+                c.setGenero(Genero.FEMENINO);
+                return clienteRepo.save(c);
+            });
+
             // ── Usuarios ───────────────────────────────────────────────────────────
             Usuario u1 = usuarioRepo.findByUsername("bryan").orElseGet(() -> {
                 Usuario u = new Usuario();
@@ -183,6 +196,16 @@ public class DataLoader {
                 u.setEstado(EstadoUsuario.ACTIVO);
                 u.setCliente(c6);
                 u.setRoles(Set.of(rolCliente));
+                return usuarioRepo.save(u);
+            });
+
+            usuarioRepo.findByUsername("patricia").orElseGet(() -> {
+                Usuario u = new Usuario();
+                u.setUsername("patricia");
+                u.setPasswordHash(passwordEncoder.encode("patricia123"));
+                u.setEstado(EstadoUsuario.ACTIVO);
+                u.setCliente(cGerente);
+                u.setRoles(Set.of(rolGerente));
                 return usuarioRepo.save(u);
             });
 
