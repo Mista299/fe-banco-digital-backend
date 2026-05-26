@@ -45,6 +45,12 @@ public class DataLoader {
                         r.setNombre(RolNombre.CLIENTE);
                         return rolRepo.save(r);
                     });
+            Rol rolGerente = rolRepo.findByNombre(RolNombre.GERENTE)
+                    .orElseGet(() -> {
+                        Rol r = new Rol();
+                        r.setNombre(RolNombre.GERENTE);
+                        return rolRepo.save(r);
+                    });
 
             // ── Clientes ───────────────────────────────────────────────────────────
             Cliente c1 = clienteRepo.findByDocumento("123456789").orElseGet(() -> {
