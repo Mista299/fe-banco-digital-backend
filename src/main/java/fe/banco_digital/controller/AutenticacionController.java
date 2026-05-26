@@ -97,7 +97,8 @@ public class AutenticacionController {
                                                       HttpServletResponse response) {
         String refreshToken = leerCookie(request, COOKIE_REFRESH);
         if (refreshToken != null) {
-            refreshTokenService.revocarToken(refreshToken);
+            try { refreshTokenService.revocarToken(refreshToken); }
+            catch (TokenInvalidoException ignored) { /* ya revocado o expirado */ }
         }
         limpiarCookies(response);
         return ResponseEntity.ok(Map.of("mensaje", "Sesión cerrada exitosamente"));

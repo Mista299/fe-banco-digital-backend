@@ -93,6 +93,7 @@ public class ConfiguracionSeguridad {
                                 "/favicon.ico"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/reportes/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
