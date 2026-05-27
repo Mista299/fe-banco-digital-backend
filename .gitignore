@@ -38,3 +38,4 @@ src/main/resources/application.properties
 
 .mcp.json
 scripts/
+scripts/HU-17/_comun.sh
