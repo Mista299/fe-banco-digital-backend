@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: banco2026
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASS}
     ports:
       - "5432:5432"
     volumes:
@@ -28,13 +28,14 @@ services:
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/banco2026
       DB_USER: postgres
-      DB_PASS: postgres
-      DDL_AUTO: update
-      PORT: 8080
-      JWT_SECRET: BancoDigital2026ClaveSecretaSuperSeguraParaFirmarTokensJWTHS256
-      SHOW_SQL: "false"
-      HTTPS_SEGURO: "false"
-      CORS_ORIGENES: http://localhost:3000,http://localhost:5173,http://localhost:8080
+      DB_PASS: ${DB_PASS}
+      DDL_AUTO: ${DDL_AUTO:-update}
+      PORT: ${PORT:-8080}
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      SHOW_SQL: ${SHOW_SQL:-false}
+      HTTPS_SEGURO: ${HTTPS_SEGURO:-false}
+      CORS_ORIGENES: ${CORS_ORIGENES}
     ports:
       - "8080:8080"
     labels:

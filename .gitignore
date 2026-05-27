@@ -35,3 +35,4 @@ build/
 src/main/resources/application-local.properties
 .env
 scripts/
+k8s/02-secret.yaml
