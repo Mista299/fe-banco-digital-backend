@@ -107,7 +107,7 @@ public class CuentaServiceImpl implements CuentaService {
                 .orElseThrow(AutenticacionFallidaException::new);
 
         List<Cuenta> cuentas = cuentaRepository
-                .findByCliente_IdCliente(usuario.getCliente().getIdCliente());
+                .findByCliente_IdClienteOrderByIdCuentaAsc(usuario.getCliente().getIdCliente());
 
         return cuentas.stream()
                 .map(cuentaMapper::aCuentaResumenDTO)

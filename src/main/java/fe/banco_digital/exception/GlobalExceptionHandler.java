@@ -3,9 +3,11 @@ package fe.banco_digital.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -96,6 +98,27 @@ public class GlobalExceptionHandler {
                 .toList();
         cuerpo.put("detalles", detalles);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(cuerpo);
+    }
+
+    @ExceptionHandler(PeriodoNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> manejarPeriodoNoDisponible(PeriodoNoDisponibleException ex) {
+        return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+    @ExceptionHandler(PeriodoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarPeriodoInvalido(PeriodoInvalidoException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> manejarTipoArgumentoInvalido(MethodArgumentTypeMismatchException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                "Parámetro inválido: '" + ex.getName() + "' debe ser " + ex.getRequiredType().getSimpleName());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> manejarJsonMalformado(HttpMessageNotReadableException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no es JSON válido o está vacío.");
     }
 
     @ExceptionHandler(Exception.class)

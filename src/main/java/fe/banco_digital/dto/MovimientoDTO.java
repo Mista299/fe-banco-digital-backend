@@ -5,43 +5,47 @@ import java.time.LocalDateTime;
 
 public class MovimientoDTO {
 
+    private String idTransaccion;
     private LocalDateTime fechaHora;
     private String concepto;
     private BigDecimal monto;
     private BigDecimal saldoResultante;
+    private String cuentaOrigen;
+    private String cuentaDestino;
+    private String bancoDestino;
+    private String nombreReceptorExterno;
+    private String estado;
 
     public MovimientoDTO() {
     }
 
-    public LocalDateTime getFechaHora() {
-        return fechaHora;
-    }
+    public String getIdTransaccion() { return idTransaccion; }
+    public void setIdTransaccion(String idTransaccion) { this.idTransaccion = idTransaccion; }
 
-    public void setFechaHora(LocalDateTime fechaHora) {
-        this.fechaHora = fechaHora;
-    }
+    public LocalDateTime getFechaHora() { return fechaHora; }
+    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
 
-    public String getConcepto() {
-        return concepto;
-    }
+    public String getConcepto() { return concepto; }
+    public void setConcepto(String concepto) { this.concepto = concepto; }
 
-    public void setConcepto(String concepto) {
-        this.concepto = concepto;
-    }
+    public BigDecimal getMonto() { return monto; }
+    public void setMonto(BigDecimal monto) { this.monto = monto; }
 
-    public BigDecimal getMonto() {
-        return monto;
-    }
+    public BigDecimal getSaldoResultante() { return saldoResultante; }
+    public void setSaldoResultante(BigDecimal saldoResultante) { this.saldoResultante = saldoResultante; }
 
-    public void setMonto(BigDecimal monto) {
-        this.monto = monto;
-    }
+    public String getCuentaOrigen() { return cuentaOrigen; }
+    public void setCuentaOrigen(String cuentaOrigen) { this.cuentaOrigen = cuentaOrigen; }
 
-    public BigDecimal getSaldoResultante() {
-        return saldoResultante;
-    }
+    public String getCuentaDestino() { return cuentaDestino; }
+    public void setCuentaDestino(String cuentaDestino) { this.cuentaDestino = cuentaDestino; }
 
-    public void setSaldoResultante(BigDecimal saldoResultante) {
-        this.saldoResultante = saldoResultante;
-    }
+    public String getBancoDestino() { return bancoDestino; }
+    public void setBancoDestino(String bancoDestino) { this.bancoDestino = bancoDestino; }
+
+    public String getNombreReceptorExterno() { return nombreReceptorExterno; }
+    public void setNombreReceptorExterno(String nombreReceptorExterno) { this.nombreReceptorExterno = nombreReceptorExterno; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 }

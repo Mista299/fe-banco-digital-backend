@@ -1,10 +1,13 @@
 package fe.banco_digital.service;
 
 import fe.banco_digital.entity.Cuenta;
-import fe.banco_digital.entity.EstadoTransaccion;
-import fe.banco_digital.entity.TipoTransaccion;
-import fe.banco_digital.entity.Transaccion;
-import fe.banco_digital.repository.TransaccionRepository;
+import fe.banco_digital.entity.EstadoMovimiento;
+import fe.banco_digital.entity.EstadoTransferencia;
+import fe.banco_digital.entity.Movimiento;
+import fe.banco_digital.entity.TipoMovimiento;
+import fe.banco_digital.entity.Transferencia;
+import fe.banco_digital.repository.MovimientoRepository;
+import fe.banco_digital.repository.TransferenciaRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -20,41 +23,53 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class RegistroFalloServiceTest {
 
-    @Mock TransaccionRepository transaccionRepository;
+    @Mock MovimientoRepository movimientoRepository;
+    @Mock TransferenciaRepository transferenciaRepository;
 
     @InjectMocks RegistroFalloService service;
 
     @Test
-    void registrarFallo_exitoso_guardaTransaccionFallida() {
+    void registrarFalloMovimiento_exitoso_guardaMovimientoFallido() {
+        Cuenta cuenta = new Cuenta();
+        cuenta.setIdCuenta(1L);
+
+        service.registrarFalloMovimiento(cuenta, TipoMovimiento.RETIRO, new BigDecimal("10000"));
+
+        ArgumentCaptor<Movimiento> captor = ArgumentCaptor.forClass(Movimiento.class);
+        verify(movimientoRepository).save(captor.capture());
+        assertEquals(EstadoMovimiento.FALLIDO, captor.getValue().getEstado());
+        assertEquals(TipoMovimiento.RETIRO, captor.getValue().getTipo());
+    }
+
+    @Test
+    void registrarFalloTransferencia_exitoso_guardaTransferenciaFallida() {
         Cuenta origen = new Cuenta();
         origen.setIdCuenta(1L);
         Cuenta destino = new Cuenta();
         destino.setIdCuenta(2L);
 
-        service.registrarFallo(origen, destino, TipoTransaccion.TRANSFERENCIA, new BigDecimal("50000"));
+        service.registrarFalloTransferencia(origen, destino, new BigDecimal("50000"));
 
-        ArgumentCaptor<Transaccion> captor = ArgumentCaptor.forClass(Transaccion.class);
-        verify(transaccionRepository).save(captor.capture());
-        assertEquals(EstadoTransaccion.FALLIDA, captor.getValue().getEstado());
-        assertEquals(TipoTransaccion.TRANSFERENCIA, captor.getValue().getTipo());
+        ArgumentCaptor<Transferencia> captor = ArgumentCaptor.forClass(Transferencia.class);
+        verify(transferenciaRepository).save(captor.capture());
+        assertEquals(EstadoTransferencia.FALLIDA, captor.getValue().getEstado());
     }
 
     @Test
-    void registrarFallo_conDestinoNulo_guardaIgual() {
-        Cuenta origen = new Cuenta();
-        origen.setIdCuenta(1L);
-
-        service.registrarFallo(origen, null, TipoTransaccion.RETIRO, new BigDecimal("10000"));
-
-        verify(transaccionRepository).save(any());
-    }
-
-    @Test
-    void registrarFallo_siRepositoryFalla_noLanzaExcepcion() {
-        doThrow(new RuntimeException("DB error")).when(transaccionRepository).save(any());
+    void registrarFalloMovimiento_conRepositoryFalla_noLanzaExcepcion() {
+        doThrow(new RuntimeException("DB error")).when(movimientoRepository).save(any());
 
         assertDoesNotThrow(() ->
-            service.registrarFallo(null, null, TipoTransaccion.DEPOSITO, BigDecimal.ONE)
+            service.registrarFalloMovimiento(null, TipoMovimiento.DEPOSITO, BigDecimal.ONE)
+        );
+    }
+
+    @Test
+    void registrarFalloTransferencia_conRepositoryFalla_noLanzaExcepcion() {
+        doThrow(new RuntimeException("DB error")).when(transferenciaRepository).save(any());
+
+        assertDoesNotThrow(() ->
+            service.registrarFalloTransferencia(null, null, BigDecimal.ONE)
         );
     }
 }

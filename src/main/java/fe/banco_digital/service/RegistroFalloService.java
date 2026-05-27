@@ -1,10 +1,13 @@
 package fe.banco_digital.service;
 
 import fe.banco_digital.entity.Cuenta;
-import fe.banco_digital.entity.EstadoTransaccion;
-import fe.banco_digital.entity.TipoTransaccion;
-import fe.banco_digital.entity.Transaccion;
-import fe.banco_digital.repository.TransaccionRepository;
+import fe.banco_digital.entity.EstadoMovimiento;
+import fe.banco_digital.entity.EstadoTransferencia;
+import fe.banco_digital.entity.Movimiento;
+import fe.banco_digital.entity.TipoMovimiento;
+import fe.banco_digital.entity.Transferencia;
+import fe.banco_digital.repository.MovimientoRepository;
+import fe.banco_digital.repository.TransferenciaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,24 +18,40 @@ import java.time.LocalDateTime;
 @Service
 public class RegistroFalloService {
 
-    private final TransaccionRepository transaccionRepository;
+    private final MovimientoRepository movimientoRepository;
+    private final TransferenciaRepository transferenciaRepository;
 
-    public RegistroFalloService(TransaccionRepository transaccionRepository) {
-        this.transaccionRepository = transaccionRepository;
+    public RegistroFalloService(MovimientoRepository movimientoRepository,
+                                TransferenciaRepository transferenciaRepository) {
+        this.movimientoRepository = movimientoRepository;
+        this.transferenciaRepository = transferenciaRepository;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void registrarFallo(Cuenta origen, Cuenta destino,
-                               TipoTransaccion tipo, BigDecimal monto) {
+    public void registrarFalloMovimiento(Cuenta cuenta, TipoMovimiento tipo, BigDecimal monto) {
         try {
-            Transaccion fallo = new Transaccion();
-            fallo.setCuentaOrigen(origen);
-            fallo.setCuentaDestino(destino);
+            Movimiento fallo = new Movimiento();
+            fallo.setCuenta(cuenta);
             fallo.setTipo(tipo);
             fallo.setMonto(monto);
-            fallo.setEstado(EstadoTransaccion.FALLIDA);
+            fallo.setEstado(EstadoMovimiento.FALLIDO);
             fallo.setFecha(LocalDateTime.now());
-            transaccionRepository.save(fallo);
+            movimientoRepository.save(fallo);
+        } catch (Exception ignorada) {
+            // nunca bloquear el lanzamiento de la excepción original
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void registrarFalloTransferencia(Cuenta origen, Cuenta destino, BigDecimal monto) {
+        try {
+            Transferencia fallo = new Transferencia();
+            fallo.setCuentaOrigen(origen);
+            fallo.setCuentaDestino(destino);
+            fallo.setMonto(monto);
+            fallo.setEstado(EstadoTransferencia.FALLIDA);
+            fallo.setFecha(LocalDateTime.now());
+            transferenciaRepository.save(fallo);
         } catch (Exception ignorada) {
             // nunca bloquear el lanzamiento de la excepción original
         }

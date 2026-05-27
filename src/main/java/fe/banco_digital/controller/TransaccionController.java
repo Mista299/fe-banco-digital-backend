@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +20,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/transacciones")
@@ -38,11 +42,14 @@ public class TransaccionController {
             @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
     })
     @PostMapping("/depositar")
-    public ResponseEntity<TransaccionRespuestaDTO> depositar(
+    public ResponseEntity<EntityModel<TransaccionRespuestaDTO>> depositar(
             @Valid @RequestBody DepositoSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transaccionService.depositar(solicitud, usuarioAutenticado.getUsername()));
+        TransaccionRespuestaDTO dto = transaccionService.depositar(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransaccionController.class).depositar(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     @Operation(summary = "Retirar dinero de una cuenta")
@@ -53,11 +60,14 @@ public class TransaccionController {
             @ApiResponse(responseCode = "409", description = "Saldo insuficiente")
     })
     @PostMapping("/retirar")
-    public ResponseEntity<TransaccionRespuestaDTO> retirar(
+    public ResponseEntity<EntityModel<TransaccionRespuestaDTO>> retirar(
             @Valid @RequestBody RetiroSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transaccionService.retirar(solicitud, usuarioAutenticado.getUsername()));
+        TransaccionRespuestaDTO dto = transaccionService.retirar(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransaccionController.class).retirar(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     @Operation(summary = "Transferir dinero entre cuentas")
@@ -68,11 +78,14 @@ public class TransaccionController {
             @ApiResponse(responseCode = "409", description = "Saldo insuficiente")
     })
     @PostMapping("/transferir")
-    public ResponseEntity<TransaccionRespuestaDTO> transferir(
+    public ResponseEntity<EntityModel<TransaccionRespuestaDTO>> transferir(
             @Valid @RequestBody TransferenciaSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transaccionService.transferir(solicitud, usuarioAutenticado.getUsername()));
+        TransaccionRespuestaDTO dto = transaccionService.transferir(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransaccionController.class).transferir(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     @Operation(summary = "Listar movimientos de una cuenta")
@@ -81,11 +94,16 @@ public class TransaccionController {
             @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
     })
     @GetMapping("/cuenta/{idCuenta}")
-    public ResponseEntity<List<MovimientoDTO>> obtenerMovimientos(
+    public ResponseEntity<List<EntityModel<MovimientoDTO>>> obtenerMovimientos(
             @PathVariable Long idCuenta,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transaccionService.obtenerMovimientos(idCuenta, usuarioAutenticado.getUsername()));
+        List<MovimientoDTO> movimientos = transaccionService.obtenerMovimientos(idCuenta, usuarioAutenticado.getUsername());
+        List<EntityModel<MovimientoDTO>> modelos = movimientos.stream()
+                .map(m -> EntityModel.of(m,
+                        linkTo(methodOn(TransaccionController.class).obtenerMovimientos(idCuenta, null)).withRel("historial-cuenta")
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(modelos);
     }
 
     @Operation(summary = "Filtrar movimientos por rango de fechas")
@@ -94,13 +112,18 @@ public class TransaccionController {
             @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
     })
     @GetMapping("/cuenta/{idCuenta}/filtro")
-    public ResponseEntity<List<MovimientoDTO>> obtenerMovimientosPorFecha(
+    public ResponseEntity<List<EntityModel<MovimientoDTO>>> obtenerMovimientosPorFecha(
             @PathVariable Long idCuenta,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transaccionService.obtenerMovimientosPorFecha(
-                        idCuenta, fechaInicio, fechaFin, usuarioAutenticado.getUsername()));
+        List<MovimientoDTO> movimientos = transaccionService.obtenerMovimientosPorFecha(
+                idCuenta, fechaInicio, fechaFin, usuarioAutenticado.getUsername());
+        List<EntityModel<MovimientoDTO>> modelos = movimientos.stream()
+                .map(m -> EntityModel.of(m,
+                        linkTo(methodOn(TransaccionController.class).obtenerMovimientos(idCuenta, null)).withRel("historial-cuenta")
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(modelos);
     }
 }

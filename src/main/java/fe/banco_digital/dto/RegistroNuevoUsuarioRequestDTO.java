@@ -1,5 +1,6 @@
 package fe.banco_digital.dto;
 
+import fe.banco_digital.entity.Genero;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +13,9 @@ public class RegistroNuevoUsuarioRequestDTO {
 
     @NotBlank(message = "El documento es obligatorio")
     private String documento;
+
+    @NotNull(message = "El género es obligatorio")
+    private Genero genero;
 
     @NotNull(message = "La fecha de expedición es obligatoria")
     @PastOrPresent(message = "La fecha de expedición no puede ser futura")
@@ -47,6 +51,14 @@ public class RegistroNuevoUsuarioRequestDTO {
 
     public void setDocumento(String documento) {
         this.documento = documento;
+    }
+
+    public Genero getGenero() {
+        return genero;
+    }
+
+    public void setGenero(Genero genero) {
+        this.genero = genero;
     }
 
     public LocalDate getFechaExpedicion() {

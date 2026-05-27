@@ -34,5 +34,11 @@ build/
 .m2repo/
 src/main/resources/application-local.properties
 .env
-scripts/
+*.patch
+
+.mcp.json
+scripts/*.sh
+scripts/**/*.sh
+scripts/*.txt
+scripts/**/*.txt
 k8s/02-secret.yaml

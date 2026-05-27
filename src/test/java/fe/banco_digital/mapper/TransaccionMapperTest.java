@@ -2,12 +2,16 @@ package fe.banco_digital.mapper;
 
 import fe.banco_digital.dto.MovimientoDTO;
 import fe.banco_digital.entity.Cuenta;
-import fe.banco_digital.entity.TipoTransaccion;
-import fe.banco_digital.entity.Transaccion;
+import fe.banco_digital.entity.EstadoMovimiento;
+import fe.banco_digital.entity.EstadoTransferencia;
+import fe.banco_digital.entity.Movimiento;
+import fe.banco_digital.entity.TipoMovimiento;
+import fe.banco_digital.entity.Transferencia;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,35 +21,28 @@ class TransaccionMapperTest {
     private final TransaccionMapper mapper = new TransaccionMapper();
 
     @Test
-    void aMovimientoDTO_esOrigen_montoNegativo() {
-        Cuenta origen = new Cuenta();
-        origen.setIdCuenta(1L);
+    void aMovimientoDTO_retiro_montoNegativo() {
+        Movimiento m = new Movimiento();
+        m.setTipo(TipoMovimiento.RETIRO);
+        m.setMonto(new BigDecimal("300.00"));
+        m.setEstado(EstadoMovimiento.EXITOSO);
+        m.setFecha(LocalDateTime.now());
 
-        Transaccion t = new Transaccion();
-        t.setTipo(TipoTransaccion.RETIRO);
-        t.setMonto(new BigDecimal("300.00"));
-        t.setCuentaOrigen(origen);
-        t.setFecha(LocalDateTime.now());
-
-        MovimientoDTO dto = mapper.aMovimientoDTO(t, 1L);
+        MovimientoDTO dto = mapper.aMovimientoDTO(m);
 
         assertEquals(new BigDecimal("-300.00"), dto.getMonto());
         assertEquals("RETIRO", dto.getConcepto());
     }
 
     @Test
-    void aMovimientoDTO_esDestino_montoPositivo() {
-        Cuenta destino = new Cuenta();
-        destino.setIdCuenta(2L);
+    void aMovimientoDTO_deposito_montoPositivo() {
+        Movimiento m = new Movimiento();
+        m.setTipo(TipoMovimiento.DEPOSITO);
+        m.setMonto(new BigDecimal("500.00"));
+        m.setEstado(EstadoMovimiento.EXITOSO);
+        m.setFecha(LocalDateTime.now());
 
-        Transaccion t = new Transaccion();
-        t.setTipo(TipoTransaccion.DEPOSITO);
-        t.setMonto(new BigDecimal("500.00"));
-        t.setCuentaOrigen(null);
-        t.setCuentaDestino(destino);
-        t.setFecha(LocalDateTime.now());
-
-        MovimientoDTO dto = mapper.aMovimientoDTO(t, 2L);
+        MovimientoDTO dto = mapper.aMovimientoDTO(m);
 
         assertEquals(new BigDecimal("500.00"), dto.getMonto());
         assertEquals("DEPOSITO", dto.getConcepto());
@@ -58,11 +55,11 @@ class TransaccionMapperTest {
         Cuenta destino = new Cuenta();
         destino.setIdCuenta(2L);
 
-        Transaccion t = new Transaccion();
-        t.setTipo(TipoTransaccion.TRANSFERENCIA);
+        Transferencia t = new Transferencia();
         t.setMonto(new BigDecimal("150.00"));
         t.setCuentaOrigen(origen);
         t.setCuentaDestino(destino);
+        t.setEstado(EstadoTransferencia.EXITOSA);
         t.setFecha(LocalDateTime.now());
 
         MovimientoDTO dto = mapper.aMovimientoDTO(t, 2L); // consultado como destino
@@ -71,23 +68,47 @@ class TransaccionMapperTest {
     }
 
     @Test
-    void aListaDTO_variosMovimientos_retornaListaCompleta() {
-        Transaccion t1 = new Transaccion();
-        t1.setTipo(TipoTransaccion.DEPOSITO);
-        t1.setMonto(new BigDecimal("100.00"));
-        t1.setFecha(LocalDateTime.now());
-
+    void aMovimientoDTO_transferenciaEnviada_montoNegativo() {
         Cuenta origen = new Cuenta();
-        origen.setIdCuenta(5L);
-        Transaccion t2 = new Transaccion();
-        t2.setTipo(TipoTransaccion.RETIRO);
-        t2.setCuentaOrigen(origen);
-        t2.setMonto(new BigDecimal("50.00"));
-        t2.setFecha(LocalDateTime.now());
+        origen.setIdCuenta(1L);
+        Cuenta destino = new Cuenta();
+        destino.setIdCuenta(2L);
 
-        List<MovimientoDTO> result = mapper.aListaDTO(List.of(t1, t2), 5L);
+        Transferencia t = new Transferencia();
+        t.setMonto(new BigDecimal("150.00"));
+        t.setCuentaOrigen(origen);
+        t.setCuentaDestino(destino);
+        t.setEstado(EstadoTransferencia.EXITOSA);
+        t.setFecha(LocalDateTime.now());
+
+        MovimientoDTO dto = mapper.aMovimientoDTO(t, 1L); // consultado como origen
+
+        assertEquals(new BigDecimal("-150.00"), dto.getMonto());
+    }
+
+    @Test
+    void aListaDTOUnificada_variosMovimientos_retornaListaCompleta() {
+        Movimiento m1 = new Movimiento();
+        m1.setTipo(TipoMovimiento.DEPOSITO);
+        m1.setMonto(new BigDecimal("100.00"));
+        m1.setEstado(EstadoMovimiento.EXITOSO);
+        m1.setFecha(LocalDateTime.now().minusMinutes(2));
+
+        Movimiento m2 = new Movimiento();
+        m2.setTipo(TipoMovimiento.RETIRO);
+        m2.setMonto(new BigDecimal("50.00"));
+        m2.setEstado(EstadoMovimiento.EXITOSO);
+        m2.setFecha(LocalDateTime.now().minusMinutes(1));
+
+        List<MovimientoDTO> result = mapper.aListaDTOUnificada(
+                List.of(m1, m2),
+                Collections.emptyList(),
+                5L,
+                Collections.emptyList(),
+                Collections.emptyList());
 
         assertEquals(2, result.size());
-        assertEquals(new BigDecimal("-50.00"), result.get(1).getMonto());
+        // m2 es más reciente, aparece primero
+        assertEquals(new BigDecimal("-50.00"), result.get(0).getMonto());
     }
 }

@@ -53,7 +53,7 @@ public class MotorValidacionServiceImpl implements MotorValidacionService {
     @Override
     public ValidacionTransaccionResponseDTO validarCuentaParaDebito(Cuenta cuenta, BigDecimal monto) {
         if (cuenta == null) {
-            throw new CuentaNoEncontradaException(null);
+            throw new CuentaNoEncontradaException((Long) null);
         }
 
         if (cuenta.getEstado() == EstadoCuenta.BLOQUEADA) {

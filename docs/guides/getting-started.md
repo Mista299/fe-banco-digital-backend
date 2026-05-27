@@ -11,7 +11,7 @@
 Copia el archivo de ejemplo y ajusta los valores:
 
 ```bash
-cp application-local.properties.example src/main/resources/application-local.properties
+cp application-local.properties src/main/resources/application-local.properties
 ```
 
 O crea un archivo `.env` en la raíz del proyecto (recomendado):

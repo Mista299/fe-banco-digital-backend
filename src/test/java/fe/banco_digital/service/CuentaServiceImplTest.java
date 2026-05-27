@@ -135,7 +135,7 @@ class CuentaServiceImplTest {
     void obtenerCuentasDelCliente_exitoso_retornaLista() {
         CuentaResumenDTO dto = mock(CuentaResumenDTO.class);
         when(usuarioRepository.findByUsername("user1")).thenReturn(Optional.of(usuario));
-        when(cuentaRepository.findByCliente_IdCliente(5L)).thenReturn(List.of(cuenta));
+        when(cuentaRepository.findByCliente_IdClienteOrderByIdCuentaAsc(5L)).thenReturn(List.of(cuenta));
         when(cuentaMapper.aCuentaResumenDTO(cuenta)).thenReturn(dto);
 
         List<CuentaResumenDTO> result = service.obtenerCuentasDelCliente("user1");

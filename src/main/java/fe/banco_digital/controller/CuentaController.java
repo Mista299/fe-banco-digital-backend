@@ -1,5 +1,6 @@
 package fe.banco_digital.controller;
 
+import fe.banco_digital.dto.AbrirCuentaSolicitudDTO;
 import fe.banco_digital.dto.CierreCuentaRespuestaDTO;
 import fe.banco_digital.dto.CierreCuentaSolicitudDTO;
 import fe.banco_digital.dto.CuentaResumenDTO;
@@ -9,12 +10,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/cuentas")
@@ -26,6 +32,22 @@ public class CuentaController {
     // Inyección por constructor — patrón del equipo
     public CuentaController(CuentaService cuentaService) {
         this.cuentaService = cuentaService;
+    }
+
+    @Operation(summary = "Abrir nueva cuenta", description = "Abre una cuenta adicional (AHORROS o CORRIENTE) para el cliente autenticado")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Cuenta abierta exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Tipo de cuenta inválido")
+    })
+    @PostMapping("/abrir")
+    public ResponseEntity<EntityModel<CuentaResumenDTO>> abrirCuenta(
+            @Valid @RequestBody AbrirCuentaSolicitudDTO solicitud,
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        CuentaResumenDTO dto = cuentaService.abrirCuenta(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(EntityModel.of(dto,
+                linkTo(methodOn(CuentaController.class).abrirCuenta(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     /**
@@ -44,12 +66,15 @@ public class CuentaController {
             @ApiResponse(responseCode = "409", description = "No se puede cerrar — saldo pendiente")
     })
     @PatchMapping("/cerrar")
-    public ResponseEntity<CierreCuentaRespuestaDTO> cerrarCuenta(
+    public ResponseEntity<EntityModel<CierreCuentaRespuestaDTO>> cerrarCuenta(
             @Valid @RequestBody CierreCuentaSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         CierreCuentaRespuestaDTO respuesta = cuentaService.cerrarCuenta(solicitud, usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(respuesta);
+        return ResponseEntity.ok(EntityModel.of(respuesta,
+                linkTo(methodOn(CuentaController.class).cerrarCuenta(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     /**
@@ -65,12 +90,18 @@ public class CuentaController {
             @ApiResponse(responseCode = "200", description = "Lista de cuentas obtenida exitosamente"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    @GetMapping("/dashboard")
-    public ResponseEntity<List<CuentaResumenDTO>> obtenerDashboard(
+    @GetMapping({"/mis-cuentas", "/dashboard"})
+    public ResponseEntity<List<EntityModel<CuentaResumenDTO>>> obtenerDashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         List<CuentaResumenDTO> cuentas =
                 cuentaService.obtenerCuentasDelCliente(usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(cuentas);
+        List<EntityModel<CuentaResumenDTO>> modelos = cuentas.stream()
+                .map(c -> EntityModel.of(c,
+                        linkTo(methodOn(TransaccionController.class).obtenerMovimientos(c.getIdCuenta(), null)).withRel("movimientos"),
+                        linkTo(methodOn(CuentaController.class).cerrarCuenta(null, null)).withRel("cerrar")
+                ))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(modelos);
     }
 }

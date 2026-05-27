@@ -15,6 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -64,12 +66,21 @@ class AccountSecurityServiceImplTest {
     void bloquearCuenta_success_savesCuentaAndAuditoria() {
         when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
-        when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.ACTIVA)).thenReturn(Optional.of(cuenta));
+        when(cuentaRepo.findAllByClienteIdClienteAndEstado(7L, EstadoCuenta.ACTIVA)).thenReturn(List.of(cuenta));
 
         service.bloquearCuenta("testuser", "1234");
 
         verify(cuentaRepo).save(cuenta);
         verify(eventPublisher).publishEvent(any());
+    }
+
+    @Test
+    void bloquearCuenta_noActiveAccounts_throws() {
+        when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
+        when(passwordEncoder.matches(any(), any())).thenReturn(true);
+        when(cuentaRepo.findAllByClienteIdClienteAndEstado(7L, EstadoCuenta.ACTIVA)).thenReturn(Collections.emptyList());
+
+        assertThrows(RuntimeException.class, () -> service.bloquearCuenta("testuser", "1234"));
     }
 
     @Test
@@ -90,7 +101,7 @@ class AccountSecurityServiceImplTest {
         cuenta.setEstado(EstadoCuenta.BLOQUEADA);
         when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
-        when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(Optional.of(cuenta));
+        when(cuentaRepo.findAllByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(List.of(cuenta));
 
         service.desbloquearCuenta("testuser", "1234");
 
@@ -102,7 +113,7 @@ class AccountSecurityServiceImplTest {
     void desbloquearCuenta_noBlockedAccount_throws() {
         when(usuarioRepo.findByUsername("testuser")).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(any(), any())).thenReturn(true);
-        when(cuentaRepo.findFirstByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(Optional.empty());
+        when(cuentaRepo.findAllByClienteIdClienteAndEstado(7L, EstadoCuenta.BLOQUEADA)).thenReturn(Collections.emptyList());
         assertThrows(RuntimeException.class, () -> service.desbloquearCuenta("testuser", "1234"));
     }
 }

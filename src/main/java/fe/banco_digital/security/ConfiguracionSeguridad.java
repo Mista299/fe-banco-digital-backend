@@ -30,6 +30,9 @@ public class ConfiguracionSeguridad {
     @Value("${app.cors.origenes:http://localhost:3000,http://localhost:5173}")
     private String corsOrigenes;
 
+    @Value("${app.gateway.secreto:clave_secreta_pasarela_banco_2026_hmac}")
+    private String gatewaySecreto;
+
     private final UsuarioDetallesService usuarioDetallesService;
     private final JwtUtil jwtUtil;
 
@@ -61,6 +64,11 @@ public class ConfiguracionSeguridad {
     }
 
     @Bean
+    public FiltroHmacGateway filtroHmacGateway() {
+        return new FiltroHmacGateway(gatewaySecreto);
+    }
+
+    @Bean
     public CorsConfigurationSource fuenteConfiguracionCors() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(Arrays.asList(corsOrigenes.split(",")));
@@ -75,22 +83,27 @@ public class ConfiguracionSeguridad {
     @Bean
     public SecurityFilterChain cadenaFiltros(HttpSecurity http) throws Exception {
         return http
-                .csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable) //NOSONAR: API REST stateless con JWT — CSRF no aplica
                 .cors(cors -> cors.configurationSource(fuenteConfiguracionCors()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/registro/**",
+                                "/api/v1/depositos/**",
+                                "/api/v1/retiros/**",
+                                "/api/v1/transferencias/interbancarias/*/confirmacion-ach",
+                                "/api/v1/transferencias/interbancarias/*/rechazo-ach",
+                                "/api/v1/transferencias/internacionales/*/confirmacion-swift",
+                                "/api/v1/transferencias/internacionales/*/rechazo-swift",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/index.html",
                                 "/v3/api-docs/**",
                                 "/api/db/ping",
-                                "/actuator/health",
-                                "/actuator/info",
-                                "/actuator/prometheus",
                                 "/favicon.ico"
                         ).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "GERENTE")
+                        .requestMatchers("/api/v1/reportes/**").hasAnyRole("ADMIN", "GERENTE")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session ->
@@ -102,8 +115,14 @@ public class ConfiguracionSeguridad {
                             response.setContentType("application/json;charset=UTF-8");
                             response.getWriter().write("{\"mensaje\":\"No autenticado. Incluye un token Bearer válido.\"}");
                         })
+                        .accessDeniedHandler((request, response, e) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"mensaje\":\"No tienes permisos para realizar esta acción.\"}");
+                        })
                 )
                 .authenticationProvider(proveedorAutenticacion())
+                .addFilterBefore(filtroHmacGateway(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(filtroJwt(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

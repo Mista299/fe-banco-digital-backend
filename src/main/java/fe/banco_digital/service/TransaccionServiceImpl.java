@@ -7,9 +7,11 @@ import fe.banco_digital.dto.TransaccionRespuestaDTO;
 import fe.banco_digital.dto.TransferenciaSolicitudDTO;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
-import fe.banco_digital.entity.EstadoTransaccion;
-import fe.banco_digital.entity.TipoTransaccion;
-import fe.banco_digital.entity.Transaccion;
+import fe.banco_digital.entity.EstadoMovimiento;
+import fe.banco_digital.entity.EstadoTransferencia;
+import fe.banco_digital.entity.Movimiento;
+import fe.banco_digital.entity.TipoMovimiento;
+import fe.banco_digital.entity.Transferencia;
 import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.AccesoNoAutorizadoException;
@@ -17,10 +19,14 @@ import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.CuentaBloqueadaException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
 import fe.banco_digital.exception.CuentaYaCerradaException;
+import fe.banco_digital.exception.OperacionNoPermitidaException;
 import fe.banco_digital.exception.SaldoInsuficienteException;
 import fe.banco_digital.mapper.TransaccionMapper;
 import fe.banco_digital.repository.CuentaRepository;
-import fe.banco_digital.repository.TransaccionRepository;
+import fe.banco_digital.repository.MovimientoRepository;
+import fe.banco_digital.repository.TransferenciaExternaRepository;
+import fe.banco_digital.repository.TransferenciaInternacionalRepository;
+import fe.banco_digital.repository.TransferenciaRepository;
 import fe.banco_digital.repository.UsuarioRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -33,20 +39,29 @@ import java.util.List;
 @Service
 public class TransaccionServiceImpl implements TransaccionService {
 
-    private final TransaccionRepository transaccionRepository;
+    private final MovimientoRepository movimientoRepository;
+    private final TransferenciaRepository transferenciaRepository;
+    private final TransferenciaExternaRepository transferenciaExternaRepository;
+    private final TransferenciaInternacionalRepository transferenciaInternacionalRepository;
     private final TransaccionMapper transaccionMapper;
     private final UsuarioRepository usuarioRepository;
     private final CuentaRepository cuentaRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final RegistroFalloService registroFalloService;
 
-    public TransaccionServiceImpl(TransaccionRepository transaccionRepository,
+    public TransaccionServiceImpl(MovimientoRepository movimientoRepository,
+                                   TransferenciaRepository transferenciaRepository,
+                                   TransferenciaExternaRepository transferenciaExternaRepository,
+                                   TransferenciaInternacionalRepository transferenciaInternacionalRepository,
                                    TransaccionMapper transaccionMapper,
                                    UsuarioRepository usuarioRepository,
                                    CuentaRepository cuentaRepository,
                                    ApplicationEventPublisher eventPublisher,
                                    RegistroFalloService registroFalloService) {
-        this.transaccionRepository = transaccionRepository;
+        this.movimientoRepository = movimientoRepository;
+        this.transferenciaRepository = transferenciaRepository;
+        this.transferenciaExternaRepository = transferenciaExternaRepository;
+        this.transferenciaInternacionalRepository = transferenciaInternacionalRepository;
         this.transaccionMapper = transaccionMapper;
         this.usuarioRepository = usuarioRepository;
         this.cuentaRepository = cuentaRepository;
@@ -65,14 +80,22 @@ public class TransaccionServiceImpl implements TransaccionService {
         cuenta.setSaldo(cuenta.getSaldo().add(solicitud.getMonto()));
         cuentaRepository.save(cuenta);
 
-        Transaccion t = registrarTransaccion(null, cuenta,
-                TipoTransaccion.DEPOSITO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
+        Movimiento m = new Movimiento();
+        m.setCuenta(cuenta);
+        m.setTipo(TipoMovimiento.DEPOSITO);
+        m.setMonto(solicitud.getMonto());
+        m.setEstado(EstadoMovimiento.EXITOSO);
+        m.setFecha(LocalDateTime.now());
+        movimientoRepository.save(m);
 
         eventPublisher.publishEvent(new AuditoriaEvent(this, "DEPOSITO",
                 usuario.getIdUsuario(),
-                "Depósito de " + solicitud.getMonto() + " en cuenta " + cuenta.getNumeroCuenta()));
+                "Depósito de " + solicitud.getMonto().toPlainString()
+                        + " en cuenta " + cuenta.getNumeroCuenta()));
 
-        return construirRespuesta(t, cuenta.getSaldo(), "Depósito realizado exitosamente.");
+        return new TransaccionRespuestaDTO(m.getIdMovimiento(), TipoMovimiento.DEPOSITO.name(),
+                m.getMonto(), cuenta.getSaldo(), EstadoMovimiento.EXITOSO.name(), m.getFecha(),
+                "Depósito realizado exitosamente.");
     }
 
     @Override
@@ -84,22 +107,29 @@ public class TransaccionServiceImpl implements TransaccionService {
         validarCuentaOperativa(cuenta);
 
         if (cuenta.getSaldo().compareTo(solicitud.getMonto()) < 0) {
-            registroFalloService.registrarFallo(cuenta, null,
-                    TipoTransaccion.RETIRO, solicitud.getMonto());
+            registroFalloService.registrarFalloMovimiento(cuenta, TipoMovimiento.RETIRO, solicitud.getMonto());
             throw new SaldoInsuficienteException();
         }
 
         cuenta.setSaldo(cuenta.getSaldo().subtract(solicitud.getMonto()));
         cuentaRepository.save(cuenta);
 
-        Transaccion t = registrarTransaccion(cuenta, null,
-                TipoTransaccion.RETIRO, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
+        Movimiento m = new Movimiento();
+        m.setCuenta(cuenta);
+        m.setTipo(TipoMovimiento.RETIRO);
+        m.setMonto(solicitud.getMonto());
+        m.setEstado(EstadoMovimiento.EXITOSO);
+        m.setFecha(LocalDateTime.now());
+        movimientoRepository.save(m);
 
         eventPublisher.publishEvent(new AuditoriaEvent(this, "RETIRO",
                 usuario.getIdUsuario(),
-                "Retiro de " + solicitud.getMonto() + " de cuenta " + cuenta.getNumeroCuenta()));
+                "Retiro de " + solicitud.getMonto().toPlainString()
+                        + " de cuenta " + cuenta.getNumeroCuenta()));
 
-        return construirRespuesta(t, cuenta.getSaldo(), "Retiro realizado exitosamente.");
+        return new TransaccionRespuestaDTO(m.getIdMovimiento(), TipoMovimiento.RETIRO.name(),
+                m.getMonto(), cuenta.getSaldo(), EstadoMovimiento.EXITOSO.name(), m.getFecha(),
+                "Retiro realizado exitosamente.");
     }
 
     // Locks siempre en orden ascendente de idCuenta para prevenir deadlocks
@@ -118,6 +148,10 @@ public class TransaccionServiceImpl implements TransaccionService {
         cuentaRepository.findByIdCuentaAndCliente_IdCliente(idOrigen,
                 usuario.getCliente().getIdCliente()).orElseThrow(AccesoNoAutorizadoException::new);
 
+        if (idOrigen.equals(idDestino)) {
+            throw new OperacionNoPermitidaException("No se puede transferir dinero a la misma cuenta.");
+        }
+
         Cuenta primerLock = cuentaRepository
                 .findByIdCuentaConLock(Math.min(idOrigen, idDestino))
                 .orElseThrow(() -> new CuentaNoEncontradaException(Math.min(idOrigen, idDestino)));
@@ -130,13 +164,11 @@ public class TransaccionServiceImpl implements TransaccionService {
 
         validarCuentaOperativa(origen);
         if (destino.getEstado() != EstadoCuenta.ACTIVA) {
-            registroFalloService.registrarFallo(origen, destino,
-                    TipoTransaccion.TRANSFERENCIA, solicitud.getMonto());
+            registroFalloService.registrarFalloTransferencia(origen, destino, solicitud.getMonto());
             throw new CuentaBloqueadaException(destino.getNumeroCuenta());
         }
         if (origen.getSaldo().compareTo(solicitud.getMonto()) < 0) {
-            registroFalloService.registrarFallo(origen, destino,
-                    TipoTransaccion.TRANSFERENCIA, solicitud.getMonto());
+            registroFalloService.registrarFalloTransferencia(origen, destino, solicitud.getMonto());
             throw new SaldoInsuficienteException();
         }
 
@@ -145,24 +177,35 @@ public class TransaccionServiceImpl implements TransaccionService {
         cuentaRepository.save(origen);
         cuentaRepository.save(destino);
 
-        Transaccion t = registrarTransaccion(origen, destino,
-                TipoTransaccion.TRANSFERENCIA, solicitud.getMonto(), EstadoTransaccion.EXITOSA);
+        Transferencia t = new Transferencia();
+        t.setCuentaOrigen(origen);
+        t.setCuentaDestino(destino);
+        t.setMonto(solicitud.getMonto());
+        t.setEstado(EstadoTransferencia.EXITOSA);
+        t.setFecha(LocalDateTime.now());
+        transferenciaRepository.save(t);
 
         eventPublisher.publishEvent(new AuditoriaEvent(this, "TRANSFERENCIA",
                 usuario.getIdUsuario(),
-                "Transferencia de " + solicitud.getMonto()
+                "Transferencia de " + solicitud.getMonto().toPlainString()
                         + " desde " + origen.getNumeroCuenta()
                         + " hacia " + destino.getNumeroCuenta()));
 
-        return construirRespuesta(t, origen.getSaldo(), "Transferencia realizada exitosamente.");
+        return new TransaccionRespuestaDTO(t.getIdTransferencia(), "TRANSFERENCIA",
+                t.getMonto(), origen.getSaldo(), EstadoTransferencia.EXITOSA.name(), t.getFecha(),
+                "Transferencia realizada exitosamente.");
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MovimientoDTO> obtenerMovimientos(Long idCuenta, String username) {
         verificarPropietario(idCuenta, username);
-        return transaccionMapper.aListaDTO(
-                transaccionRepository.findByCuentaIdOrderByFechaDesc(idCuenta), idCuenta);
+        return transaccionMapper.aListaDTOUnificada(
+                movimientoRepository.findByCuenta_IdCuentaOrderByFechaDesc(idCuenta),
+                transferenciaRepository.findByCuentaIdOrderByFechaDesc(idCuenta),
+                idCuenta,
+                transferenciaExternaRepository.findByCuentaOrigen_IdCuentaOrderByFechaDesc(idCuenta),
+                transferenciaInternacionalRepository.findByCuentaOrigen_IdCuentaOrderByFechaDesc(idCuenta));
     }
 
     @Override
@@ -170,9 +213,12 @@ public class TransaccionServiceImpl implements TransaccionService {
     public List<MovimientoDTO> obtenerMovimientosPorFecha(Long idCuenta,
             LocalDateTime fechaInicio, LocalDateTime fechaFin, String username) {
         verificarPropietario(idCuenta, username);
-        return transaccionMapper.aListaDTO(
-                transaccionRepository.findByCuentaIdAndFechaBetweenOrderByFechaDesc(
-                        idCuenta, fechaInicio, fechaFin), idCuenta);
+        return transaccionMapper.aListaDTOUnificada(
+                movimientoRepository.findByCuenta_IdCuentaAndFechaBetweenOrderByFechaDesc(idCuenta, fechaInicio, fechaFin),
+                transferenciaRepository.findByCuentaIdAndFechaBetweenOrderByFechaDesc(idCuenta, fechaInicio, fechaFin),
+                idCuenta,
+                transferenciaExternaRepository.findByCuentaOrigen_IdCuentaAndFechaBetweenOrderByFechaDesc(idCuenta, fechaInicio, fechaFin),
+                transferenciaInternacionalRepository.findByCuentaOrigen_IdCuentaAndFechaBetweenOrderByFechaDesc(idCuenta, fechaInicio, fechaFin));
     }
 
     private Usuario resolverUsuario(String username) {
@@ -192,24 +238,6 @@ public class TransaccionServiceImpl implements TransaccionService {
             throw new CuentaBloqueadaException(cuenta.getNumeroCuenta());
         if (cuenta.getEstado() == EstadoCuenta.INACTIVA)
             throw new CuentaYaCerradaException(cuenta.getNumeroCuenta());
-    }
-
-    private Transaccion registrarTransaccion(Cuenta origen, Cuenta destino,
-            TipoTransaccion tipo, BigDecimal monto, EstadoTransaccion estado) {
-        Transaccion t = new Transaccion();
-        t.setCuentaOrigen(origen);
-        t.setCuentaDestino(destino);
-        t.setTipo(tipo);
-        t.setMonto(monto);
-        t.setEstado(estado);
-        t.setFecha(LocalDateTime.now());
-        return transaccionRepository.save(t);
-    }
-
-    private TransaccionRespuestaDTO construirRespuesta(Transaccion t,
-            BigDecimal saldoResultante, String mensaje) {
-        return new TransaccionRespuestaDTO(t.getIdTransaccion(), t.getTipo().name(),
-                t.getMonto(), saldoResultante, t.getEstado().name(), t.getFecha(), mensaje);
     }
 
     private void verificarPropietario(Long idCuenta, String username) {

@@ -10,12 +10,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/registro")
@@ -35,8 +38,12 @@ public class RegistroUsuarioController {
             @ApiResponse(responseCode = "400", description = "Campos obligatorios faltantes")
     })
     @PostMapping("/validar-identidad")
-    public ResponseEntity<ValidacionIdentidadResponseDTO> validarIdentidad(@Valid @RequestBody ValidarIdentidadRequestDTO dto) {
-        return ResponseEntity.ok(registroUsuarioService.validarIdentidad(dto));
+    public ResponseEntity<EntityModel<ValidacionIdentidadResponseDTO>> validarIdentidad(@Valid @RequestBody ValidarIdentidadRequestDTO dto) {
+        ValidacionIdentidadResponseDTO respuesta = registroUsuarioService.validarIdentidad(dto);
+        return ResponseEntity.ok(EntityModel.of(respuesta,
+                linkTo(methodOn(RegistroUsuarioController.class).validarIdentidad(null)).withSelfRel(),
+                linkTo(methodOn(RegistroUsuarioController.class).registrar(null)).withRel("registrar")
+        ));
     }
 
     @Operation(summary = "Registrar nuevo usuario", description = "Crea cliente, cuenta bancaria automática e identidad digital del usuario")
@@ -46,7 +53,11 @@ public class RegistroUsuarioController {
             @ApiResponse(responseCode = "400", description = "Campos obligatorios faltantes")
     })
     @PostMapping
-    public ResponseEntity<RegistroNuevoUsuarioResponseDTO> registrar(@Valid @RequestBody RegistroNuevoUsuarioRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(registroUsuarioService.registrar(dto));
+    public ResponseEntity<EntityModel<RegistroNuevoUsuarioResponseDTO>> registrar(@Valid @RequestBody RegistroNuevoUsuarioRequestDTO dto) {
+        RegistroNuevoUsuarioResponseDTO respuesta = registroUsuarioService.registrar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(EntityModel.of(respuesta,
+                linkTo(methodOn(RegistroUsuarioController.class).registrar(null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 }

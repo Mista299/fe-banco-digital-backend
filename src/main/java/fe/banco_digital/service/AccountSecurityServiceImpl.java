@@ -1,11 +1,13 @@
 package fe.banco_digital.service;
 
 import fe.banco_digital.entity.Cuenta;
+import java.util.List;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.AutenticacionFallidaException;
 import fe.banco_digital.exception.CuentaNoEncontradaException;
+import fe.banco_digital.exception.OperacionNoPermitidaException;
 import fe.banco_digital.repository.CuentaRepository;
 import fe.banco_digital.repository.UsuarioRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,16 +44,19 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
         }
 
         Long clienteId = usuario.getCliente().getIdCliente();
-        Cuenta cuenta = cuentaRepo
-                .findFirstByClienteIdClienteAndEstado(clienteId, EstadoCuenta.ACTIVA)
-                .orElseThrow(() -> new CuentaNoEncontradaException(clienteId));
 
-        cuenta.setEstado(EstadoCuenta.BLOQUEADA);
-        cuentaRepo.save(cuenta);
+        List<Cuenta> activas = cuentaRepo.findAllByClienteIdClienteAndEstado(clienteId, EstadoCuenta.ACTIVA);
+        if (activas.isEmpty()) {
+            throw new OperacionNoPermitidaException("No hay cuentas activas para bloquear.");
+        }
 
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "BLOQUEO_CUENTA",
-                usuario.getIdUsuario(),
-                "Cuenta " + cuenta.getNumeroCuenta() + " bloqueada via APP_MOVIL"));
+        for (Cuenta cuenta : activas) {
+            cuenta.setEstado(EstadoCuenta.BLOQUEADA);
+            cuentaRepo.save(cuenta);
+            eventPublisher.publishEvent(new AuditoriaEvent(this, "BLOQUEO_CUENTA",
+                    usuario.getIdUsuario(),
+                    "Cuenta " + cuenta.getNumeroCuenta() + " bloqueada via APP_MOVIL"));
+        }
     }
 
     @Override
@@ -65,15 +70,18 @@ public class AccountSecurityServiceImpl implements AccountSecurityService {
         }
 
         Long clienteId = usuario.getCliente().getIdCliente();
-        Cuenta cuenta = cuentaRepo
-                .findFirstByClienteIdClienteAndEstado(clienteId, EstadoCuenta.BLOQUEADA)
-                .orElseThrow(() -> new CuentaNoEncontradaException(clienteId));
 
-        cuenta.setEstado(EstadoCuenta.ACTIVA);
-        cuentaRepo.save(cuenta);
+        List<Cuenta> bloqueadas = cuentaRepo.findAllByClienteIdClienteAndEstado(clienteId, EstadoCuenta.BLOQUEADA);
+        if (bloqueadas.isEmpty()) {
+            throw new CuentaNoEncontradaException(clienteId);
+        }
 
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "DESBLOQUEO_CUENTA",
-                usuario.getIdUsuario(),
-                "Cuenta " + cuenta.getNumeroCuenta() + " desbloqueada via APP_MOVIL"));
+        for (Cuenta cuenta : bloqueadas) {
+            cuenta.setEstado(EstadoCuenta.ACTIVA);
+            cuentaRepo.save(cuenta);
+            eventPublisher.publishEvent(new AuditoriaEvent(this, "DESBLOQUEO_CUENTA",
+                    usuario.getIdUsuario(),
+                    "Cuenta " + cuenta.getNumeroCuenta() + " desbloqueada via APP_MOVIL"));
+        }
     }
 }

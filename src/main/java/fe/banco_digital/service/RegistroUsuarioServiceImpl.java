@@ -8,6 +8,7 @@ import fe.banco_digital.entity.Cliente;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
 import fe.banco_digital.entity.EstadoUsuario;
+import fe.banco_digital.entity.Genero;
 import fe.banco_digital.entity.Rol;
 import fe.banco_digital.entity.RolNombre;
 import fe.banco_digital.entity.TipoCuenta;
@@ -81,6 +82,7 @@ public class RegistroUsuarioServiceImpl implements RegistroUsuarioService {
         cliente.setEmail(dto.getEmail());
         cliente.setDireccion(dto.getDireccion());
         cliente.setTelefono(dto.getTelefono());
+        cliente.setGenero(dto.getGenero() != null ? dto.getGenero() : Genero.MASCULINO);
         cliente.setFechaRegistro(LocalDateTime.now());
         Cliente clienteGuardado = clienteRepository.save(cliente);
 
