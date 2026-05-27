@@ -10,6 +10,8 @@ public class MovimientoDTO {
     private String concepto;
     private BigDecimal monto;
     private BigDecimal saldoResultante;
+    private String cuentaOrigen;
+    private String cuentaDestino;
     private String bancoDestino;
     private String nombreReceptorExterno;
     private String estado;
@@ -31,6 +33,12 @@ public class MovimientoDTO {
 
     public BigDecimal getSaldoResultante() { return saldoResultante; }
     public void setSaldoResultante(BigDecimal saldoResultante) { this.saldoResultante = saldoResultante; }
+
+    public String getCuentaOrigen() { return cuentaOrigen; }
+    public void setCuentaOrigen(String cuentaOrigen) { this.cuentaOrigen = cuentaOrigen; }
+
+    public String getCuentaDestino() { return cuentaDestino; }
+    public void setCuentaDestino(String cuentaDestino) { this.cuentaDestino = cuentaDestino; }
 
     public String getBancoDestino() { return bancoDestino; }
     public void setBancoDestino(String bancoDestino) { this.bancoDestino = bancoDestino; }

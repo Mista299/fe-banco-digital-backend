@@ -168,6 +168,14 @@ public class AdminActividadServiceImpl implements AdminActividadService {
                     .collect(Collectors.toList());
         }
 
+        // Escenario 4: enmascarar números de cuenta en los movimientos si no es GERENTE
+        if (!esGerente) {
+            todos.forEach(dto -> {
+                if (dto.getCuentaOrigen() != null) dto.setCuentaOrigen(enmascararCuenta(dto.getCuentaOrigen()));
+                if (dto.getCuentaDestino() != null) dto.setCuentaDestino(enmascararCuenta(dto.getCuentaDestino()));
+            });
+        }
+
         // Escenario 4: registrar auditoría asíncrona
         eventPublisher.publishEvent(new AuditoriaEvent(this,
                 "CONSULTA_ACTIVIDAD_ADMIN",

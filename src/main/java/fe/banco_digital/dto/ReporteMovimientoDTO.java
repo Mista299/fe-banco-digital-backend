@@ -7,9 +7,9 @@ public class ReporteMovimientoDTO {
 
     private Long idTransaccion;
 
-    private Long cuentaOrigen;
+    private String cuentaOrigen;
 
-    private Long cuentaDestino;
+    private String cuentaDestino;
 
     private BigDecimal monto;
 
@@ -31,19 +31,19 @@ public class ReporteMovimientoDTO {
         this.idTransaccion = idTransaccion;
     }
 
-    public Long getCuentaOrigen() {
+    public String getCuentaOrigen() {
         return cuentaOrigen;
     }
 
-    public void setCuentaOrigen(Long cuentaOrigen) {
+    public void setCuentaOrigen(String cuentaOrigen) {
         this.cuentaOrigen = cuentaOrigen;
     }
 
-    public Long getCuentaDestino() {
+    public String getCuentaDestino() {
         return cuentaDestino;
     }
 
-    public void setCuentaDestino(Long cuentaDestino) {
+    public void setCuentaDestino(String cuentaDestino) {
         this.cuentaDestino = cuentaDestino;
     }
 

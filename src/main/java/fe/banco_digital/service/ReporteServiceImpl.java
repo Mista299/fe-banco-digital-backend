@@ -5,6 +5,7 @@ import fe.banco_digital.dto.ReporteResumenDTO;
 import fe.banco_digital.entity.*;
 import fe.banco_digital.repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -34,6 +35,7 @@ public class ReporteServiceImpl implements ReporteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ReporteResumenDTO generarReporte(LocalDateTime inicio, LocalDateTime fin) {
         List<ReporteMovimientoDTO> filas = new ArrayList<>();
 
@@ -60,6 +62,7 @@ public class ReporteServiceImpl implements ReporteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public byte[] exportarCSV(LocalDateTime inicio, LocalDateTime fin) {
         List<ReporteMovimientoDTO> datos = generarReporte(inicio, fin).getTransacciones();
 
@@ -94,9 +97,9 @@ public class ReporteServiceImpl implements ReporteService {
         dto.setCanal("App");
         dto.setFecha(m.getFecha());
         if (m.getTipo() == TipoMovimiento.DEPOSITO) {
-            dto.setCuentaDestino(m.getCuenta().getIdCuenta());
+            dto.setCuentaDestino(m.getCuenta().getNumeroCuenta());
         } else {
-            dto.setCuentaOrigen(m.getCuenta().getIdCuenta());
+            dto.setCuentaOrigen(m.getCuenta().getNumeroCuenta());
         }
         return dto;
     }
@@ -104,8 +107,8 @@ public class ReporteServiceImpl implements ReporteService {
     private ReporteMovimientoDTO desdeTransf(Transferencia t) {
         ReporteMovimientoDTO dto = new ReporteMovimientoDTO();
         dto.setIdTransaccion(t.getIdTransferencia());
-        dto.setCuentaOrigen(t.getCuentaOrigen().getIdCuenta());
-        dto.setCuentaDestino(t.getCuentaDestino().getIdCuenta());
+        dto.setCuentaOrigen(t.getCuentaOrigen().getNumeroCuenta());
+        dto.setCuentaDestino(t.getCuentaDestino().getNumeroCuenta());
         dto.setMonto(t.getMonto());
         dto.setEstado(t.getEstado().name());
         dto.setTipo("TRANSFERENCIA");
@@ -117,7 +120,8 @@ public class ReporteServiceImpl implements ReporteService {
     private ReporteMovimientoDTO desdeAch(TransferenciaExterna t) {
         ReporteMovimientoDTO dto = new ReporteMovimientoDTO();
         dto.setIdTransaccion(t.getIdTransfExt());
-        dto.setCuentaOrigen(t.getCuentaOrigen().getIdCuenta());
+        dto.setCuentaOrigen(t.getCuentaOrigen().getNumeroCuenta());
+        dto.setCuentaDestino(t.getNumeroCuentaDestino());
         dto.setMonto(t.getMonto());
         dto.setEstado(t.getEstado().name());
         dto.setTipo("TRANSFERENCIA_INTERBANCARIA");
@@ -129,7 +133,8 @@ public class ReporteServiceImpl implements ReporteService {
     private ReporteMovimientoDTO desdeSwift(TransferenciaInternacional t) {
         ReporteMovimientoDTO dto = new ReporteMovimientoDTO();
         dto.setIdTransaccion(t.getIdTransfInt());
-        dto.setCuentaOrigen(t.getCuentaOrigen().getIdCuenta());
+        dto.setCuentaOrigen(t.getCuentaOrigen().getNumeroCuenta());
+        dto.setCuentaDestino(t.getIbanCuentaDestino());
         dto.setMonto(t.getMontoCop());
         dto.setEstado(t.getEstado().name());
         dto.setTipo("TRANSFERENCIA_INTERNACIONAL");
