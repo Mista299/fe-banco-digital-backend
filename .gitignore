@@ -37,5 +37,7 @@ src/main/resources/application.properties
 *.patch
 
 .mcp.json
-scripts/
-scripts/HU-17/_comun.sh
+scripts/*.sh
+scripts/**/*.sh
+scripts/*.txt
+scripts/**/*.txt
