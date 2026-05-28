@@ -20,4 +20,7 @@ public interface TransferenciaRepository extends JpaRepository<Transferencia, Lo
             @Param("idCuenta") Long idCuenta,
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
+
+    List<Transferencia> findByFechaBetweenOrderByFechaDesc(
+            LocalDateTime fechaInicio, LocalDateTime fechaFin);
 }

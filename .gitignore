@@ -32,10 +32,14 @@ build/
 ### VS Code ###
 .vscode/
 .m2repo/
-src/main/resources/application.properties
+src/main/resources/application-local.properties
 .env
-scripts/
-src/test/
 *.patch
 
 .mcp.json
+scripts/*.sh
+scripts/**/*.sh
+scripts/*.txt
+scripts/**/*.txt
+k8s/02-secret.yaml
+*.txt

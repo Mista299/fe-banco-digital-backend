@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -26,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Arrays;
 import java.util.Map;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -55,8 +58,12 @@ public class AutenticacionController {
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
     @PostMapping("/registro")
-    public ResponseEntity<UsuarioRegistradoDTO> registrar(@Validated @RequestBody RegistroRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(autenticacionService.registrar(dto));
+    public ResponseEntity<EntityModel<UsuarioRegistradoDTO>> registrar(@Validated @RequestBody RegistroRequestDTO dto) {
+        UsuarioRegistradoDTO registrado = autenticacionService.registrar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(EntityModel.of(registrado,
+                linkTo(methodOn(AutenticacionController.class).registrar(null)).withSelfRel(),
+                linkTo(methodOn(AutenticacionController.class).login(null, null)).withRel("login")
+        ));
     }
 
     @Operation(summary = "Iniciar sesión",
@@ -66,11 +73,16 @@ public class AutenticacionController {
             @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     })
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@Validated @RequestBody LoginRequestDTO dto,
-                                                     HttpServletResponse response) {
+    public ResponseEntity<EntityModel<Map<String, String>>> login(@Validated @RequestBody LoginRequestDTO dto,
+                                                                  HttpServletResponse response) {
         LoginResponseDTO tokens = autenticacionService.login(dto);
         setearCookies(response, tokens.getAccessToken(), tokens.getRefreshToken());
-        return ResponseEntity.ok(Map.of("mensaje", "Sesión iniciada exitosamente"));
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("mensaje", "Sesión iniciada exitosamente"),
+                linkTo(methodOn(AutenticacionController.class).login(null, null)).withSelfRel(),
+                linkTo(methodOn(AutenticacionController.class).logout(null, null)).withRel("logout"),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     @Operation(summary = "Renovar token",
@@ -80,27 +92,35 @@ public class AutenticacionController {
             @ApiResponse(responseCode = "401", description = "Refresh token inválido o expirado")
     })
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, String>> refresh(HttpServletRequest request,
-                                                       HttpServletResponse response) {
+    public ResponseEntity<EntityModel<Map<String, String>>> refresh(HttpServletRequest request,
+                                                                    HttpServletResponse response) {
         String refreshToken = leerCookie(request, COOKIE_REFRESH);
         if (refreshToken == null) throw new TokenInvalidoException();
 
         LoginResponseDTO tokens = refreshTokenService.renovarToken(refreshToken);
         setearCookies(response, tokens.getAccessToken(), tokens.getRefreshToken());
-        return ResponseEntity.ok(Map.of("mensaje", "Token renovado exitosamente"));
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("mensaje", "Token renovado exitosamente"),
+                linkTo(methodOn(AutenticacionController.class).refresh(null, null)).withSelfRel()
+        ));
     }
 
     @Operation(summary = "Cerrar sesión", description = "Revoca el refresh token y limpia las cookies")
     @ApiResponse(responseCode = "200", description = "Sesión cerrada")
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, String>> logout(HttpServletRequest request,
-                                                      HttpServletResponse response) {
+    public ResponseEntity<EntityModel<Map<String, String>>> logout(HttpServletRequest request,
+                                                                   HttpServletResponse response) {
         String refreshToken = leerCookie(request, COOKIE_REFRESH);
         if (refreshToken != null) {
-            refreshTokenService.revocarToken(refreshToken);
+            try { refreshTokenService.revocarToken(refreshToken); }
+            catch (TokenInvalidoException ignored) { /* ya revocado o expirado */ }
         }
         limpiarCookies(response);
-        return ResponseEntity.ok(Map.of("mensaje", "Sesión cerrada exitosamente"));
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("mensaje", "Sesión cerrada exitosamente"),
+                linkTo(methodOn(AutenticacionController.class).logout(null, null)).withSelfRel(),
+                linkTo(methodOn(AutenticacionController.class).login(null, null)).withRel("login")
+        ));
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

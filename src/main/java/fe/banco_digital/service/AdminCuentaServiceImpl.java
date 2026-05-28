@@ -4,6 +4,7 @@ import fe.banco_digital.dto.DecisionAperturaRespuestaDTO;
 import fe.banco_digital.dto.SolicitudPendienteDTO;
 import fe.banco_digital.entity.Cuenta;
 import fe.banco_digital.entity.EstadoCuenta;
+import fe.banco_digital.entity.TipoCuenta;
 import fe.banco_digital.entity.Usuario;
 import fe.banco_digital.event.AuditoriaEvent;
 import fe.banco_digital.exception.AutenticacionFallidaException;
@@ -52,6 +53,25 @@ public class AdminCuentaServiceImpl implements AdminCuentaService {
 
         if (cuenta.getEstado() != EstadoCuenta.PENDIENTE_APROBACION) {
             throw new OperacionNoPermitidaException("La cuenta no tiene una solicitud de apertura pendiente.");
+        }
+
+        Long idCliente = cuenta.getCliente().getIdCliente();
+        List<EstadoCuenta> ocupados = List.of(EstadoCuenta.ACTIVA, EstadoCuenta.BLOQUEADA, EstadoCuenta.PENDIENTE_APROBACION);
+
+        // Revalidar límite total (excluyendo esta misma cuenta del conteo)
+        long totalSinEsta = cuentaRepository.countByClienteIdClienteAndEstadoIn(idCliente, ocupados) - 1;
+        if (totalSinEsta >= 3) {
+            throw new OperacionNoPermitidaException("El cliente ya alcanzó el límite de 3 cuentas activas.");
+        }
+
+        // Revalidar prerequisito de CORRIENTE: debe existir al menos una AHORROS ACTIVA
+        if (cuenta.getTipo() == TipoCuenta.CORRIENTE) {
+            long ahorrrosActivas = cuentaRepository.countByClienteIdClienteAndTipoAndEstadoIn(
+                    idCliente, TipoCuenta.AHORROS, List.of(EstadoCuenta.ACTIVA));
+            if (ahorrrosActivas == 0) {
+                throw new OperacionNoPermitidaException(
+                        "No se puede aprobar: el cliente no tiene cuentas de ahorros activas.");
+            }
         }
 
         cuenta.setEstado(EstadoCuenta.ACTIVA);

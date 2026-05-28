@@ -5,11 +5,13 @@ import java.time.LocalDateTime;
 
 public class MovimientoDTO {
 
-    private Long idTransaccion;
+    private String idTransaccion;
     private LocalDateTime fechaHora;
     private String concepto;
     private BigDecimal monto;
     private BigDecimal saldoResultante;
+    private String cuentaOrigen;
+    private String cuentaDestino;
     private String bancoDestino;
     private String nombreReceptorExterno;
     private String estado;
@@ -17,8 +19,8 @@ public class MovimientoDTO {
     public MovimientoDTO() {
     }
 
-    public Long getIdTransaccion() { return idTransaccion; }
-    public void setIdTransaccion(Long idTransaccion) { this.idTransaccion = idTransaccion; }
+    public String getIdTransaccion() { return idTransaccion; }
+    public void setIdTransaccion(String idTransaccion) { this.idTransaccion = idTransaccion; }
 
     public LocalDateTime getFechaHora() { return fechaHora; }
     public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
@@ -31,6 +33,12 @@ public class MovimientoDTO {
 
     public BigDecimal getSaldoResultante() { return saldoResultante; }
     public void setSaldoResultante(BigDecimal saldoResultante) { this.saldoResultante = saldoResultante; }
+
+    public String getCuentaOrigen() { return cuentaOrigen; }
+    public void setCuentaOrigen(String cuentaOrigen) { this.cuentaOrigen = cuentaOrigen; }
+
+    public String getCuentaDestino() { return cuentaDestino; }
+    public void setCuentaDestino(String cuentaDestino) { this.cuentaDestino = cuentaDestino; }
 
     public String getBancoDestino() { return bancoDestino; }
     public void setBancoDestino(String bancoDestino) { this.bancoDestino = bancoDestino; }

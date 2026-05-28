@@ -1,5 +1,6 @@
 package fe.banco_digital.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,6 +24,8 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
 
     Optional<Cuenta> findFirstByClienteIdClienteAndEstado(Long idCliente, EstadoCuenta estado);
 
+    List<Cuenta> findAllByClienteIdClienteAndEstado(Long idCliente, EstadoCuenta estado);
+
     List<Cuenta> findByCliente_IdClienteOrderByIdCuentaAsc(Long idCliente);
 
     Optional<Cuenta> findByIdCuentaAndCliente_IdCliente(Long idCuenta, Long idCliente);
@@ -42,4 +45,14 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Long> {
 
     @Query("SELECT c FROM Cuenta c JOIN FETCH c.cliente WHERE c.estado = :estado")
     List<Cuenta> findByEstadoConCliente(@Param("estado") EstadoCuenta estado);
+
+    @Query("SELECT COALESCE(SUM(c.saldo),0) FROM Cuenta c")
+    BigDecimal obtenerSaldoTotalSistema();
+
+    @Query("SELECT COALESCE(SUM(c.saldo),0) FROM Cuenta c WHERE c.tipo = :tipo")
+    BigDecimal obtenerSaldoPorTipo(@Param("tipo") TipoCuenta tipo);
+
+    List<Cuenta> findBySaldoBetween(BigDecimal min, BigDecimal max);
+
+    List<Cuenta> findBySaldoGreaterThan(BigDecimal min);
 }

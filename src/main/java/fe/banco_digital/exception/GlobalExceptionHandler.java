@@ -1,16 +1,13 @@
 package fe.banco_digital.exception;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingRequestHeaderException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -19,8 +16,6 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(SaldoPendienteException.class)
     public ResponseEntity<Map<String, Object>> manejarSaldoPendiente(SaldoPendienteException ex) {
@@ -88,36 +83,14 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    @ExceptionHandler(CamposObligatoriosException.class)
-    public ResponseEntity<Map<String, Object>> manejarCamposObligatorios(CamposObligatoriosException ex) {
-        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
-
-
     @ExceptionHandler(OperacionNoPermitidaException.class)
     public ResponseEntity<Map<String, Object>> manejarOperacionNoPermitida(OperacionNoPermitidaException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(TransaccionNoEncontradaException.class)
-    public ResponseEntity<Map<String, Object>> manejarTransaccionNoEncontrada(TransaccionNoEncontradaException ex) {
-        return construirRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
-
-    @ExceptionHandler(MissingRequestHeaderException.class)
-    public ResponseEntity<Map<String, Object>> manejarHeaderFaltante(MissingRequestHeaderException ex) {
-        return construirRespuesta(HttpStatus.FORBIDDEN, "Acceso no autorizado: header requerido ausente.");
-    }
-
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<Map<String, Object>> manejarParametroFaltante(MissingServletRequestParameterException ex) {
-        return construirRespuesta(HttpStatus.BAD_REQUEST,
-                "El parámetro '" + ex.getParameterName() + "' es obligatorio.");
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, Object>> manejarViolacionIntegridad(DataIntegrityViolationException ex) {
-        return construirRespuesta(HttpStatus.CONFLICT, "Ya existe un registro con los datos proporcionados.");
+    @ExceptionHandler(CamposObligatoriosException.class)
+    public ResponseEntity<Map<String, Object>> manejarCamposObligatorios(CamposObligatoriosException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -132,9 +105,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(cuerpo);
     }
 
+    @ExceptionHandler(PeriodoNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> manejarPeriodoNoDisponible(PeriodoNoDisponibleException ex) {
+        return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+    @ExceptionHandler(PeriodoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> manejarPeriodoInvalido(PeriodoInvalidoException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> manejarTipoArgumentoInvalido(MethodArgumentTypeMismatchException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                "Parámetro inválido: '" + ex.getName() + "' debe ser " + ex.getRequiredType().getSimpleName());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> manejarJsonMalformado(HttpMessageNotReadableException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, "El cuerpo de la solicitud no es JSON válido o está vacío.");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarExcepcionGeneral(Exception ex) {
-        log.error("Error interno no controlado: {}", ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(cuerpoBase(HttpStatus.INTERNAL_SERVER_ERROR, "No se pudo cargar la información, intente más tarde"));

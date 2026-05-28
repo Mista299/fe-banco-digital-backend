@@ -75,11 +75,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         String nuevoAccessToken = jwtUtil.generarToken(username);
         RefreshToken nuevoRefreshToken = crearRefreshToken(refreshToken.getUsuario().getIdUsuario());
 
-        String genero = refreshToken.getUsuario().getCliente() != null
-                && refreshToken.getUsuario().getCliente().getGenero() != null
-                ? refreshToken.getUsuario().getCliente().getGenero().name()
-                : null;
-        return autenticacionMapper.aLoginResponseDTO(nuevoAccessToken, nuevoRefreshToken, genero);
+        return autenticacionMapper.aLoginResponseDTO(nuevoAccessToken, nuevoRefreshToken);
     }
 
     @Override

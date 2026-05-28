@@ -1,5 +1,6 @@
 package fe.banco_digital.dto;
 
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ public class RetiroSolicitudDTO {
 
     @NotNull(message = "El monto es obligatorio.")
     @DecimalMin(value = "0.01", message = "El monto debe ser mayor a cero.")
+    @DecimalMax(value = "50000000", message = "El monto no puede superar $50,000,000 por operación.")
     private BigDecimal monto;
 
     public Long getIdCuenta() { return idCuenta; }

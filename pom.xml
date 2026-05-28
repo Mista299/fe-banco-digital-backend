@@ -56,6 +56,10 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-hateoas</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
@@ -98,6 +102,20 @@
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 			<version>2.8.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
 
 		<dependency>
@@ -161,6 +179,18 @@
 							<goal>check</goal>
 						</goals>
 						<configuration>
+							<excludes>
+								<!-- DTOs, entidades y clases sin lógica de negocio -->
+								<exclude>fe/banco_digital/dto/**</exclude>
+								<exclude>fe/banco_digital/entity/**</exclude>
+								<exclude>fe/banco_digital/exception/**</exclude>
+								<exclude>fe/banco_digital/repository/**</exclude>
+								<exclude>fe/banco_digital/BancoDigitalApplication.class</exclude>
+								<exclude>fe/banco_digital/repository/DataLoader.class</exclude>
+								<exclude>fe/banco_digital/config/**</exclude>
+								<exclude>fe/banco_digital/listener/**</exclude>
+								<exclude>fe/banco_digital/event/**</exclude>
+							</excludes>
 							<rules>
 								<rule>
 									<element>BUNDLE</element>
@@ -179,6 +209,13 @@
 			</plugin>
 			
 			<!-- ✅ NUEVO: Configurar Surefire para que funcione con JaCoCo -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<argLine>${surefireArgLine}</argLine>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.sonarsource.scanner.maven</groupId>
 				<artifactId>sonar-maven-plugin</artifactId>

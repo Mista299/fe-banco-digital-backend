@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: banco-digital-postgres
+    environment:
+      POSTGRES_DB: banco2026
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASS}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d banco2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: banco-digital-backend:latest
+    container_name: banco-digital-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/banco2026
+      DB_USER: postgres
+      DB_PASS: ${DB_PASS}
+      DDL_AUTO: ${DDL_AUTO:-update}
+      PORT: ${PORT:-8080}
+      JWT_SECRET: ${JWT_SECRET}
+      GATEWAY_SECRET: ${GATEWAY_SECRET}
+      SHOW_SQL: ${SHOW_SQL:-false}
+      HTTPS_SEGURO: ${HTTPS_SEGURO:-false}
+      CORS_ORIGENES: ${CORS_ORIGENES}
+    ports:
+      - "8080:8080"
+    labels:
+      prometheus.scrape: "true"
+      prometheus.path: "/actuator/prometheus"
+      prometheus.port: "8080"
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: banco-digital-prometheus
+    depends_on:
+      - backend
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: banco-digital-grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+
+volumes:
+  postgres_data:
+  grafana_data:

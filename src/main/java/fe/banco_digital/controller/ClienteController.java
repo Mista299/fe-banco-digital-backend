@@ -8,10 +8,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import java.util.Map;
 
@@ -32,9 +35,30 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Dashboard obtenido exitosamente"),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     })
-    public ResponseEntity<DashboardClienteDTO> dashboard(
+    public ResponseEntity<EntityModel<DashboardClienteDTO>> dashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(clienteService.obtenerDashboard(usuarioAutenticado.getUsername()));
+        DashboardClienteDTO dto = clienteService.obtenerDashboard(usuarioAutenticado.getUsername());
+        EntityModel<DashboardClienteDTO> model = EntityModel.of(dto,
+                linkTo(methodOn(ClienteController.class).dashboard(null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        );
+        return ResponseEntity.ok(model);
+    }
+
+    @GetMapping("/me/rol")
+    @Operation(summary = "Rol del usuario autenticado", description = "Retorna el rol principal del usuario en sesión")
+    public ResponseEntity<EntityModel<Map<String, String>>> getMiRol(
+            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
+        String rol = usuarioAutenticado.getAuthorities().stream()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .filter(a -> !a.equals("CLIENTE"))
+                .findFirst()
+                .orElse("CLIENTE");
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("rol", rol),
+                linkTo(methodOn(ClienteController.class).getMiRol(null)).withSelfRel(),
+                linkTo(methodOn(ClienteController.class).dashboard(null)).withRel("dashboard")
+        ));
     }
 
     @PutMapping("/me")
@@ -46,11 +70,15 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Datos actualizados correctamente"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    public ResponseEntity<Map<String, String>> actualizar(
+    public ResponseEntity<EntityModel<Map<String, String>>> actualizar(
             @Valid @RequestBody ActualizarClienteDTO dto,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
 
         clienteService.actualizar(dto, usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(Map.of("mensaje", "Tus datos se han actualizado correctamente"));
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("mensaje", "Tus datos se han actualizado correctamente"),
+                linkTo(methodOn(ClienteController.class).actualizar(null, null)).withSelfRel(),
+                linkTo(methodOn(ClienteController.class).dashboard(null)).withRel("dashboard")
+        ));
     }
 }

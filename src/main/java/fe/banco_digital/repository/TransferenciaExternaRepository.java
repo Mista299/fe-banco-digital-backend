@@ -14,4 +14,8 @@ public interface TransferenciaExternaRepository extends JpaRepository<Transferen
 
     List<TransferenciaExterna> findByCuentaOrigen_IdCuentaAndFechaBetweenOrderByFechaDesc(
             Long idCuenta, LocalDateTime fechaInicio, LocalDateTime fechaFin);
+
+    List<TransferenciaExterna> findByFechaBetweenOrderByFechaDesc(
+            LocalDateTime fechaInicio, LocalDateTime fechaFin);
+
 }

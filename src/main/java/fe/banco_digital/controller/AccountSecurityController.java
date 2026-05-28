@@ -3,10 +3,15 @@ package fe.banco_digital.controller;
 import fe.banco_digital.dto.SolicitudBloqueoDTO;
 import fe.banco_digital.service.AccountSecurityService;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/cuentas/seguridad")
@@ -19,18 +24,26 @@ public class AccountSecurityController {
     }
 
     @PostMapping("/bloquear")
-    public ResponseEntity<String> bloquearCuenta(
+    public ResponseEntity<EntityModel<Map<String, String>>> bloquearCuenta(
             @Valid @RequestBody SolicitudBloqueoDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
         service.bloquearCuenta(usuarioAutenticado.getUsername(), solicitud.getPassword());
-        return ResponseEntity.ok("Cuenta bloqueada exitosamente");
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("mensaje", "Cuenta bloqueada exitosamente"),
+                linkTo(methodOn(AccountSecurityController.class).bloquearCuenta(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 
     @PostMapping("/desbloquear")
-    public ResponseEntity<String> desbloquearCuenta(
+    public ResponseEntity<EntityModel<Map<String, String>>> desbloquearCuenta(
             @Valid @RequestBody SolicitudBloqueoDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
         service.desbloquearCuenta(usuarioAutenticado.getUsername(), solicitud.getPassword());
-        return ResponseEntity.ok("Cuenta desbloqueada exitosamente");
+        return ResponseEntity.ok(EntityModel.of(
+                Map.of("mensaje", "Cuenta desbloqueada exitosamente"),
+                linkTo(methodOn(AccountSecurityController.class).desbloquearCuenta(null, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 }

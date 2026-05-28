@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/v1/transferencias/interbancarias")
@@ -45,11 +48,15 @@ public class TransferenciaInterbancariaController {
             @ApiResponse(responseCode = "409", description = "Saldo insuficiente")
     })
     @PostMapping
-    public ResponseEntity<TransferenciaInterbancariaResponseDTO> crear(
+    public ResponseEntity<EntityModel<TransferenciaInterbancariaResponseDTO>> crear(
             @Valid @RequestBody TransferenciaInterbancariaSolicitudDTO solicitud,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
-                transferenciaInterbancariaService.iniciarTransferencia(solicitud, usuarioAutenticado.getUsername()));
+        TransferenciaInterbancariaResponseDTO dto =
+                transferenciaInterbancariaService.iniciarTransferencia(solicitud, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInterbancariaController.class).crear(null, null)).withSelfRel(),
+                linkTo(methodOn(TransferenciaInterbancariaController.class).consultar(dto.getIdTransaccion(), null)).withRel("consultar")
+        ));
     }
 
     @Operation(summary = "Registrar rechazo de la red ACH y reversar fondos")
@@ -59,13 +66,17 @@ public class TransferenciaInterbancariaController {
             @ApiResponse(responseCode = "400", description = "La transacción no está pendiente o no es interbancaria")
     })
     @PostMapping("/{idTransaccion}/rechazo-ach")
-    public ResponseEntity<TransferenciaInterbancariaResponseDTO> registrarRechazoAch(
+    public ResponseEntity<EntityModel<TransferenciaInterbancariaResponseDTO>> registrarRechazoAch(
             @PathVariable Long idTransaccion,
             @RequestHeader("X-Gateway-Secret") String secret,
             @Valid @RequestBody RechazoAchSolicitudDTO solicitud) {
         if (!gatewaySecret.equals(secret)) throw new AccesoNoAutorizadoException();
-        return ResponseEntity.ok(
-                transferenciaInterbancariaService.registrarRechazoAch(idTransaccion, solicitud));
+        TransferenciaInterbancariaResponseDTO dto =
+                transferenciaInterbancariaService.registrarRechazoAch(idTransaccion, solicitud);
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInterbancariaController.class).registrarRechazoAch(idTransaccion, null, null)).withSelfRel(),
+                linkTo(methodOn(TransferenciaInterbancariaController.class).consultar(idTransaccion, null)).withRel("consultar")
+        ));
     }
 
     @Operation(summary = "Registrar confirmación de la red ACH como exitosa")
@@ -75,22 +86,30 @@ public class TransferenciaInterbancariaController {
             @ApiResponse(responseCode = "400", description = "La transacción no está pendiente o no es interbancaria")
     })
     @PostMapping("/{idTransaccion}/confirmacion-ach")
-    public ResponseEntity<TransferenciaInterbancariaResponseDTO> registrarConfirmacionAch(
+    public ResponseEntity<EntityModel<TransferenciaInterbancariaResponseDTO>> registrarConfirmacionAch(
             @PathVariable Long idTransaccion,
             @RequestHeader("X-Gateway-Secret") String secret,
             @RequestBody ConfirmacionAchSolicitudDTO solicitud) {
         if (!gatewaySecret.equals(secret)) throw new AccesoNoAutorizadoException();
-        return ResponseEntity.ok(
-                transferenciaInterbancariaService.registrarConfirmacionAch(idTransaccion, solicitud));
+        TransferenciaInterbancariaResponseDTO dto =
+                transferenciaInterbancariaService.registrarConfirmacionAch(idTransaccion, solicitud);
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInterbancariaController.class).registrarConfirmacionAch(idTransaccion, null, null)).withSelfRel(),
+                linkTo(methodOn(TransferenciaInterbancariaController.class).consultar(idTransaccion, null)).withRel("consultar")
+        ));
     }
 
     @Operation(summary = "Consultar estado de una transferencia interbancaria")
     @GetMapping("/{idTransaccion}")
-    public ResponseEntity<TransferenciaInterbancariaResponseDTO> consultar(
+    public ResponseEntity<EntityModel<TransferenciaInterbancariaResponseDTO>> consultar(
             @PathVariable Long idTransaccion,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        return ResponseEntity.ok(
+        TransferenciaInterbancariaResponseDTO dto =
                 transferenciaInterbancariaService.consultarTransferencia(
-                        idTransaccion, usuarioAutenticado.getUsername()));
+                        idTransaccion, usuarioAutenticado.getUsername());
+        return ResponseEntity.ok(EntityModel.of(dto,
+                linkTo(methodOn(TransferenciaInterbancariaController.class).consultar(idTransaccion, null)).withSelfRel(),
+                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
+        ));
     }
 }
