@@ -109,9 +109,14 @@ public class ExtractoServiceImpl implements ExtractoService {
         return pdfGenerador.generar(datos);
     }
 
+    private static final int ANIO_MIN = 2020;
+
     private void validarParametros(int anio, int mes) {
         if (mes < 1 || mes > 12) {
             throw new PeriodoInvalidoException("El mes debe estar entre 1 y 12");
+        }
+        if (anio < ANIO_MIN) {
+            throw new PeriodoInvalidoException("El año no puede ser anterior a " + ANIO_MIN);
         }
         LocalDate hoy = LocalDate.now();
         if (anio > hoy.getYear()

@@ -32,14 +32,20 @@ public class FiltroHmacGateway extends OncePerRequestFilter {
         this.secretoBytes = secreto.getBytes(StandardCharsets.UTF_8);
     }
 
-    private static final java.util.Set<String> RUTAS_HMAC = java.util.Set.of(
+    private static final java.util.Set<String> RUTAS_HMAC_EXACTAS = java.util.Set.of(
             "/api/v1/depositos/notificacion",
             "/api/v1/retiros/notificacion"
     );
 
+    private static final java.util.regex.Pattern PATRON_HMAC_ACH_SWIFT = java.util.regex.Pattern.compile(
+            "/api/v1/transferencias/(interbancarias|internacionales)/\\d+/(confirmacion-ach|rechazo-ach|confirmacion-swift|rechazo-swift)"
+    );
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !RUTAS_HMAC.contains(request.getRequestURI());
+        String uri = request.getRequestURI();
+        return !RUTAS_HMAC_EXACTAS.contains(uri)
+                && !PATRON_HMAC_ACH_SWIFT.matcher(uri).matches();
     }
 
     @Override

@@ -83,6 +83,11 @@ public class GlobalExceptionHandler {
         return construirRespuesta(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(OperacionNoPermitidaException.class)
+    public ResponseEntity<Map<String, Object>> manejarOperacionNoPermitida(OperacionNoPermitidaException ex) {
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(CamposObligatoriosException.class)
     public ResponseEntity<Map<String, Object>> manejarCamposObligatorios(CamposObligatoriosException ex) {
         return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
