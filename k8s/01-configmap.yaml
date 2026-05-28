@@ -6,7 +6,8 @@ metadata:
 data:
   DB_URL: jdbc:postgresql://postgres:5432/banco2026
   DB_USER: postgres
-  DDL_AUTO: update
+  DDL_AUTO: create
+  SPRING_PROFILES_ACTIVE: seed
   PORT: "8080"
   SHOW_SQL: "false"
   HTTPS_SEGURO: "false"

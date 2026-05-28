@@ -100,7 +100,9 @@ public class ConfiguracionSeguridad {
                                 "/swagger-ui/index.html",
                                 "/v3/api-docs/**",
                                 "/api/db/ping",
-                                "/favicon.ico"
+                                "/favicon.ico",
+                                "/actuator/health",
+                                "/actuator/prometheus"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "GERENTE")
                         .requestMatchers("/api/v1/reportes/**").hasAnyRole("ADMIN", "GERENTE")

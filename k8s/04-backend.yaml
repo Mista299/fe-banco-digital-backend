@@ -37,17 +37,22 @@ spec:
                 secretKeyRef:
                   name: banco-digital-secret
                   key: JWT_SECRET
+            - name: GATEWAY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: banco-digital-secret
+                  key: GATEWAY_SECRET
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 90
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: 8080
-            initialDelaySeconds: 45
+            initialDelaySeconds: 120
             periodSeconds: 20
           resources:
             requests:
