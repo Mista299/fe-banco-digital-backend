@@ -1,8 +1,6 @@
 package fe.banco_digital.controller;
 
-import fe.banco_digital.dto.DepositoSolicitudDTO;
 import fe.banco_digital.dto.MovimientoDTO;
-import fe.banco_digital.dto.RetiroSolicitudDTO;
 import fe.banco_digital.dto.TransaccionRespuestaDTO;
 import fe.banco_digital.dto.TransferenciaSolicitudDTO;
 import fe.banco_digital.service.TransaccionService;
@@ -33,41 +31,6 @@ public class TransaccionController {
 
     public TransaccionController(TransaccionService transaccionService) {
         this.transaccionService = transaccionService;
-    }
-
-    @Operation(summary = "Depositar dinero en una cuenta")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Depósito realizado exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Cuenta bloqueada o inactiva"),
-            @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado")
-    })
-    @PostMapping("/depositar")
-    public ResponseEntity<EntityModel<TransaccionRespuestaDTO>> depositar(
-            @Valid @RequestBody DepositoSolicitudDTO solicitud,
-            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        TransaccionRespuestaDTO dto = transaccionService.depositar(solicitud, usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(EntityModel.of(dto,
-                linkTo(methodOn(TransaccionController.class).depositar(null, null)).withSelfRel(),
-                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
-        ));
-    }
-
-    @Operation(summary = "Retirar dinero de una cuenta")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Retiro realizado exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Cuenta bloqueada o inactiva"),
-            @ApiResponse(responseCode = "403", description = "La cuenta no pertenece al usuario autenticado"),
-            @ApiResponse(responseCode = "409", description = "Saldo insuficiente")
-    })
-    @PostMapping("/retirar")
-    public ResponseEntity<EntityModel<TransaccionRespuestaDTO>> retirar(
-            @Valid @RequestBody RetiroSolicitudDTO solicitud,
-            @AuthenticationPrincipal UserDetails usuarioAutenticado) {
-        TransaccionRespuestaDTO dto = transaccionService.retirar(solicitud, usuarioAutenticado.getUsername());
-        return ResponseEntity.ok(EntityModel.of(dto,
-                linkTo(methodOn(TransaccionController.class).retirar(null, null)).withSelfRel(),
-                linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
-        ));
     }
 
     @Operation(summary = "Transferir dinero entre cuentas")

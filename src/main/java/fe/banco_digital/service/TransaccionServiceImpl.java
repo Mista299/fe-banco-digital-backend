@@ -1,8 +1,6 @@
 package fe.banco_digital.service;
 
-import fe.banco_digital.dto.DepositoSolicitudDTO;
 import fe.banco_digital.dto.MovimientoDTO;
-import fe.banco_digital.dto.RetiroSolicitudDTO;
 import fe.banco_digital.dto.TransaccionRespuestaDTO;
 import fe.banco_digital.dto.TransferenciaSolicitudDTO;
 import fe.banco_digital.entity.Cuenta;
@@ -67,69 +65,6 @@ public class TransaccionServiceImpl implements TransaccionService {
         this.cuentaRepository = cuentaRepository;
         this.eventPublisher = eventPublisher;
         this.registroFalloService = registroFalloService;
-    }
-
-    @Override
-    @Transactional
-    public TransaccionRespuestaDTO depositar(DepositoSolicitudDTO solicitud, String username) {
-        Usuario usuario = resolverUsuario(username);
-        Cuenta cuenta = resolverCuentaConLock(solicitud.getIdCuenta(),
-                usuario.getCliente().getIdCliente());
-        validarCuentaOperativa(cuenta);
-
-        cuenta.setSaldo(cuenta.getSaldo().add(solicitud.getMonto()));
-        cuentaRepository.save(cuenta);
-
-        Movimiento m = new Movimiento();
-        m.setCuenta(cuenta);
-        m.setTipo(TipoMovimiento.DEPOSITO);
-        m.setMonto(solicitud.getMonto());
-        m.setEstado(EstadoMovimiento.EXITOSO);
-        m.setFecha(LocalDateTime.now());
-        movimientoRepository.save(m);
-
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "DEPOSITO",
-                usuario.getIdUsuario(),
-                "Depósito de " + solicitud.getMonto().toPlainString()
-                        + " en cuenta " + cuenta.getNumeroCuenta()));
-
-        return new TransaccionRespuestaDTO(m.getIdMovimiento(), TipoMovimiento.DEPOSITO.name(),
-                m.getMonto(), cuenta.getSaldo(), EstadoMovimiento.EXITOSO.name(), m.getFecha(),
-                "Depósito realizado exitosamente.");
-    }
-
-    @Override
-    @Transactional
-    public TransaccionRespuestaDTO retirar(RetiroSolicitudDTO solicitud, String username) {
-        Usuario usuario = resolverUsuario(username);
-        Cuenta cuenta = resolverCuentaConLock(solicitud.getIdCuenta(),
-                usuario.getCliente().getIdCliente());
-        validarCuentaOperativa(cuenta);
-
-        if (cuenta.getSaldo().compareTo(solicitud.getMonto()) < 0) {
-            registroFalloService.registrarFalloMovimiento(cuenta, TipoMovimiento.RETIRO, solicitud.getMonto());
-            throw new SaldoInsuficienteException();
-        }
-
-        cuenta.setSaldo(cuenta.getSaldo().subtract(solicitud.getMonto()));
-        cuentaRepository.save(cuenta);
-
-        Movimiento m = new Movimiento();
-        m.setCuenta(cuenta);
-        m.setTipo(TipoMovimiento.RETIRO);
-        m.setMonto(solicitud.getMonto());
-        m.setEstado(EstadoMovimiento.EXITOSO);
-        m.setFecha(LocalDateTime.now());
-        movimientoRepository.save(m);
-
-        eventPublisher.publishEvent(new AuditoriaEvent(this, "RETIRO",
-                usuario.getIdUsuario(),
-                "Retiro de " + solicitud.getMonto().toPlainString()
-                        + " de cuenta " + cuenta.getNumeroCuenta()));
-
-        return new TransaccionRespuestaDTO(m.getIdMovimiento(), TipoMovimiento.RETIRO.name(),
-                m.getMonto(), cuenta.getSaldo(), EstadoMovimiento.EXITOSO.name(), m.getFecha(),
-                "Retiro realizado exitosamente.");
     }
 
     // Locks siempre en orden ascendente de idCuenta para prevenir deadlocks

@@ -1,9 +1,7 @@
 package fe.banco_digital.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fe.banco_digital.dto.DepositoSolicitudDTO;
 import fe.banco_digital.dto.MovimientoDTO;
-import fe.banco_digital.dto.RetiroSolicitudDTO;
 import fe.banco_digital.dto.TransaccionRespuestaDTO;
 import fe.banco_digital.dto.TransferenciaSolicitudDTO;
 import fe.banco_digital.service.TransaccionService;
@@ -65,44 +63,6 @@ class TransaccionControllerTest {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
-    }
-
-    @Test
-    void depositar_retorna200YCallsService() throws Exception {
-        DepositoSolicitudDTO dto = new DepositoSolicitudDTO();
-        dto.setIdCuenta(1L);
-        dto.setMonto(new BigDecimal("200.00"));
-
-        when(transaccionService.depositar(any(), eq("testuser"))).thenReturn(respuestaBase);
-
-        mockMvc.perform(post("/api/v1/transacciones/depositar")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tipo").value("DEPOSITO"));
-
-        verify(transaccionService).depositar(any(), eq("testuser"));
-    }
-
-    @Test
-    void retirar_retorna200YCallsService() throws Exception {
-        RetiroSolicitudDTO dto = new RetiroSolicitudDTO();
-        dto.setIdCuenta(1L);
-        dto.setMonto(new BigDecimal("100.00"));
-
-        TransaccionRespuestaDTO respuestaRetiro = new TransaccionRespuestaDTO(
-                2L, "RETIRO", new BigDecimal("100.00"),
-                new BigDecimal("900.00"), "EXITOSO", LocalDateTime.now(), "Retiro exitoso");
-
-        when(transaccionService.retirar(any(), eq("testuser"))).thenReturn(respuestaRetiro);
-
-        mockMvc.perform(post("/api/v1/transacciones/retirar")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.tipo").value("RETIRO"));
-
-        verify(transaccionService).retirar(any(), eq("testuser"));
     }
 
     @Test
