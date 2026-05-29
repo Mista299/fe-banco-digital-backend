@@ -11,4 +11,4 @@ data:
   PORT: "8080"
   SHOW_SQL: "false"
   HTTPS_SEGURO: "false"
-  CORS_ORIGENES: http://localhost:3000,http://localhost:5173
+  CORS_ORIGENES: http://localhost:3000,http://localhost:5173,https://app.nexusbank.uk
