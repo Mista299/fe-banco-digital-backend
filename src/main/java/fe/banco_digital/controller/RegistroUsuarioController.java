@@ -7,7 +7,7 @@ import fe.banco_digital.dto.ValidarIdentidadRequestDTO;
 import fe.banco_digital.service.RegistroUsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
@@ -32,11 +32,9 @@ public class RegistroUsuarioController {
     }
 
     @Operation(summary = "Validar identidad", description = "Verifica si el número de documento ya existe antes de habilitar el formulario completo")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Identidad disponible"),
-            @ApiResponse(responseCode = "409", description = "Identificación duplicada"),
-            @ApiResponse(responseCode = "400", description = "Campos obligatorios faltantes")
-    })
+    @ApiResponse(responseCode = "200", description = "Identidad disponible")
+    @ApiResponse(responseCode = "409", description = "Identificación duplicada")
+    @ApiResponse(responseCode = "400", description = "Campos obligatorios faltantes")
     @PostMapping("/validar-identidad")
     public ResponseEntity<EntityModel<ValidacionIdentidadResponseDTO>> validarIdentidad(@Valid @RequestBody ValidarIdentidadRequestDTO dto) {
         ValidacionIdentidadResponseDTO respuesta = registroUsuarioService.validarIdentidad(dto);
@@ -47,11 +45,9 @@ public class RegistroUsuarioController {
     }
 
     @Operation(summary = "Registrar nuevo usuario", description = "Crea cliente, cuenta bancaria automática e identidad digital del usuario")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Registro exitoso"),
-            @ApiResponse(responseCode = "409", description = "Documento, correo o username duplicados"),
-            @ApiResponse(responseCode = "400", description = "Campos obligatorios faltantes")
-    })
+    @ApiResponse(responseCode = "201", description = "Registro exitoso")
+    @ApiResponse(responseCode = "409", description = "Documento, correo o username duplicados")
+    @ApiResponse(responseCode = "400", description = "Campos obligatorios faltantes")
     @PostMapping
     public ResponseEntity<EntityModel<RegistroNuevoUsuarioResponseDTO>> registrar(@Valid @RequestBody RegistroNuevoUsuarioRequestDTO dto) {
         RegistroNuevoUsuarioResponseDTO respuesta = registroUsuarioService.registrar(dto);

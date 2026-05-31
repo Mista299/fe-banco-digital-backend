@@ -7,7 +7,7 @@ import fe.banco_digital.dto.CuentaResumenDTO;
 import fe.banco_digital.service.CuentaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
@@ -18,7 +18,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -35,10 +34,8 @@ public class CuentaController {
     }
 
     @Operation(summary = "Abrir nueva cuenta", description = "Abre una cuenta adicional (AHORROS o CORRIENTE) para el cliente autenticado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Cuenta abierta exitosamente"),
-            @ApiResponse(responseCode = "400", description = "Tipo de cuenta inválido")
-    })
+    @ApiResponse(responseCode = "201", description = "Cuenta abierta exitosamente")
+    @ApiResponse(responseCode = "400", description = "Tipo de cuenta inválido")
     @PostMapping("/abrir")
     public ResponseEntity<EntityModel<CuentaResumenDTO>> abrirCuenta(
             @Valid @RequestBody AbrirCuentaSolicitudDTO solicitud,
@@ -59,12 +56,10 @@ public class CuentaController {
             description = "Permite al cliente cerrar su cuenta de ahorros. " +
                     "Valida identidad, saldo cero y cambia el estado a CERRADA."
     )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Cuenta cerrada exitosamente"),
-            @ApiResponse(responseCode = "401", description = "Contraseña incorrecta — cierre bloqueado"),
-            @ApiResponse(responseCode = "404", description = "Cuenta no encontrada"),
-            @ApiResponse(responseCode = "409", description = "No se puede cerrar — saldo pendiente")
-    })
+    @ApiResponse(responseCode = "200", description = "Cuenta cerrada exitosamente")
+    @ApiResponse(responseCode = "401", description = "Contraseña incorrecta — cierre bloqueado")
+    @ApiResponse(responseCode = "404", description = "Cuenta no encontrada")
+    @ApiResponse(responseCode = "409", description = "No se puede cerrar — saldo pendiente")
     @PatchMapping("/cerrar")
     public ResponseEntity<EntityModel<CierreCuentaRespuestaDTO>> cerrarCuenta(
             @Valid @RequestBody CierreCuentaSolicitudDTO solicitud,
@@ -86,10 +81,8 @@ public class CuentaController {
             description = "Retorna todas las cuentas del cliente autenticado. " +
                     "Las cuentas cerradas incluyen etiqueta visual y tienen transacciones bloqueadas."
     )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de cuentas obtenida exitosamente"),
-            @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
-    })
+    @ApiResponse(responseCode = "200", description = "Lista de cuentas obtenida exitosamente")
+    @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     @GetMapping({"/mis-cuentas", "/dashboard"})
     public ResponseEntity<List<EntityModel<CuentaResumenDTO>>> obtenerDashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
@@ -101,7 +94,7 @@ public class CuentaController {
                         linkTo(methodOn(TransaccionController.class).obtenerMovimientos(c.getIdCuenta(), null)).withRel("movimientos"),
                         linkTo(methodOn(CuentaController.class).cerrarCuenta(null, null)).withRel("cerrar")
                 ))
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(modelos);
     }
 }

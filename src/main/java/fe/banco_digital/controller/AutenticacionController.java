@@ -9,7 +9,6 @@ import fe.banco_digital.service.AutenticacionService;
 import fe.banco_digital.service.RefreshTokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,6 +35,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class AutenticacionController {
 
     private static final String COOKIE_ACCESS  = "accessToken";
+    private static final String MSG_CLAVE = "mensaje";
     private static final String COOKIE_REFRESH = "refreshToken";
 
     @Value("${app.https:false}")
@@ -52,11 +52,9 @@ public class AutenticacionController {
 
     @Operation(summary = "Registrar usuario",
                description = "Crea las credenciales de acceso para un cliente existente")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente"),
-            @ApiResponse(responseCode = "409", description = "El username ya existe o el cliente ya tiene usuario"),
-            @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
-    })
+    @ApiResponse(responseCode = "201", description = "Usuario registrado exitosamente")
+    @ApiResponse(responseCode = "409", description = "El username ya existe o el cliente ya tiene usuario")
+    @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     @PostMapping("/registro")
     public ResponseEntity<EntityModel<UsuarioRegistradoDTO>> registrar(@Validated @RequestBody RegistroRequestDTO dto) {
         UsuarioRegistradoDTO registrado = autenticacionService.registrar(dto);
@@ -68,17 +66,15 @@ public class AutenticacionController {
 
     @Operation(summary = "Iniciar sesión",
                description = "Setea cookies HttpOnly con el access token (10 min) y el refresh token (7 días)")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Login exitoso"),
-            @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
-    })
+    @ApiResponse(responseCode = "200", description = "Login exitoso")
+    @ApiResponse(responseCode = "401", description = "Credenciales incorrectas")
     @PostMapping("/login")
     public ResponseEntity<EntityModel<Map<String, String>>> login(@Validated @RequestBody LoginRequestDTO dto,
                                                                   HttpServletResponse response) {
         LoginResponseDTO tokens = autenticacionService.login(dto);
         setearCookies(response, tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.ok(EntityModel.of(
-                Map.of("mensaje", "Sesión iniciada exitosamente"),
+                Map.of(MSG_CLAVE,"Sesión iniciada exitosamente"),
                 linkTo(methodOn(AutenticacionController.class).login(null, null)).withSelfRel(),
                 linkTo(methodOn(AutenticacionController.class).logout(null, null)).withRel("logout"),
                 linkTo(methodOn(CuentaController.class).obtenerDashboard(null)).withRel("mis-cuentas")
@@ -87,10 +83,8 @@ public class AutenticacionController {
 
     @Operation(summary = "Renovar token",
                description = "Lee el refresh token de la cookie y emite un nuevo par de tokens")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Tokens renovados"),
-            @ApiResponse(responseCode = "401", description = "Refresh token inválido o expirado")
-    })
+    @ApiResponse(responseCode = "200", description = "Tokens renovados")
+    @ApiResponse(responseCode = "401", description = "Refresh token inválido o expirado")
     @PostMapping("/refresh")
     public ResponseEntity<EntityModel<Map<String, String>>> refresh(HttpServletRequest request,
                                                                     HttpServletResponse response) {
@@ -100,7 +94,7 @@ public class AutenticacionController {
         LoginResponseDTO tokens = refreshTokenService.renovarToken(refreshToken);
         setearCookies(response, tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.ok(EntityModel.of(
-                Map.of("mensaje", "Token renovado exitosamente"),
+                Map.of(MSG_CLAVE,"Token renovado exitosamente"),
                 linkTo(methodOn(AutenticacionController.class).refresh(null, null)).withSelfRel()
         ));
     }
@@ -117,7 +111,7 @@ public class AutenticacionController {
         }
         limpiarCookies(response);
         return ResponseEntity.ok(EntityModel.of(
-                Map.of("mensaje", "Sesión cerrada exitosamente"),
+                Map.of(MSG_CLAVE,"Sesión cerrada exitosamente"),
                 linkTo(methodOn(AutenticacionController.class).logout(null, null)).withSelfRel(),
                 linkTo(methodOn(AutenticacionController.class).login(null, null)).withRel("login")
         ));
@@ -161,7 +155,7 @@ public class AutenticacionController {
         if (request.getCookies() == null) return null;
         return Arrays.stream(request.getCookies())
                 .filter(c -> nombre.equals(c.getName()))
-                .map(c -> c.getValue())
+                .map(jakarta.servlet.http.Cookie::getValue)
                 .findFirst()
                 .orElse(null);
     }

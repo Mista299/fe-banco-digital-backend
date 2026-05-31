@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -22,6 +21,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @RequestMapping("/api/v1/reportes/saldos")
 @Tag(name = "Reportes de saldos", description = "Reportes administrativos de cuentas")
 public class ReporteSaldoController {
+
+    private static final String REL_CONSOLIDADO = "consolidado";
 
     private final ReporteSaldoService reporteSaldoService;
 
@@ -48,10 +49,10 @@ public class ReporteSaldoController {
                 .map(d -> EntityModel.of(d,
                         linkTo(methodOn(ReporteSaldoController.class).filtrarPorEstado(estado)).withRel("self")
                 ))
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(CollectionModel.of(items,
                 linkTo(methodOn(ReporteSaldoController.class).filtrarPorEstado(estado)).withSelfRel(),
-                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel("consolidado")
+                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel(REL_CONSOLIDADO)
         ));
     }
 
@@ -64,10 +65,10 @@ public class ReporteSaldoController {
                 .map(d -> EntityModel.of(d,
                         linkTo(methodOn(ReporteSaldoController.class).filtrarPorRango(min, max)).withRel("self")
                 ))
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(CollectionModel.of(items,
                 linkTo(methodOn(ReporteSaldoController.class).filtrarPorRango(min, max)).withSelfRel(),
-                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel("consolidado")
+                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel(REL_CONSOLIDADO)
         ));
     }
 
@@ -78,10 +79,10 @@ public class ReporteSaldoController {
                 .map(d -> EntityModel.of(d,
                         linkTo(methodOn(ReporteSaldoController.class).obtenerTiempoReal()).withRel("self")
                 ))
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(CollectionModel.of(items,
                 linkTo(methodOn(ReporteSaldoController.class).obtenerTiempoReal()).withSelfRel(),
-                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel("consolidado")
+                linkTo(methodOn(ReporteSaldoController.class).obtenerConsolidado()).withRel(REL_CONSOLIDADO)
         ));
     }
 }

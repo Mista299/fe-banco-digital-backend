@@ -5,7 +5,7 @@ import fe.banco_digital.dto.DashboardClienteDTO;
 import fe.banco_digital.service.ClienteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
@@ -31,10 +31,8 @@ public class ClienteController {
 
     @GetMapping("/dashboard")
     @Operation(summary = "Dashboard del cliente", description = "Retorna nombre, email y cuentas activas del cliente autenticado")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Dashboard obtenido exitosamente"),
-            @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
-    })
+    @ApiResponse(responseCode = "200", description = "Dashboard obtenido exitosamente")
+    @ApiResponse(responseCode = "401", description = "Usuario no autenticado")
     public ResponseEntity<EntityModel<DashboardClienteDTO>> dashboard(
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {
         DashboardClienteDTO dto = clienteService.obtenerDashboard(usuarioAutenticado.getUsername());
@@ -66,10 +64,8 @@ public class ClienteController {
             summary = "Actualizar datos del cliente autenticado",
             description = "Permite actualizar teléfono y correo electrónico."
     )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Datos actualizados correctamente"),
-            @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
-    })
+    @ApiResponse(responseCode = "200", description = "Datos actualizados correctamente")
+    @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     public ResponseEntity<EntityModel<Map<String, String>>> actualizar(
             @Valid @RequestBody ActualizarClienteDTO dto,
             @AuthenticationPrincipal UserDetails usuarioAutenticado) {

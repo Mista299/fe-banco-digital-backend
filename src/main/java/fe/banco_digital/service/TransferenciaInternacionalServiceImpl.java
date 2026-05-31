@@ -114,8 +114,8 @@ public class TransferenciaInternacionalServiceImpl implements TransferenciaInter
                 usuario.getIdUsuario(),
                 "Orden SWIFT enviada a " + sanitizar(solicitud.getBancoDestino())
                         + " (" + sanitizar(solicitud.getPaisDestino()) + ")"
-                        + " por " + solicitud.getMontoUsd() + " " + ti.getMoneda()
-                        + " desde cuenta " + origen.getNumeroCuenta()));
+                        + " por " + sanitizar(solicitud.getMontoUsd().toPlainString()) + " " + sanitizar(ti.getMoneda())
+                        + " desde cuenta " + sanitizar(origen.getNumeroCuenta())));
 
         return construirRespuesta(ti, origen.getSaldo(),
                 "Transferencia enviada a la red SWIFT. Estado: Pendiente de Procesamiento.");
