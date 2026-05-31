@@ -15,12 +15,14 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Random;
 
 @Service
 public class TokenRetiroServiceImpl implements TokenRetiroService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final CuentaRepository cuentaRepository;
     private final TokenRetiroRepository tokenRepository;
@@ -118,19 +120,18 @@ public class TokenRetiroServiceImpl implements TokenRetiroService {
     @Override
     @Transactional
     public void expirarTokens() {
-        tokenRepository.findAll().forEach(token -> {
+        for (TokenRetiro token : tokenRepository.findAll()) {
             if (token.getEstado() == EstadoToken.ACTIVO &&
                 token.getFechaExpiracion().isBefore(LocalDateTime.now())) {
 
                 Cuenta cuenta = token.getCuenta();
-                // devolver el saldo descontado al generar el token
                 cuenta.setSaldo(cuenta.getSaldo().add(token.getMonto()));
                 token.setEstado(EstadoToken.EXPIRADO);
 
                 cuentaRepository.save(cuenta);
                 tokenRepository.save(token);
             }
-        });
+        }
     }
 
     @Override
@@ -144,8 +145,6 @@ public class TokenRetiroServiceImpl implements TokenRetiroService {
     }
 
     private String generarCodigo6Digitos() {
-        Random random = new Random();
-        int numero = 100000 + random.nextInt(900000);
-        return String.valueOf(numero);
+        return String.valueOf(100000 + SECURE_RANDOM.nextInt(900000));
     }
 }
