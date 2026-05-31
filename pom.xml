@@ -31,6 +31,7 @@
 		<!-- ✅ NUEVO: Configuración para SonarCloud -->
 		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.coverage.exclusions>**/dto/**,**/entity/**,**/exception/**,**/repository/**,**/config/**,**/listener/**,**/event/**,**/BancoDigitalApplication.java,**/DataLoader.java</sonar.coverage.exclusions>
 	</properties>
 	<dependencies>
 		<!-- Test dependencies -->
@@ -142,12 +143,13 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.5.5</version>
 				<configuration>
+					<argLine>${argLine}</argLine>
 					<excludes>
 						<exclude>**/DataLoaderTest.java</exclude>
 					</excludes>
 				</configuration>
 			</plugin>
-			<!-- ✅ JaCoCO CONFIGURADO CORRECTAMENTE -->
+			<!-- JaCoCo -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -166,11 +168,23 @@
 							<goal>report</goal>
 						</goals>
 						<configuration>
-							<!-- ✅ NUEVO: Generar reporte en formato XML para SonarCloud -->
 							<formats>
 								<format>XML</format>
 								<format>HTML</format>
 							</formats>
+							<classesDirectory>${project.build.outputDirectory}</classesDirectory>
+							<excludes>
+								<exclude>fe/banco_digital/dto/**</exclude>
+								<exclude>fe/banco_digital/entity/**</exclude>
+								<exclude>fe/banco_digital/exception/**</exclude>
+								<exclude>fe/banco_digital/repository/DataLoader.class</exclude>
+								<exclude>fe/banco_digital/repository/**</exclude>
+								<exclude>fe/banco_digital/config/**</exclude>
+								<exclude>fe/banco_digital/listener/**</exclude>
+								<exclude>fe/banco_digital/event/**</exclude>
+								<exclude>fe/banco_digital/security/FiltroHmacGateway*.class</exclude>
+								<exclude>fe/banco_digital/BancoDigitalApplication.class</exclude>
+							</excludes>
 						</configuration>
 					</execution>
 					<execution>
@@ -208,14 +222,6 @@
 				</executions>
 			</plugin>
 			
-			<!-- ✅ NUEVO: Configurar Surefire para que funcione con JaCoCo -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<argLine>${surefireArgLine}</argLine>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.sonarsource.scanner.maven</groupId>
 				<artifactId>sonar-maven-plugin</artifactId>
@@ -225,6 +231,17 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>repackage</id>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+						<configuration>
+							<classifier>exec</classifier>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
