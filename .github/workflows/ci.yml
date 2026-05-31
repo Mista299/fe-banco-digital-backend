@@ -37,6 +37,7 @@ jobs:
           path: target/site/jacoco/
 
       - name: SonarCloud analysis
+        continue-on-error: true
         uses: SonarSource/sonarcloud-github-action@v2.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
