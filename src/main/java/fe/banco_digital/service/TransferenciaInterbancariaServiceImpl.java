@@ -101,7 +101,7 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
 
         eventPublisher.publishEvent(new AuditoriaEvent(this, "TRANSFERENCIA_INTERBANCARIA_ACH",
                 usuario.getIdUsuario(),
-                "Orden ACH enviada a " + solicitud.getBancoDestino()
+                "Orden ACH enviada a " + sanitizar(solicitud.getBancoDestino())
                         + " desde cuenta " + origen.getNumeroCuenta()));
 
         return construirRespuesta(te, origen.getSaldo(),
@@ -143,7 +143,7 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
                 .orElse(null);
         if (idUsuarioAuditoria != null) {
             eventPublisher.publishEvent(new AuditoriaEvent(this, "REVERSO_ACH", idUsuarioAuditoria,
-                    "Reversión ACH de transacción " + idTransaccion + ". Motivo: " + solicitud.getMotivo()));
+                    "Reversión ACH de transacción " + idTransaccion + ". Motivo: " + sanitizar(solicitud.getMotivo())));
         }
 
         return construirRespuesta(te, origen.getSaldo(),
@@ -211,5 +211,9 @@ public class TransferenciaInterbancariaServiceImpl implements TransferenciaInter
         return new TransferenciaInterbancariaResponseDTO(te.getIdTransfExt(),
                 te.getReferenciaExterna(), te.getMonto(), saldoResultante,
                 te.getEstado().name(), te.getFecha(), mensaje);
+    }
+
+    private String sanitizar(String valor) {
+        return valor == null ? "" : valor.replaceAll("[\r\n\t]", "_");
     }
 }

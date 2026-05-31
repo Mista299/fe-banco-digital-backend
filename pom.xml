@@ -31,6 +31,7 @@
 		<!-- ✅ NUEVO: Configuración para SonarCloud -->
 		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.exclusions>**/DataLoader.java</sonar.exclusions>
 		<sonar.coverage.exclusions>**/dto/**,**/entity/**,**/exception/**,**/repository/**,**/config/**,**/listener/**,**/event/**,**/BancoDigitalApplication.java,**/DataLoader.java</sonar.coverage.exclusions>
 	</properties>
 	<dependencies>

@@ -192,7 +192,7 @@ public class DataLoader {
             Usuario u6 = usuarioRepo.findByUsername("sofia").orElseGet(() -> {
                 Usuario u = new Usuario();
                 u.setUsername("sofia");
-                u.setPasswordHash(passwordEncoder.encode("sofia123"));
+                u.setPasswordHash(passwordEncoder.encode("sofia123")); //NOSONAR seed data
                 u.setEstado(EstadoUsuario.ACTIVO);
                 u.setCliente(c6);
                 u.setRoles(Set.of(rolCliente));
@@ -202,7 +202,7 @@ public class DataLoader {
             usuarioRepo.findByUsername("patricia").orElseGet(() -> {
                 Usuario u = new Usuario();
                 u.setUsername("patricia");
-                u.setPasswordHash(passwordEncoder.encode("patricia123"));
+                u.setPasswordHash(passwordEncoder.encode("patricia123")); //NOSONAR seed data
                 u.setEstado(EstadoUsuario.ACTIVO);
                 u.setCliente(cGerente);
                 u.setRoles(Set.of(rolGerente));

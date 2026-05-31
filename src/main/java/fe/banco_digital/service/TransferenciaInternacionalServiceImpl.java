@@ -112,8 +112,8 @@ public class TransferenciaInternacionalServiceImpl implements TransferenciaInter
 
         eventPublisher.publishEvent(new AuditoriaEvent(this, "TRANSFERENCIA_INTERNACIONAL_SWIFT",
                 usuario.getIdUsuario(),
-                "Orden SWIFT enviada a " + solicitud.getBancoDestino()
-                        + " (" + solicitud.getPaisDestino() + ")"
+                "Orden SWIFT enviada a " + sanitizar(solicitud.getBancoDestino())
+                        + " (" + sanitizar(solicitud.getPaisDestino()) + ")"
                         + " por " + solicitud.getMontoUsd() + " " + ti.getMoneda()
                         + " desde cuenta " + origen.getNumeroCuenta()));
 
@@ -156,7 +156,7 @@ public class TransferenciaInternacionalServiceImpl implements TransferenciaInter
                 .orElse(null);
         if (idUsuarioAuditoria != null) {
             eventPublisher.publishEvent(new AuditoriaEvent(this, "RECHAZO_SWIFT", idUsuarioAuditoria,
-                    "Rechazo SWIFT de transferencia " + idTransfInt + ". Motivo: " + solicitud.getMotivo()));
+                    "Rechazo SWIFT de transferencia " + idTransfInt + ". Motivo: " + sanitizar(solicitud.getMotivo())));
         }
 
         return construirRespuesta(ti, origen.getSaldo(),
@@ -225,5 +225,9 @@ public class TransferenciaInternacionalServiceImpl implements TransferenciaInter
                 ti.getIdTransfInt(), ti.getReferenciaSwift(),
                 ti.getMontoUsd(), ti.getMontoCop(), ti.getTasaCambio(),
                 saldoResultante, ti.getEstado().name(), ti.getFecha(), mensaje);
+    }
+
+    private String sanitizar(String valor) {
+        return valor == null ? "" : valor.replaceAll("[\r\n\t]", "_");
     }
 }
