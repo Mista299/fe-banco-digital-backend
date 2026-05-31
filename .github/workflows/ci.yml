@@ -37,7 +37,6 @@ jobs:
           path: target/site/jacoco/
 
       - name: SonarCloud analysis
-        if: ${{ secrets.SONAR_TOKEN != '' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -45,5 +44,4 @@ jobs:
           mvn -B sonar:sonar \
             -Dsonar.projectKey=Mista299_fe-banco-digital-backend \
             -Dsonar.organization=mista299 \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.host.url=https://sonarcloud.io
