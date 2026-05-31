@@ -324,4 +324,112 @@ public enum EstadoTransaccion { EXITOSA, FALLIDA }
 
 ---
 
+## Blindaje de integridad en BD — `script-sprint3.sql` (Sprint 3 · 2026-05-29)
+
+### Propósito
+`script-sprint3.sql` es el script de esquema + **blindaje de integridad** para
+producción. Es **no destructivo** (no contiene `DROP TABLE`) e **idempotente**
+(se puede re-ejecutar sin duplicar ni romper datos). Compatible con
+`spring.jpa.hibernate.ddl-auto=validate`.
+
+### Modelo de integridad (Opción "C")
+La aplicación sigue moviendo el saldo igual que siempre (la lógica Java **no se
+tocó**, salvo la FK de `deposito_pendiente`, ver abajo). La base de datos actúa
+como **red de seguridad pasiva**:
+
+1. **CHECK constraints estrictos**: montos `> 0`, saldo `>= 0`, formatos por
+   regex (documento numérico, email válido, `numero_cuenta` 8–20 dígitos, código
+   de token de 6 dígitos), campos no vacíos, transferencia no a la misma cuenta,
+   fechas coherentes.
+2. **Saldo nunca negativo**: trigger sobre `cuenta` (mensaje en español) +
+   `CHECK` de respaldo.
+3. **Histórico contable inmutable (append-only)**: triggers bloquean
+   `UPDATE`/`DELETE` en `movimiento`, `transferencia`, `libro_mayor` y
+   `auditoria`. Las máquinas de estado (`transferencia_externa`, `token_retiro`,
+   `deposito_pendiente`) **sí** permiten actualizar su estado, como necesita la app.
+4. **Libro mayor espejo** (`libro_mayor`): ver abajo.
+5. **Reconciliación**: vista `v_reconciliacion_saldos` + función
+   `fn_verificar_integridad()` (devuelve solo cuentas descuadradas).
+
+### `libro_mayor` — ¿qué es y para qué? (esto era lo que se olvidó)
+Es una **tabla espejo append-only** (sin entidad JPA) que registra **cada cambio
+de saldo de una cuenta** como un asiento contable, con el saldo **antes y
+después**. La llena automáticamente un trigger `AFTER UPDATE ON cuenta`; la app
+no la conoce ni la escribe.
+
+- Tipos de asiento: `APERTURA` (saldo inicial), `CREDITO` (entra dinero),
+  `DEBITO` (sale dinero).
+- **Por qué existe**: el saldo de `cuenta` es un único número; si un bug lo
+  corrompe, el valor correcto se pierde. El libro mayor permite (a) reconstruir
+  el saldo sumando asientos, (b) detectar descuadres en tiempo real comparando
+  `cuenta.saldo` contra el último `saldo_resultante`, y (c) auditoría/forense de
+  cada centavo. Es el equivalente al libro contable de un banco: no se borra.
+- Los asientos `APERTURA` de cuentas semilla se generan por un backfill
+  idempotente (no por el trigger), para no depender de `INSERT ... ON CONFLICT`.
+
+### Tablas sin entidad JPA (no entran en conflicto con Hibernate)
+`libro_mayor` (y cualquier tabla de auditoría/historial futura) **no tienen
+`@Entity`**. Esto **no rompe** `ddl-auto=validate`: la validación es
+unidireccional (entidad → tabla); Hibernate ignora por completo las tablas que
+no mapea. Verificado arrancando la app con `validate` contra una BD que contenía
+estas tablas: sin errores de schema-validation.
+
+### Relaciones / FKs ajustadas
+- **`deposito_pendiente` → `cuenta`**: la entidad `DepositoPendiente` pasó de
+  `String numeroCuenta` a `@ManyToOne Cuenta` (JoinColumn `numero_cuenta` →
+  `cuenta.numero_cuenta`, columna UNIQUE). **Único cambio en Java** del sprint,
+  para que el modelo Java y la FK de la BD coincidan. Alinea la entidad con
+  `Movimiento`/`Transferencia`/`TokenRetiro`.
+- **`transferencia_externa.cuentaOrigen` → `cuenta`**: ya existía, correcta (la
+  cuenta origen es de nuestro banco). Los datos del destinatario externo
+  (`numero_cuenta_destino`, `banco_destino`, etc.) se quedan como texto: son de
+  otro banco, no son FKs.
+
+### `transferencia_externa.id_transf_original` — NO implementado
+Autorreferencia **prevista** para el patrón storno/reverso ACH (un reverso
+apuntaría a su transferencia original). **No se alcanzó a implementar en este
+sprint**: el flujo Java actual reversa mutando el estado a `REVERSADA` y la
+columna permanece siempre `NULL`. Por eso **no** tiene CHECK ni índice asociados
+(serían infraestructura inerte, YAGNI). Solo queda documentada su intención con
+`COMMENT ON COLUMN`. Implementar junto con el refactor de
+`TransferenciaInterbancariaServiceImpl` si se retoma.
+
+### Exclusión: `transferencia_internacional`
+Feature no terminado este sprint → **sin** constraints ni triggers dedicados.
+(El trigger genérico de `cuenta` sí captura cualquier cambio de saldo que
+produzca, lo cual es deseable y no toca el feature.)
+
+### Verificación rápida tras ejecutar
+```sql
+SELECT * FROM v_reconciliacion_saldos;   -- estado por cuenta
+SELECT * FROM fn_verificar_integridad(); -- vacío = todo OK
+```
+
+### Mejoras futuras (NO implementadas — backlog)
+
+**Historial de estados por trigger (trazabilidad operativa).**
+Patrón análogo al `libro_mayor`, pero espiando el **estado** en vez del saldo:
+una tabla append-only + trigger `AFTER UPDATE ... WHEN (OLD.estado IS DISTINCT
+FROM NEW.estado)` que registra cada transición. Hoy, cuando la app hace
+`UPDATE ... SET estado=...`, el estado anterior se sobrescribe y se pierde
+(no queda cuándo ni cuántas veces cambió).
+
+- **Relación:** 1 a N. `transferencia_externa (1) ──< (N) transferencia_externa_historial`,
+  con FK `id_transf_ext` → `transferencia_externa(id_transf_ext)` (por **PK**, no
+  por columna de negocio, al ser tabla interna). El trigger rellena el
+  `id_transf_ext` desde `NEW`; sin entidad JPA, invisible para `validate`.
+- **Alcance evaluado:** solo `transferencia_externa` tiene caso real (su reverso
+  `PENDIENTE→REVERSADA` destruye historia que no está en otro lado).
+  `token_retiro` y `deposito_pendiente` **no lo necesitan**: su dinero ya queda
+  trazado en `Movimiento` + `libro_mayor`, y ambas ya tienen `fecha_creacion` /
+  `fecha_expiracion`. → Implementarlo **solo** para `transferencia_externa`.
+- **Diseño:** preferir tabla **específica** (FK real) sobre una tabla genérica
+  `historial_estados(tabla, id, ...)`, que perdería la integridad referencial.
+- **No es bloqueante:** el objetivo del Sprint 3 (proteger el dinero) ya está
+  cubierto por `libro_mayor` + constraints + append-only. Esto es trazabilidad
+  operativa, de menor urgencia. Conviene implementarlo junto con el storno real
+  de `id_transf_original` (son mejoras hermanas del módulo ACH).
+
+---
+
 *Para dudas sobre el modelo, consultar con el líder técnico o el DBA del proyecto.*

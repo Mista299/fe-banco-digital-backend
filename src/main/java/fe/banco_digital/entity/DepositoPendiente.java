@@ -16,8 +16,11 @@ public class DepositoPendiente {
     @Column(unique = true, nullable = false)
     private String referenciaGateway;
 
-    @Column(nullable = false)
-    private String numeroCuenta;
+    // Relación a la cuenta destino. Se enlaza por numero_cuenta (columna UNIQUE),
+    // no por id, porque el flujo de la pasarela identifica la cuenta por su número.
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "numero_cuenta", referencedColumnName = "numero_cuenta", nullable = false)
+    private Cuenta cuenta;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal monto;
@@ -37,8 +40,11 @@ public class DepositoPendiente {
     public String getReferenciaGateway() { return referenciaGateway; }
     public void setReferenciaGateway(String referenciaGateway) { this.referenciaGateway = referenciaGateway; }
 
-    public String getNumeroCuenta() { return numeroCuenta; }
-    public void setNumeroCuenta(String numeroCuenta) { this.numeroCuenta = numeroCuenta; }
+    public Cuenta getCuenta() { return cuenta; }
+    public void setCuenta(Cuenta cuenta) { this.cuenta = cuenta; }
+
+    // Conveniencia de solo lectura: número de la cuenta destino.
+    public String getNumeroCuenta() { return cuenta != null ? cuenta.getNumeroCuenta() : null; }
 
     public BigDecimal getMonto() { return monto; }
     public void setMonto(BigDecimal monto) { this.monto = monto; }

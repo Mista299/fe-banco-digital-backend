@@ -49,7 +49,7 @@ public class DepositoPendienteServiceImpl implements DepositoPendienteService {
 
         DepositoPendiente pendiente = new DepositoPendiente();
         pendiente.setReferenciaGateway(solicitud.getReferenciaGateway());
-        pendiente.setNumeroCuenta(solicitud.getNumeroCuenta());
+        pendiente.setCuenta(cuenta);
         pendiente.setMonto(solicitud.getMonto());
         pendiente.setEstado(EstadoDepositoPendiente.PENDIENTE);
         pendiente.setFechaCreacion(LocalDateTime.now());
