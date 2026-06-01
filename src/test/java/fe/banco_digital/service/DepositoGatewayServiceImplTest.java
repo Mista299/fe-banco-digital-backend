@@ -46,7 +46,7 @@ class DepositoGatewayServiceImplTest {
 
         pendiente = new DepositoPendiente();
         pendiente.setReferenciaGateway("REF001");
-        pendiente.setNumeroCuenta("11112222");
+        pendiente.setCuenta(cuenta);
         pendiente.setMonto(new BigDecimal("200.00"));
         pendiente.setEstado(EstadoDepositoPendiente.PENDIENTE);
         pendiente.setFechaExpiracion(LocalDateTime.now().plusMinutes(10));

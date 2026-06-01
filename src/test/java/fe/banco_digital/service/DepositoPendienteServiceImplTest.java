@@ -116,7 +116,7 @@ class DepositoPendienteServiceImplTest {
         pendiente.setEstado(EstadoDepositoPendiente.PENDIENTE);
         pendiente.setFechaExpiracion(LocalDateTime.now().plusMinutes(10));
         pendiente.setMonto(new BigDecimal("200.00"));
-        pendiente.setNumeroCuenta("11112222");
+        pendiente.setCuenta(cuenta);
 
         when(depositoPendienteRepository.findByReferenciaGateway("REF001")).thenReturn(Optional.of(pendiente));
 
